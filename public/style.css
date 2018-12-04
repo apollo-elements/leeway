@@ -1,0 +1,28 @@
+:root {
+  --primary-hue: 200;
+  --hue-coeff: 1;
+}
+
+html {
+  width: 100vw;
+  height: 100vh;
+}
+
+body {
+  font-family: ubuntu, arial, sans-serif;
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+chat-subscription {
+  flex: 1 0 auto;
+}
+
+chat-mutation {
+  flex: 0 1 1px;
+}

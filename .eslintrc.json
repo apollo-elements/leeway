@@ -1,0 +1,18 @@
+{
+  "extends": "eslint:recommended",
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": 2018
+  },
+  "env": {
+    "browser": true,
+    "es6": true
+  },
+  "rules": {
+    "semi": ["error", "always"],
+    "arrow-parens": [2, "as-needed"],
+    "indent": ["error", 2, {
+      "flatTernaryExpressions": true
+    }]
+  }
+}

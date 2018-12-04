@@ -1,0 +1,10 @@
+{
+  "ignore": ["public/bundle.*", ".git", "node_modules/**/node_modules"],
+  "watch": [
+    "src/**/*",
+    "server.js",
+    "apollo-server.js",
+    "public/index.html",
+    "package-lock.json"
+  ]
+}
