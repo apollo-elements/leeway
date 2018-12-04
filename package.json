@@ -2,13 +2,17 @@
   "name": "demo-lit-apollo-subscriptions",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "index.js",
+  "engines": {
+    "node": "10.3.0"
+  },
   "scripts": {
     "build": "rollup -c",
-    "serve": "node -r esm server.js",
-    "start": "run-s build serve",
-    "watch": "nodemon -x 'npm start'",
-    "postinstall": "patch-package"
+    "start": "node index.js",
+    "watch": "nodemon -x 'npm build && npm start'",
+    "patch": "patch-package",
+    "postinstall": "run-s patch build",
+    "heroku-prebuild": "npm install --dev"
   },
   "author": "",
   "license": "ISC",
@@ -25,7 +29,7 @@
     "express": "^4.16.4",
     "graphql": "^14.0.2",
     "graphql-tag": "^2.10.0",
-    "lit-apollo": "git+ssh://git@github.com/bennypowers/lit-apollo.git#subscriptions"
+    "lit-apollo": "^0.7.0-dev.1"
   },
   "devDependencies": {
     "eslint": "^5.9.0",
