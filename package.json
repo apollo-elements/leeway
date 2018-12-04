@@ -9,7 +9,7 @@
   "scripts": {
     "build": "rollup -c",
     "start": "node index.js",
-    "watch": "nodemon -x 'npm build && npm start'",
+    "watch": "nodemon -x 'npm run build && npm start'",
     "patch": "patch-package",
     "postinstall": "run-s patch build",
     "heroku-prebuild": "npm install --dev"
