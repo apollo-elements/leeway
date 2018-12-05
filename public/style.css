@@ -17,11 +17,26 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
-  transition: opacity 0.3s ease;
 }
 
-body[unresolved] {
+body > * {
+  transition: opacity 0.3s ease;
+  opacity: 1;
+}
+
+body[unresolved] > * {
   opacity: 0;
+}
+
+body[unresolved]::before {
+  content: '🤷‍♂️';
+  font-size: 144px;
+  line-height: 1;
+  position: absolute;
+  top: calc(50vh - 72px);
+  left: calc(50vw - 72px);
+  animation: zoom 3s ease-in-out infinite;
+  opacity: 1;
 }
 
 chat-query {
@@ -31,4 +46,26 @@ chat-query {
 
 chat-mutation {
   flex: 0 1 1px;
+}
+
+@keyframes zoom {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  10% {
+    transform: translate(30px, 20px);
+  }
+
+  30% {
+    transform: translate(50px, 25px);
+  }
+
+  60% {
+    transform: translate(10px, 55px);
+  }
+
+  100% {
+    transform: translate(0, 0);
+  }
 }

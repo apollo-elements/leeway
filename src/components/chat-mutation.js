@@ -70,6 +70,10 @@ class ChatMutation extends ApolloMutation {
     this.client = client;
   }
 
+  get userInput() {
+    return this.$('user-input');
+  }
+
   get input() {
     return this.$('message-input');
   }

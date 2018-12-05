@@ -43,7 +43,13 @@
     </chat-mutation>
 
     <script defer>
-      WebComponents.waitFor(function resolveBody() {
+      WebComponents.waitFor(async function resolveBody() {
+        await Promise.all([
+          customElements.whenDefined('chat-mutation'),
+          customElements.whenDefined('chat-query'),
+          customElements.whenDefined('chat-subscription'),
+          customElements.whenDefined('info-box'),
+        ])
         document.body.removeAttribute('unresolved');
       })
     </script>
