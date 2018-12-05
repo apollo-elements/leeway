@@ -81,8 +81,9 @@ class ChatQuery extends ApolloQuery {
 
   onSubscriptionData({ client, subscriptionData }) {
     const { query } = this;
-    const { data: { messageSent: messages } } = subscriptionData;
-    client.writeQuery({ query, data: { messages } });
+    const { data: { messageSent } } = subscriptionData;
+    const { messages } = client.readQuery({ query });
+    client.writeQuery({ query, data: { messages: [...messages, messageSent] } });
   }
 }
 

@@ -9,7 +9,7 @@ type Query {
 }
 
 type Subscription {
-  messageSent: [Message]
+  messageSent: Message
 }
 
 type Mutation {

@@ -13,9 +13,10 @@ const resolvers = {
   Mutation: {
     sendMessage(root, { user, message }, context) {
       const date = new Date().toISOString();
+      const messageSent = { user, message, date };
       messages.push({ user, message, date });
-      pubsub.publish(MESSAGE_SENT, { messageSent: messages });
-      return { user, message, date };
+      pubsub.publish(MESSAGE_SENT, { messageSent });
+      return messageSent;
     },
   },
 

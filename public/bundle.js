@@ -16094,26 +16094,6 @@ var WebSocketLink = /** @class */ (function (_super) {
 
 
 
-// and : (a -> Boolean) | Pred -> (a -> Boolean) | Pred -> a -> Boolean
-function and(f, g) {
-  if(!(isPredOrFunc$2(f) && isPredOrFunc$2(g))) {
-    throw new TypeError(
-      'and: Preds or predicate functions required for first two arguments'
-    )
-  }
-
-  return function (x) { return !!(predOrFunc$2(f, x) && predOrFunc$2(g, x)); }
-}
-
-var and_1 = curry$2(and);
-
-/** @license ISC License (c) copyright 2017 original and current authors */
-/** @author Ian Hofmann-Hicks (evil) */
-
-
-
-
-
 var isSame_1$1 = curry$2(isSame$2);
 
 /** @license ISC License (c) copyright 2016 original and current authors */
@@ -29906,8 +29886,9 @@ class ChatQuery extends ApolloQuery {
 
   onSubscriptionData({ client, subscriptionData }) {
     const { query } = this;
-    const { data: { messageSent: messages } } = subscriptionData;
-    client.writeQuery({ query, data: { messages } });
+    const { data: { messageSent } } = subscriptionData;
+    const { messages } = client.readQuery({ query });
+    client.writeQuery({ query, data: { messages: [...messages, messageSent] } });
   }
 }
 
