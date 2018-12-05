@@ -16087,28 +16087,397 @@ var WebSocketLink = /** @class */ (function (_super) {
     return WebSocketLink;
 }(ApolloLink));
 
-// Set up the WebSocket Link
-const { host } = location;
-const protocol$3 = host.includes('localhost') ? 'ws' : 'wss';
-const options = { reconnect: true };
+/** @license ISC License (c) copyright 2017 original and current authors */
+/** @author Ian Hofmann-Hicks (evil) */
 
-const httpLink = new HttpLink({
-  uri: `http://${host}/graphql`
-});
 
-const wsLink = new WebSocketLink({
-  uri: `${protocol$3}://${host}/graphql`,
-  options
-});
 
-const link = split(
-  ({ query }) => {
-    const { kind, operation } = getMainDefinition(query);
-    return kind === 'OperationDefinition' && operation === 'subscription';
-  },
-  wsLink,
-  httpLink,
+
+
+// and : (a -> Boolean) | Pred -> (a -> Boolean) | Pred -> a -> Boolean
+function and(f, g) {
+  if(!(isPredOrFunc$2(f) && isPredOrFunc$2(g))) {
+    throw new TypeError(
+      'and: Preds or predicate functions required for first two arguments'
+    )
+  }
+
+  return function (x) { return !!(predOrFunc$2(f, x) && predOrFunc$2(g, x)); }
+}
+
+var and_1 = curry$2(and);
+
+/** @license ISC License (c) copyright 2017 original and current authors */
+/** @author Ian Hofmann-Hicks (evil) */
+
+
+
+
+
+var isSame_1$1 = curry$2(isSame$2);
+
+/** @license ISC License (c) copyright 2016 original and current authors */
+/** @author Ian Hofmann-Hicks (evil) */
+
+var VERSION$2 = 4;
+
+
+
+
+var type$6 = require$$0.type('Pair');
+var _type$2 = require$$0.typeFn(type$6(), VERSION$2);
+
+
+
+
+
+
+
+
+
+function Pair(l, r) {
+  var obj;
+
+  if(arguments.length < 2) {
+    throw new TypeError('Pair: Must provide a first and second value')
+  }
+
+  var fst =
+    function () { return l; };
+
+  var snd =
+    function () { return r; };
+
+  var inspect =
+    function () { return ("Pair(" + (_inspect(l)) + "," + (_inspect(r)) + " )"); };
+
+  var toArray =
+    function () { return [ l, r ]; };
+
+  function merge(fn) {
+    if(!isFunction$2(fn)) {
+      throw new TypeError('Pair.merge: Binary function required')
+    }
+
+    return fn(fst(), snd())
+  }
+
+  function equals(m) {
+    return isSameType$2(Pair, m)
+      && _equals(m.fst(), fst())
+      && _equals(m.snd(), snd())
+  }
+
+  function concat(method) {
+    return function(m) {
+      if(!isSameType$2(Pair, m)) {
+        throw new TypeError(("Pair." + method + ": Pair required"))
+      }
+
+      var lf = fst();
+      var ls = snd();
+      var rf = m.fst();
+      var rs = m.snd();
+
+      if(!(isSemigroup$2(lf) && isSemigroup$2(ls))) {
+        throw new TypeError(("Pair." + method + ": Both Pairs must contain Semigroups of the same type"))
+      }
+
+      if(!(isSameType$2(lf, rf) && isSameType$2(ls, rs))) {
+        throw new TypeError(("Pair." + method + ": Both Pairs must contain Semigroups of the same type"))
+      }
+
+      return Pair(
+        lf.concat(rf),
+        ls.concat(rs)
+      )
+    }
+  }
+
+  function swap(f, g) {
+    if(!isFunction$2(f) || !isFunction$2(g)) {
+      throw new TypeError('Pair.swap: Requires both left and right functions')
+    }
+
+    return Pair(g(r), f(l))
+  }
+
+  function map(method) {
+    return function(fn) {
+      if(!isFunction$2(fn)) {
+        throw new TypeError(("Pair." + method + ": Function required"))
+      }
+
+      return Pair(l, fn(r))
+    }
+  }
+
+  function bimap(method) {
+    return function(f, g) {
+      if(!isFunction$2(f) || !isFunction$2(g)) {
+        throw new TypeError(("Pair." + method + ": Function required for both arguments"))
+      }
+
+      return Pair(f(l), g(r))
+    }
+  }
+
+  function ap(m) {
+    if(!isSameType$2(Pair, m)) {
+      throw new TypeError('Pair.ap: Pair required')
+    }
+
+    var fn = snd();
+
+    if(!isFunction$2(fn)) {
+      throw new TypeError('Pair.ap: Function required for second value')
+    }
+
+    var l = fst();
+    var r = m.fst();
+
+    if(!(isSemigroup$2(l) && isSameType$2(l, r))) {
+      throw new TypeError('Pair.ap: Semigroups of the same type is required for first values')
+    }
+
+    return Pair(l.concat(r), fn(m.snd()))
+  }
+
+  function chain(method) {
+    return function(fn) {
+      var l = fst();
+
+      if(!isFunction$2(fn)) {
+        throw new TypeError(("Pair." + method + ": Function required"))
+      }
+
+      if(!isSemigroup$2(l)) {
+        throw new TypeError(("Pair." + method + ": Semigroups of the same type required for first values"))
+      }
+
+      var m = fn(snd());
+
+      if(!isSameType$2(Pair, m)) {
+        throw new TypeError(("Pair." + method + ": Function must return a Pair"))
+      }
+
+      var r = m.fst();
+
+      if(!isSameType$2(l, r)) {
+        throw new TypeError(("Pair." + method + ": Semigroups of the same type required for first values"))
+      }
+
+      return Pair(
+        l.concat(r),
+        m.snd()
+      )
+    }
+  }
+
+  function sequence(f) {
+    if(!(isApplicative$2(f) || isFunction$2(f))) {
+      throw new TypeError(
+        'Pair.sequence: Applicative TypeRep or Apply returning function required'
+      )
+    }
+
+    if(!(isApply$2(r) || isArray$2(r))) {
+      throw new TypeError(
+        'Pair.sequence: Must wrap an Apply in the second'
+      )
+    }
+
+    return r.map(function (v) { return Pair(l, v); })
+  }
+
+  function traverse(f, fn) {
+    if(!(isApplicative$2(f) || isFunction$2(f))) {
+      throw new TypeError(
+        'Pair.traverse: Applicative TypeRep or Apply returning function required for first argument'
+      )
+    }
+
+    if(!isFunction$2(fn)) {
+      throw new TypeError(
+        'Pair.traverse: Apply returning function required for second argument'
+      )
+    }
+
+    var m = fn(r);
+
+    if(!(isApply$2(m) || isArray$2(m))) {
+      throw new TypeError(
+        'Pair.traverse: Both functions must return an Apply of the same type'
+      )
+    }
+
+    return m.map(function (v) { return Pair(l, v); })
+  }
+
+  function extend(method) {
+    return function(fn) {
+      if(!isFunction$2(fn)) {
+        throw new TypeError(("Pair." + method + ": Function required"))
+      }
+
+      return Pair(l, fn(Pair(l, r)))
+    }
+  }
+
+  return ( obj = {
+    inspect: inspect, toString: inspect, fst: fst,
+    snd: snd, toArray: toArray, type: type$6, merge: merge, equals: equals,
+    swap: swap, ap: ap, sequence: sequence, traverse: traverse,
+    concat: concat('concat'),
+    map: map('map'),
+    bimap: bimap('bimap'),
+    chain: chain('chain'),
+    extend: extend('extend')
+  }, obj[fl.equals] = equals, obj[fl.concat] = concat(fl.concat), obj[fl.map] = map(fl.map), obj[fl.bimap] = bimap, obj[fl.chain] = chain(fl.chain), obj[fl.extend] = extend(fl.extend), obj['@@type'] = _type$2, obj.constructor = Pair, obj )
+}
+
+Pair.type = type$6;
+Pair['@@type'] = _type$2;
+
+Pair['@@implements'] = _implements$2(
+  [ 'ap', 'bimap', 'chain', 'concat', 'extend', 'equals', 'map', 'traverse' ]
 );
+
+var Pair_1 = Pair;
+
+var Pair$1 = /*#__PURE__*/Object.freeze({
+  default: Pair_1,
+  __moduleExports: Pair_1
+});
+
+/** @license ISC License (c) copyright 2017 original and current authors */
+/** @author Ian Hofmann-Hicks (evil) */
+
+
+
+// isContravariant : a -> Boolean
+function isContravariant(m) {
+  return !!m && hasAlg$2('contramap', m)
+}
+
+var isContravariant_1 = isContravariant;
+
+var isContravariant$1 = /*#__PURE__*/Object.freeze({
+  default: isContravariant_1,
+  __moduleExports: isContravariant_1
+});
+
+/** @license ISC License (c) copyright 2017 original and current authors */
+/** @author Ian Hofmann-Hicks (evil) */
+
+
+
+// isSemigroupoid : a -> Boolean
+function isSemigroupoid(m) {
+  return !!m && hasAlg$2('compose', m)
+}
+
+var isSemigroupoid_1 = isSemigroupoid;
+
+var isSemigroupoid$1 = /*#__PURE__*/Object.freeze({
+  default: isSemigroupoid_1,
+  __moduleExports: isSemigroupoid_1
+});
+
+var Pair$2 = ( Pair$1 && Pair_1 ) || Pair$1;
+
+var isContravariant$2 = ( isContravariant$1 && isContravariant_1 ) || isContravariant$1;
+
+var isSemigroupoid$2 = ( isSemigroupoid$1 && isSemigroupoid_1 ) || isSemigroupoid$1;
+
+/** @license ISC License (c) copyright 2017 original and current authors */
+/** @author Ian Hofmann-Hicks (evil) */
+
+
+
+
+
+
+
+
+
+var valid = function (x, y) { return isSameType$2(x, y)
+    && isSemigroupoid$2(x)
+    && isContravariant$2(x)
+    && isFunction$2(x.first)
+    && isFunction$2(x.second); };
+
+// fanout : m a b -> m a c -> m a (b, c)
+function fanout(fst, snd) {
+  if(isFunction$2(fst) && isFunction$2(snd)) {
+    return function (x) { return Pair$2(fst(x), snd(x)); }
+  }
+
+  if(valid(fst, snd)) {
+    return fst.first()
+      .compose(snd.second())
+      .contramap(function (x) { return Pair$2(x, x); })
+  }
+
+  throw new TypeError(
+    'fanout: Arrows, Functions or Stars of the same type required for both arguments'
+  )
+}
+
+var fanout_1 = curry$2(fanout);
+
+/** @license ISC License (c) copyright 2016 original and current authors */
+/** @author Ian Hofmann-Hicks (evil) */
+
+
+
+
+function merge$1(fn, m) {
+  if(!isFunction$2(fn)) {
+    throw new TypeError('merge: Binary function required for first argument')
+  }
+
+  if(!(m && isFunction$2(m.merge))) {
+    throw new TypeError('merge: Pair required for second argument')
+  }
+
+  return m.merge(fn)
+}
+
+var merge_1 = curry$2(merge$1);
+
+const { host } = location;
+
+// Set up the WebSocket Link for Subscriptions
+function getWsLink() {
+  const protocol = host.includes('localhost') ? 'ws' : 'wss';
+  const options = { reconnect: true };
+  const uri = `${protocol}://${host}/graphql`;
+  return new WebSocketLink({ uri, options });
+}
+
+// Set up the HTTP Link for Queries and Mutations
+function getHttpLink() {
+  const protocol = host.includes('localhost') ? 'http' : 'https';
+  const uri = `${protocol}://${host}/graphql`;
+  return new HttpLink({ uri });
+}
+
+// isWsOperation :: { query } -> Boolean
+const getKind = propOr_1(null, 'kind');
+const getOperation = propOr_1(null, 'operation');
+const getQuery$1 = propOr_1(null, 'query');
+const isOperation = compose_1(isSame_1$1('OperationDefinition'), getKind);
+const isSubscription = compose_1(isSame_1$1('subscription'), getOperation);
+const both = (a, b) => a && b;
+const isWsOperation = compose_1(
+  merge_1(both),
+  fanout_1(isOperation, isSubscription),
+  getMainDefinition,
+  getQuery$1
+);
+
+const link = split(isWsOperation, getWsLink(), getHttpLink());
 
 const cache$2 = new InMemoryCache();
 

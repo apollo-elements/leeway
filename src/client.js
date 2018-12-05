@@ -5,28 +5,44 @@ import { HttpLink } from 'apollo-link-http';
 import { WebSocketLink } from 'apollo-link-ws';
 import { getMainDefinition } from 'apollo-utilities';
 
-// Set up the WebSocket Link
+import compose from 'crocks/helpers/compose';
+import isSame from 'crocks/predicates/isSame';
+import propOr from 'crocks/helpers/propOr';
+import fanout from 'crocks/helpers/fanout';
+import merge from 'crocks/Pair/merge';
+
 const { host } = location;
-const protocol = host.includes('localhost') ? 'ws' : 'wss';
-const options = { reconnect: true };
 
-const httpLink = new HttpLink({
-  uri: `http://${host}/graphql`
-});
+// Set up the WebSocket Link for Subscriptions
+function getWsLink() {
+  const protocol = host.includes('localhost') ? 'ws' : 'wss';
+  const options = { reconnect: true };
+  const uri = `${protocol}://${host}/graphql`;
+  return new WebSocketLink({ uri, options });
+}
 
-const wsLink = new WebSocketLink({
-  uri: `${protocol}://${host}/graphql`,
-  options
-});
+// Set up the HTTP Link for Queries and Mutations
+function getHttpLink() {
+  const protocol = host.includes('localhost') ? 'http' : 'https';
+  const uri = `${protocol}://${host}/graphql`;
+  return new HttpLink({ uri });
+}
 
-const link = split(
-  ({ query }) => {
-    const { kind, operation } = getMainDefinition(query);
-    return kind === 'OperationDefinition' && operation === 'subscription';
-  },
-  wsLink,
-  httpLink,
+// isWsOperation :: { query } -> Boolean
+const getKind = propOr(null, 'kind');
+const getOperation = propOr(null, 'operation');
+const getQuery = propOr(null, 'query');
+const isOperation = compose(isSame('OperationDefinition'), getKind);
+const isSubscription = compose(isSame('subscription'), getOperation);
+const both = (a, b) => a && b;
+const isWsOperation = compose(
+  merge(both),
+  fanout(isOperation, isSubscription),
+  getMainDefinition,
+  getQuery
 );
+
+const link = split(isWsOperation, getWsLink(), getHttpLink());
 
 const cache = new InMemoryCache();
 
