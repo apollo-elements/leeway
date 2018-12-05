@@ -5,6 +5,7 @@ import { createServer } from 'http';
 import { apolloServer } from './apollo-server';
 
 const port = process.env.PORT || 8000;
+const url = process.env.URL || `http://localhost:${port}`;
 const app = express();
 const http = createServer(app);
 
@@ -18,5 +19,5 @@ apolloServer.applyMiddleware({ app, path: '/graphql' });
 apolloServer.installSubscriptionHandlers(http);
 
 http.listen({ port }, () => {
-  console.log(`🚀  Apollo Server at ${http.address()}:${http.address().port}${apolloServer.graphqlPath}`);
+  console.log(`🚀  Apollo Server at ${url}${apolloServer.graphqlPath}`);
 });

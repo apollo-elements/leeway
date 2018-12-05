@@ -58,6 +58,10 @@ class ChatSubscription extends ApolloSubscription {
       }
     `;
   }
+
+  updated() {
+    this.scrollIntoView(false);
+  }
 }
 
 customElements.define('chat-subscription', ChatSubscription);

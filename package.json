@@ -7,7 +7,7 @@
     "node": "10.3.0"
   },
   "scripts": {
-    "build": "rollup -c",
+    "build": "rollup -c && cp -r node_modules/@webcomponents public/assets",
     "start": "node index.js",
     "watch": "nodemon -x 'npm run build && npm start'",
     "patch": "patch-package",
@@ -19,6 +19,7 @@
   "dependencies": {
     "@material/mwc-button": "^0.3.3",
     "@polymer/lit-element": "^0.6.3",
+    "@webcomponents/webcomponentsjs": "^2.2.1",
     "apollo-cache-inmemory": "^1.2.5",
     "apollo-client": "^2.3.5",
     "apollo-link-http": "^1.5.3",

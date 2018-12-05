@@ -17,10 +17,16 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
+  transition: opacity 0.3s ease;
+}
+
+body[unresolved] {
+  opacity: 0;
 }
 
 chat-subscription {
   flex: 1 0 auto;
+  overflow-y: scroll;
 }
 
 chat-mutation {

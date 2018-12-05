@@ -6,11 +6,20 @@
     <title>Chat Over GraphQL</title>
     <link rel="stylesheet" href="/style.css">
     <script type="module" src="/bundle.js"></script>
+    <script src="/assets/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+    <script defer>
+      WebComponents.waitFor(function resolveBody() {
+        document.body.removeAttribute('unresolved');
+      })
+    </script>
   </head>
-  <body>
+  <body unresolved>
     <info-box heading="About This Demo">
-      <p>This is a demo of <code>lit-apollo</code> using GraphQL subscriptions to create a simple chat app.</p>
-      <p>The source code is available on <a href="https://gitlab.com/bennyp/demo-lit-apollo-subscriptions">GitLab</a>.</p>
+      <p>
+        This is a demo of <code>lit-apollo</code> using GraphQL subscriptions to create a simple chat app.
+        The source code is available on <a href="https://gitlab.com/bennyp/demo-lit-apollo-subscriptions">GitLab</a>.
+        Change your username with <code>/nick {new name}</code>.
+      </p>
     </info-box>
     <chat-subscription></chat-subscription>
     <chat-mutation></chat-mutation>

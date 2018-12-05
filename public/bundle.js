@@ -16234,20 +16234,31 @@ class ChatMutation extends ApolloMutation {
     `;
   }
 
+  get input() {
+    return this.$('message-input');
+  }
+
   firstUpdated() {
     const input = this.$('user-input');
     input && input.focus();
   }
 
+  changeUsername() {
+    this.username = this.input.value.replace('/nick ', '');
+    this.input.value = '';
+  }
+
   onSubmitUsername(event) {
     this.username = this.userinput;
     setTimeout(() => {
-      this.$('message-input').focus();
+      this.input.focus();
     });
   }
 
   onMessageKeyup({ key }) {
-    if (key === 'Enter') this.send();
+    if (key !== 'Enter') return;
+    if (this.input.value.startsWith('/nick ')) return this.changeUsername();
+    this.send();
   }
 
   onUserKeyup({ key, target: { value: username } }) {
@@ -16257,13 +16268,12 @@ class ChatMutation extends ApolloMutation {
   }
 
   async send() {
-    const input = this.$('message-input');
     const user = this.username;
-    const message = input.value;
+    const message = this.input.value;
     this.variables = { user, message };
     await this.mutate();
-    input.value = '';
-    input.focus();
+    this.input.value = '';
+    this.input.focus();
   }
 }
 
@@ -27716,6 +27726,10 @@ class ChatSubscription extends ApolloSubscription {
         }
       }
     `;
+  }
+
+  updated() {
+    this.scrollIntoView(false);
   }
 }
 
