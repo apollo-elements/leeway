@@ -4889,6 +4889,259 @@ const hasAllVariables = params =>
 const validGql = doc =>
   !!(doc && typeof doc === 'object');
 
+const scriptSelector = 'script[type="application/graphql"]';
+
+/** @typedef {"none" | "ignore" | "all"} ErrorPolicy */
+/** @typedef {"cache-first" | "cache-and-network" | "network-only" | "cache-only" | "no-cache" | "standby"} FetchPolicy */
+
+/**
+ * `ApolloQueryMixin`: class mixin for apollo-query elements.
+ *
+ * @mixinFunction
+ * @appliesMixin ApolloElementMixin
+ *
+ * @param {Class} superclass
+ * @return {Class}
+ */
+const ApolloQueryMixin = superclass => class extends ApolloElementMixin(superclass) {
+  /**
+   * A GraphQL document that consists of a single query to be sent down to the server.
+   * @type {DocumentNode}
+   */
+  get query() {
+    return this.__query || gqlFromInnerText(this.querySelector(scriptSelector));
+  }
+
+  set query(query) {
+    this.__query = query;
+    if (query == null) return;
+    const valid = validGql(query);
+    const variables = this.__variables;
+    if (!valid) throw new Error('Query must be a gql-parsed document');
+    this.subscribe({ query, variables });
+  }
+
+  /**
+   * An object map from variable name to variable value, where the variables are used within the GraphQL query.
+   * @type {Object}
+   */
+  get variables() {
+    return this.__variables;
+  }
+
+  set variables(variables) {
+    this.__variables = variables;
+    const query = this.__query;
+    this.observableQuery
+      ? this.setVariables(variables)
+      : this.subscribe({ query, variables });
+  }
+
+  constructor() {
+    super();
+    this.nextData = this.nextData.bind(this);
+    this.nextError = this.nextError.bind(this);
+
+    /**
+     * Specifies the ErrorPolicy to be used for this query.
+     * @type {ErrorPolicy}
+     */
+    this.errorPolicy = 'none';
+    /**
+     * Specifies the FetchPolicy to be used for this query.
+     * @type {FetchPolicy}
+     */
+    this.fetchPolicy = 'cache-first';
+    /**
+     * Whether or not to fetch results.
+     * @type {Boolean}
+     */
+    this.fetchResults = undefined;
+    /**
+     * The time interval (in milliseconds) on which this query should be refetched from the server.
+     * @type {Number}
+     */
+    this.pollInterval = undefined;
+    /**
+     * Whether or not updates to the network status should trigger next on the observer of this query.
+     * @type {Boolean}
+     */
+    this.notifyOnNetworkStatusChange = undefined;
+    /**
+     * Variables used in the query.
+     * @type {Object}
+     */
+    this.variables = undefined;
+    /**
+     * Apollo Query Object. e.g. gql`query { foo { bar } }`
+     * @type {DocumentNode}
+     */
+    this.query = undefined;
+    /**
+     * Try and fetch new results even if the variables haven't changed (we may still just hit the store, but if there's nothing in there will refetch).
+     * @type {Boolean}
+     */
+    this.tryFetch = undefined;
+    /**
+     * The apollo ObservableQuery watching this element's query.
+     * @type {ZenObservable}
+     */
+    this.observableQuery = undefined;
+  }
+
+  /**
+   * Exposes the [`ObservableQuery#setOptions`](https://www.apollographql.com/docs/react/api/apollo-client.html#ObservableQuery.setOptions) method.
+   * @param {ModifiableWatchQueryOptions} options [options](https://www.apollographql.com/docs/react/api/apollo-client.html#ModifiableWatchQueryOptions) object.
+   * @return {Promise<ApolloQueryResult>}
+   */
+  setOptions(options) {
+    return (
+      this.observableQuery &&
+      this.observableQuery.setOptions(options)
+    );
+  }
+
+  /**
+   * Exposes the [`ObservableQuery#setVariables`](https://www.apollographql.com/docs/react/api/apollo-client.html#ObservableQuery.setVariables) method.
+   * @param {Object}  variables                        The new set of variables. If there are missing variables, the previous values of those variables will be used.
+   * @param {Boolean} [tryFetch=this.tryFetch]         Try and fetch new results even if the variables haven't changed (we may still just hit the store, but if there's nothing in there will refetch).
+   * @param {Boolean} [fetchResults=this.fetchResults] Option to ignore fetching results when updating variables.
+   * @return {Promise<ApolloQueryResult>}
+   */
+  setVariables(variables, tryFetch = this.tryFetch, fetchResults = this.fetchResults) {
+    return (
+      this.observableQuery &&
+      this.observableQuery.setVariables(variables, tryFetch, fetchResults)
+    );
+  }
+
+  /**
+   * Resets the observableQuery and subscribes.
+   * @param  {DocumentNode}               [query=this.query]
+   * @param  {Object}                     [variables=this.variables]
+   * @return {ZenObservable.Subscription}
+   */
+  async subscribe({ query = this.query, variables = this.variables } = {}) {
+    if (!hasAllVariables({ query, variables })) return;
+    this.observableQuery = this.watchQuery({ query, variables });
+    return this.observableQuery.subscribe({
+      next: this.nextData,
+      error: this.nextError,
+    });
+  }
+
+  /**
+   * Executes a Query once and updates the component with the result
+   * @return {Promise<ApolloQueryResult>}
+   */
+  executeQuery() {
+    const {
+      context,
+      errorPolicy,
+      fetchPolicy,
+      fetchResults,
+      metadata,
+      query,
+      variables,
+    } = this;
+    const queryPromise = this.client.query({
+      context,
+      errorPolicy,
+      fetchPolicy,
+      fetchResults,
+      metadata,
+      query,
+      variables,
+    });
+
+    queryPromise
+      .then(this.nextData.bind(this))
+      .catch(this.nextError.bind(this));
+
+    return queryPromise;
+  }
+
+  /**
+   * Exposes the `ObservableQuery#fetchMore` method.
+   * https://www.apollographql.com/docs/react/api/apollo-client.html#ObservableQuery.fetchMore
+   * @param  {fetchMoreOptions} options
+   * @param  {DocumentNode} [options.query=this.query] The Query.
+   * @param  {Function} options.updateQuery            Function that defines how to update the query data with the new results.
+   * @param  {Object} options.variables                New variables. Any variables not provided will be filled-in using the previous variables.
+   * @return {Promise<ApolloQueryResult>}
+   */
+  fetchMore({ query = this.query, updateQuery, variables }) {
+    return (
+      this.observableQuery &&
+      this.observableQuery.fetchMore({ query, updateQuery, variables })
+    );
+  }
+
+  /**
+   * Creates an instance of ObservableQuery with the options provided by the element.
+   * @param  {Object}       options
+   * @param  {any}          [options.context=this.context]                                          Context to be passed to link execution chain
+   * @param  {ErrorPolicy}  [options.errorPolicy=this.errorPolicy]                                  Specifies the ErrorPolicy to be used for this query
+   * @param  {FetchPolicy}  [options.fetchPolicy=this.fetchPolicy]                                  Specifies the FetchPolicy to be used for this query
+   * @param  {Boolean}      [options.fetchResults=this.fetchResults]                                Whether or not to fetch results
+   * @param  {any}          [options.metadata=this.metadata]                                        Arbitrary metadata stored in the store with this query. Designed for debugging, developer tools, etc.
+   * @param  {Boolean}      [options.notifyOnNetworkStatusChange=this.notifyOnNetworkStatusChange]  Whether or not updates to the network status should trigger next on the observer of this query
+   * @param  {Number}       [options.pollInterval=this.pollInterval]                                The time interval (in milliseconds) on which this query should be refetched from the server.
+   * @param  {DocumentNode} [options.query=this.query]                                              A GraphQL document that consists of a single query to be sent down to the server.
+   * @param  {Object}       [options.variables=this.variables]                                      A map going from variable name to variable value, where the variables are used within the GraphQL query.
+   * @return {ObservableQuery}
+   * @protected
+   */
+  watchQuery({
+    context = this.context,
+    errorPolicy = this.errorPolicy,
+    fetchPolicy = this.fetchPolicy,
+    fetchResults = this.fetchResults,
+    metadata = this.metadata,
+    notifyOnNetworkStatusChange = this.notifyOnNetworkStatusChange,
+    pollInterval = this.pollInterval,
+    query = this.query,
+    variables = this.variables,
+  } = {}) {
+    return this.client.watchQuery({
+      context,
+      errorPolicy,
+      fetchPolicy,
+      fetchResults,
+      metadata,
+      notifyOnNetworkStatusChange,
+      pollInterval,
+      query,
+      variables,
+    });
+  }
+
+  /**
+   * Updates the element with the result of a query.
+   * @param  {ApolloQueryResult} result The result of the query.
+   * @param  {Object}  result.data          The data from the query.
+   * @param  {Boolean} result.loading       Whether the query is loading.
+   * @param  {Number}  result.networkStatus The networkStatus of the query.
+   * @param  {Boolean} result.stale         Whether the query is stale.
+   * @protected
+   */
+  nextData({ data, loading, networkStatus, stale }) {
+    this.data = data;
+    this.loading = loading;
+    this.networkStatus = networkStatus;
+    this.stale = stale;
+  }
+
+  /**
+   * Updates the element with the error when the query fails.
+   * @param  {Error} error
+   * @protected
+   */
+  nextError(error) {
+    this.error = error;
+  }
+};
+
 /**
  * @license
  * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
@@ -6802,6 +7055,87 @@ class ApolloElement extends ApolloElementMixin(LitElement) {
   }
 }
 
+/** @typedef {"none" | "ignore" | "all"} ErrorPolicy */
+/** @typedef {"cache-first" | "cache-and-network" | "network-only" | "cache-only" | "no-cache" | "standby"} FetchPolicy */
+
+/**
+ * # ApolloQuery
+ *
+ * 🚀 A custom element base class that connects to your Apollo cache.
+ *
+ * ## Usage
+ *
+ * ```html
+ * <script type="module">
+ *   import { cache } from './cache';
+ *   import { link } from './link';
+ *   import { ApolloClient } from 'apollo-client';
+ *   import { ApolloQuery, html } from 'lit-apollo/apollo-query';
+ *
+ *   // Create the Apollo Client
+ *   const client = new ApolloClient({ cache, link });
+ *
+ *   const errorTemplate = ({message = 'Unknown Error'}) => html`
+ *     <h1>😢 Such Sad, Very Error! 😰</h1>
+ *     <div>${message}</div>`
+ *
+ *   class ConnectedElement extends ApolloQuery {
+ *     render() {
+ *       const { data, error, loading, networkStatus } = this;
+ *       return
+ *           loading ? html`<such-overlay-very-spin></such-overlay-very-spin>`
+ *         : error ? errorTemplate(error)
+ *         : html`<p>${data.helloWorld.greeting}, ${data.helloWorld.name}</p>`
+ *     }
+ *
+ *     constructor() {
+ *       super();
+ *       this.client = client;
+ *       this.query = gql`query {
+ *         helloWorld {
+ *           name
+ *           greeting
+ *         }
+ *       }`;
+ *     }
+ *   };
+ *
+ *   customElements.define('connected-element', ConnectedElement)
+ * </script>
+ * ```
+ *
+ * @extends LitElement
+ * @appliesMixin ApolloQueryMixin
+ */
+class ApolloQuery extends ApolloQueryMixin(ApolloElement) {
+  static get properties() {
+    return {
+      /**
+       * Enum of network statuses. See https://bit.ly/2sfKLY0
+       * @type {Number}
+       */
+      networkStatus: { type: Object },
+    };
+  }
+
+  /**
+   * By default, will only render if
+   *   - The component has `data` or
+   *   - The component has an `error` or
+   *   - The component is `loading`.
+   * @param  {Map}  changedProps           Changed properties.
+   * @return {Boolean}                     Whether the component should render.
+   * @protected
+   */
+  shouldUpdate(changedProps) {
+    return (
+      this.loading != null ||
+      !!this.error ||
+      !!this.data
+    );
+  }
+}
+
 const scriptSelector$1 = 'script[type="application/graphql"]';
 
 /** @typedef {"none" | "ignore" | "all"} ErrorPolicy */
@@ -7023,6 +7357,12 @@ class ApolloMutation extends ApolloMutationMixin(LitElement) {
   }
 }
 
+/** @license ISC License (c) copyright 2017 original and current authors */
+/** @author Ian Hofmann-Hicks (evil) */
+
+var isFunction$3 =
+  isFunction$2;
+
 const scriptSelector$2 = 'script[type="application/graphql"]';
 
 /** @typedef {"none" | "ignore" | "all"} ErrorPolicy */
@@ -7182,6 +7522,8 @@ const ApolloSubscriptionMixin = superclass => class extends ApolloElementMixin(s
    * @protected
    */
   nextData({ data }) {
+    const { client, onSubscriptionData } = this;
+    if (isFunction$3(onSubscriptionData)) onSubscriptionData({ client, subscriptionData: { data } });
     this.data = data;
     this.loading = false;
     this.error = undefined;
@@ -9405,6 +9747,11 @@ var LinkError = /** @class */ (function (_super) {
 }(Error));
 function isTerminating(link) {
     return link.request.length <= 1;
+}
+function fromError(errorValue) {
+    return new Observable$2(function (observer) {
+        observer.error(errorValue);
+    });
 }
 function transformOperation(operation) {
     var transformedOperation = {
@@ -11893,6 +12240,53 @@ var ApolloClient = /** @class */ (function () {
     return ApolloClient;
 }());
 
+var testMap = new Map();
+if (testMap.set(1, 2) !== testMap) {
+    var set_1 = testMap.set;
+    Map.prototype.set = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        set_1.apply(this, args);
+        return this;
+    };
+}
+var testSet = new Set();
+if (testSet.add(3) !== testSet) {
+    var add_1 = testSet.add;
+    Set.prototype.add = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        add_1.apply(this, args);
+        return this;
+    };
+}
+var frozen = {};
+if (typeof Object.freeze === 'function') {
+    Object.freeze(frozen);
+}
+try {
+    testMap.set(frozen, frozen).delete(frozen);
+}
+catch (_a) {
+    var wrap$1 = function (method) {
+        return method && (function (obj) {
+            try {
+                testMap.set(obj, obj).delete(obj);
+            }
+            finally {
+                return method.call(Object, obj);
+            }
+        });
+    };
+    Object.freeze = wrap$1(Object.freeze);
+    Object.seal = wrap$1(Object.seal);
+    Object.preventExtensions = wrap$1(Object.preventExtensions);
+}
+
 function queryFromPojo(obj) {
     var op = {
         kind: 'OperationDefinition',
@@ -11937,14 +12331,11 @@ function selectionSetFromObj(obj) {
         typeof obj === 'string' ||
         typeof obj === 'undefined' ||
         obj === null) {
-        // No selection set here
         return null;
     }
     if (Array.isArray(obj)) {
-        // GraphQL queries don't include arrays
         return selectionSetFromObj(obj[0]);
     }
-    // Now we know it's an object
     var selections = [];
     Object.keys(obj).forEach(function (key) {
         var field = {
@@ -11954,7 +12345,6 @@ function selectionSetFromObj(obj) {
                 value: key,
             },
         };
-        // Recurse
         var nestedSelSet = selectionSetFromObj(obj[key]);
         if (nestedSelSet) {
             field.selectionSet = nestedSelSet;
@@ -11996,23 +12386,15 @@ var justTypenameQuery = {
     ],
 };
 
-var ApolloCache = /** @class */ (function () {
+var ApolloCache = (function () {
     function ApolloCache() {
     }
-    // optional API
     ApolloCache.prototype.transformDocument = function (document) {
         return document;
     };
-    // experimental
     ApolloCache.prototype.transformForLink = function (document) {
         return document;
     };
-    // DataProxy API
-    /**
-     *
-     * @param options
-     * @param optimistic
-     */
     ApolloCache.prototype.readQuery = function (options, optimistic) {
         if (optimistic === void 0) { optimistic = false; }
         return this.read({
@@ -12050,10 +12432,6 @@ var ApolloCache = /** @class */ (function () {
         var id = _a.id, data = _a.data;
         if (typeof id !== 'undefined') {
             var typenameResult = null;
-            // Since we can't use fragments without having a typename in the store,
-            // we need to make sure we have one.
-            // To avoid overwriting an existing typename, we need to read it out first
-            // and generate a fake one if none exists.
             try {
                 typenameResult = this.read({
                     rootId: id,
@@ -12062,11 +12440,8 @@ var ApolloCache = /** @class */ (function () {
                 });
             }
             catch (e) {
-                // Do nothing, since an error just means no typename exists
             }
-            // tslint:disable-next-line
             var __typename = (typenameResult && typenameResult.__typename) || '__ClientData';
-            // Add a type here to satisfy the inmemory cache
             var dataToWrite = Object.assign({ __typename: __typename }, data);
             this.writeFragment({
                 id: id,
@@ -12082,18 +12457,14 @@ var ApolloCache = /** @class */ (function () {
 }());
 
 var haveWarned$1 = false;
-/**
- * This fragment matcher is very basic and unable to match union or interface type conditions
- */
-var HeuristicFragmentMatcher = /** @class */ (function () {
+var HeuristicFragmentMatcher = (function () {
     function HeuristicFragmentMatcher() {
-        // do nothing
     }
     HeuristicFragmentMatcher.prototype.ensureReady = function () {
         return Promise.resolve();
     };
     HeuristicFragmentMatcher.prototype.canBypassInit = function () {
-        return true; // we don't need to initialize this fragment matcher.
+        return true;
     };
     HeuristicFragmentMatcher.prototype.match = function (idValue, typeCondition, context) {
         var obj = context.store.get(idValue.id);
@@ -12109,33 +12480,1517 @@ var HeuristicFragmentMatcher = /** @class */ (function () {
                 console.warn('Could not find __typename on Fragment ', typeCondition, obj);
                 console.warn("DEPRECATION WARNING: using fragments without __typename is unsupported behavior " +
                     "and will be removed in future versions of Apollo client. You should fix this and set addTypename to true now.");
-                /* istanbul ignore if */
                 if (!isTest()) {
-                    // When running tests, we want to print the warning every time
                     haveWarned$1 = true;
                 }
             }
-            context.returnPartialData = true;
-            return true;
+            return 'heuristic';
         }
         if (obj.__typename === typeCondition) {
             return true;
         }
-        // XXX here we reach an issue - we don't know if this fragment should match or not. It's either:
-        // 1. A fragment on a non-matching concrete type or interface or union
-        // 2. A fragment on a matching interface or union
-        // If it's 1, we don't want to return anything, if it's 2 we want to match. We can't tell the
-        // difference, so we warn the user, but still try to match it (backcompat).
-        warnOnceInDevelopment("You are using the simple (heuristic) fragment matcher, but your queries contain union or interface types.\n     Apollo Client will not be able to able to accurately map fragments." +
-            "To make this error go away, use the IntrospectionFragmentMatcher as described in the docs: " +
-            "https://www.apollographql.com/docs/react/recipes/fragment-matching.html", 'error');
-        context.returnPartialData = true;
-        return true;
+        warnOnceInDevelopment('You are using the simple (heuristic) fragment matcher, but your ' +
+            'queries contain union or interface types. Apollo Client will not be ' +
+            'able to accurately map fragments. To make this error go away, use ' +
+            'the `IntrospectionFragmentMatcher` as described in the docs: ' +
+            'https://www.apollographql.com/docs/react/recipes/fragment-matching.html', 'error');
+        return 'heuristic';
     };
     return HeuristicFragmentMatcher;
 }());
 
-var ObjectCache = /** @class */ (function () {
+function Cache$1(options) {
+  this.map = new Map;
+  this.newest = null;
+  this.oldest = null;
+  this.max = options && options.max;
+  this.dispose = options && options.dispose;
+}
+
+var Cache_1 = Cache$1;
+
+var Cp = Cache$1.prototype;
+
+Cp.has = function (key) {
+  return this.map.has(key);
+};
+
+Cp.get = function (key) {
+  var entry = getEntry(this, key);
+  return entry && entry.value;
+};
+
+function getEntry(cache, key) {
+  var entry = cache.map.get(key);
+  if (entry &&
+      entry !== cache.newest) {
+    var older = entry.older;
+    var newer = entry.newer;
+
+    if (newer) {
+      newer.older = older;
+    }
+
+    if (older) {
+      older.newer = newer;
+    }
+
+    entry.older = cache.newest;
+    entry.older.newer = entry;
+
+    entry.newer = null;
+    cache.newest = entry;
+
+    if (entry === cache.oldest) {
+      cache.oldest = newer;
+    }
+  }
+
+  return entry;
+}
+
+Cp.set = function (key, value) {
+  var entry = getEntry(this, key);
+  if (entry) {
+    return entry.value = value;
+  }
+
+  entry = {
+    key: key,
+    value: value,
+    newer: null,
+    older: this.newest
+  };
+
+  if (this.newest) {
+    this.newest.newer = entry;
+  }
+
+  this.newest = entry;
+  this.oldest = this.oldest || entry;
+
+  this.map.set(key, entry);
+
+  return entry.value;
+};
+
+Cp.clean = function () {
+  if (typeof this.max === "number") {
+    while (this.oldest &&
+           this.map.size > this.max) {
+      this.delete(this.oldest.key);
+    }
+  }
+};
+
+Cp.delete = function (key) {
+  var entry = this.map.get(key);
+  if (entry) {
+    if (entry === this.newest) {
+      this.newest = entry.older;
+    }
+
+    if (entry === this.oldest) {
+      this.oldest = entry.newer;
+    }
+
+    if (entry.newer) {
+      entry.newer.older = entry.older;
+    }
+
+    if (entry.older) {
+      entry.older.newer = entry.newer;
+    }
+
+    this.map.delete(key);
+
+    if (typeof this.dispose === "function") {
+      this.dispose(key, entry.value);
+    }
+
+    return true;
+  }
+
+  return false;
+};
+
+var cache = {
+	Cache: Cache_1
+};
+
+var cache$1 = /*#__PURE__*/Object.freeze({
+  default: cache,
+  __moduleExports: cache,
+  Cache: Cache_1
+});
+
+// Although `Symbol` is widely supported these days, we can safely fall
+// back to using a non-enumerable string property without violating any
+// assumptions elsewhere in the implementation.
+var useSymbol = typeof Symbol === "function";
+
+// Used to mark `tuple.prototype` so that all objects that inherit from
+// any `tuple.prototype` object (there could be more than one) will test
+// positive according to `tuple.isTuple`.
+var brand = useSymbol
+  ? Symbol.for("immutable-tuple")
+  : "@@__IMMUTABLE_TUPLE__@@";
+
+// Used to save a reference to the globally shared `UniversalWeakMap` that
+// stores all known `tuple` objects.
+var globalKey = useSymbol
+  ? Symbol.for("immutable-tuple-root")
+  : "@@__IMMUTABLE_TUPLE_ROOT__@@";
+
+// Convenient helper for defining hidden immutable properties.
+function def(obj, name, value, enumerable) {
+  Object.defineProperty(obj, name, {
+    value: value,
+    enumerable: !! enumerable,
+    writable: false,
+    configurable: false
+  });
+  return value;
+}
+
+var freeze = Object.freeze || function (obj) {
+  return obj;
+};
+
+function isObjRef(value) {
+  switch (typeof value) {
+  case "object":
+    if (value === null) {
+      return false;
+    }
+  case "function":
+    return true;
+  default:
+    return false;
+  }
+}
+
+// The `mustConvertThisToArray` value is true when the corresponding
+// `Array` method does not attempt to modify `this`, which means we can
+// pass a `tuple` object as `this` without first converting it to an
+// `Array`.
+function forEachArrayMethod(fn) {
+  function call(name, mustConvertThisToArray) {
+    var desc = Object.getOwnPropertyDescriptor(Array.prototype, name);
+    fn(name, desc, !! mustConvertThisToArray);
+  }
+
+  call("every");
+  call("filter");
+  call("find");
+  call("findIndex");
+  call("forEach");
+  call("includes");
+  call("indexOf");
+  call("join");
+  call("lastIndexOf");
+  call("map");
+  call("reduce");
+  call("reduceRight");
+  call("slice");
+  call("some");
+  call("toLocaleString");
+  call("toString");
+
+  // The `reverse` and `sort` methods are usually destructive, but for
+  // `tuple` objects they return a new `tuple` object that has been
+  // appropriately reversed/sorted.
+  call("reverse", true);
+  call("sort", true);
+
+  // Make `[...someTuple]` work.
+  call(useSymbol && Symbol.iterator || "@@iterator");
+}
+
+// A map data structure that holds object keys weakly, yet can also hold
+// non-object keys, unlike the native `WeakMap`.
+var UniversalWeakMap = function UniversalWeakMap() {
+  // Since a `WeakMap` cannot hold primitive values as keys, we need a
+  // backup `Map` instance to hold primitive keys. Both `this._weakMap`
+  // and `this._strongMap` are lazily initialized.
+  this._weakMap = null;
+  this._strongMap = null;
+  this.data = null;
+};
+
+// Since `get` and `set` are the only methods used, that's all I've
+// implemented here.
+
+UniversalWeakMap.prototype.get = function get (key) {
+  var map = this._getMap(key, false);
+  if (map) {
+    return map.get(key);
+  }
+};
+
+UniversalWeakMap.prototype.set = function set (key, value) {
+  this._getMap(key, true).set(key, value);
+  // An actual `Map` or `WeakMap` would return `this` here, but
+  // returning the `value` is more convenient for the `tuple`
+  // implementation.
+  return value;
+};
+
+UniversalWeakMap.prototype._getMap = function _getMap (key, canCreate) {
+  if (! canCreate) {
+    return isObjRef(key) ? this._weakMap : this._strongMap;
+  }
+  if (isObjRef(key)) {
+    return this._weakMap || (this._weakMap = new WeakMap);
+  }
+  return this._strongMap || (this._strongMap = new Map);
+};
+
+// See [`universal-weak-map.js`](universal-weak-map.html).
+// See [`util.js`](util.html).
+// If this package is installed multiple times, there could be mutiple
+// implementations of the `tuple` function with distinct `tuple.prototype`
+// objects, but the shared pool of `tuple` objects must be the same across
+// all implementations. While it would be ideal to use the `global`
+// object, there's no reliable way to get the global object across all JS
+// environments without using the `Function` constructor, so instead we
+// use the global `Array` constructor as a shared namespace.
+var root$1 = Array[globalKey] || def(Array, globalKey, new UniversalWeakMap, false);
+
+function lookup() {
+  return lookupArray(arguments);
+}
+
+function lookupArray(array) {
+  var node = root$1;
+
+  // Because we are building a tree of *weak* maps, the tree will not
+  // prevent objects in tuples from being garbage collected, since the
+  // tree itself will be pruned over time when the corresponding `tuple`
+  // objects become unreachable. In addition to internalization, this
+  // property is a key advantage of the `immutable-tuple` package.
+  var len = array.length;
+  for (var i = 0; i < len; ++i) {
+    var item = array[i];
+    node = node.get(item) || node.set(item, new UniversalWeakMap);
+  }
+
+  // Return node.data rather than node itself to prevent tampering with
+  // the UniversalWeakMap tree.
+  return node.data || (node.data = Object.create(null));
+}
+
+// See [`lookup.js`](lookup.html).
+// See [`util.js`](util.html).
+// When called with any number of arguments, this function returns an
+// object that inherits from `tuple.prototype` and is guaranteed to be
+// `===` any other `tuple` object that has exactly the same items. In
+// computer science jargon, `tuple` instances are "internalized" or just
+// "interned," which allows for constant-time equality checking, and makes
+// it possible for tuple objects to be used as `Map` or `WeakMap` keys, or
+// stored in a `Set`.
+function tuple() {
+  var arguments$1 = arguments;
+
+  var node = lookup.apply(null, arguments);
+
+  if (node.tuple) {
+    return node.tuple;
+  }
+
+  var t = Object.create(tuple.prototype);
+
+  // Define immutable items with numeric indexes, and permanently fix the
+  // `.length` property.
+  var argc = arguments.length;
+  for (var i = 0; i < argc; ++i) {
+    t[i] = arguments$1[i];
+  }
+
+  def(t, "length", argc, false);
+
+  // Remember this new `tuple` object so that we can return the same object
+  // earlier next time.
+  return freeze(node.tuple = t);
+}
+
+// Since the `immutable-tuple` package could be installed multiple times
+// in an application, there is no guarantee that the `tuple` constructor
+// or `tuple.prototype` will be unique, so `value instanceof tuple` is
+// unreliable. Instead, to test if a value is a tuple, you should use
+// `tuple.isTuple(value)`.
+def(tuple.prototype, brand, true, false);
+function isTuple(that) {
+  return !! (that && that[brand] === true);
+}
+
+tuple.isTuple = isTuple;
+
+function toArray(tuple) {
+  var array = [];
+  var i = tuple.length;
+  while (i--) { array[i] = tuple[i]; }
+  return array;
+}
+
+// Copy all generic non-destructive Array methods to `tuple.prototype`.
+// This works because (for example) `Array.prototype.slice` can be invoked
+// against any `Array`-like object.
+forEachArrayMethod(function (name, desc, mustConvertThisToArray) {
+  var method = desc && desc.value;
+  if (typeof method === "function") {
+    desc.value = function () {
+      var args = [], len = arguments.length;
+      while ( len-- ) args[ len ] = arguments[ len ];
+
+      var result = method.apply(
+        mustConvertThisToArray ? toArray(this) : this,
+        args
+      );
+      // Of course, `tuple.prototype.slice` should return a `tuple` object,
+      // not a new `Array`.
+      return Array.isArray(result) ? tuple.apply(void 0, result) : result;
+    };
+    Object.defineProperty(tuple.prototype, name, desc);
+  }
+});
+
+// Like `Array.prototype.concat`, except for the extra effort required to
+// convert any tuple arguments to arrays, so that
+// ```
+// tuple(1).concat(tuple(2), 3) === tuple(1, 2, 3)
+// ```
+var ref$1 = Array.prototype;
+var concat$2 = ref$1.concat;
+tuple.prototype.concat = function () {
+  var args = [], len = arguments.length;
+  while ( len-- ) args[ len ] = arguments[ len ];
+
+  return tuple.apply(void 0, concat$2.apply(toArray(this), args.map(
+    function (item) { return isTuple(item) ? toArray(item) : item; }
+  )));
+};
+
+var tuple$1 = /*#__PURE__*/Object.freeze({
+  default: tuple,
+  tuple: tuple,
+  lookup: lookup,
+  lookupArray: lookupArray
+});
+
+var local = createCommonjsModule(function (module, exports) {
+
+var fakeNullFiber = new (function Fiber(){});
+var localKey = "_optimism_local";
+
+function getCurrentFiber() {
+  return fakeNullFiber;
+}
+
+{
+  try {
+    var Fiber = module["eriuqer".split("").reverse().join("")]("fibers");
+    // If we were able to require fibers, redefine the getCurrentFiber
+    // function so that it has a chance to return Fiber.current.
+    getCurrentFiber = function () {
+      return Fiber.current || fakeNullFiber;
+    };
+  } catch (e) {}
+}
+
+// Returns an object unique to Fiber.current, if fibers are enabled.
+// This object is used for Fiber-local storage in ./entry.js.
+exports.get = function () {
+  var fiber = getCurrentFiber();
+  return fiber[localKey] || (fiber[localKey] = Object.create(null));
+};
+});
+var local_1 = local.get;
+
+var local$1 = /*#__PURE__*/Object.freeze({
+  default: local,
+  __moduleExports: local,
+  get: local_1
+});
+
+var require$$0$3 = ( local$1 && local ) || local$1;
+
+var entry = createCommonjsModule(function (module, exports) {
+
+var getLocal = require$$0$3.get;
+var UNKNOWN_VALUE = Object.create(null);
+var emptySetPool = [];
+var entryPool = [];
+
+// Don't let the emptySetPool or entryPool grow larger than this size,
+// since unconstrained pool growth could lead to memory leaks.
+exports.POOL_TARGET_SIZE = 100;
+
+// Since this package might be used browsers, we should avoid using the
+// Node built-in assert module.
+function assert(condition, optionalMessage) {
+  if (! condition) {
+    throw new Error(optionalMessage || "assertion failure");
+  }
+}
+
+function Entry(fn, key, args) {
+  this.parents = new Set;
+  this.childValues = new Map;
+
+  // When this Entry has children that are dirty, this property becomes
+  // a Set containing other Entry objects, borrowed from emptySetPool.
+  // When the set becomes empty, it gets recycled back to emptySetPool.
+  this.dirtyChildren = null;
+
+  reset(this, fn, key, args);
+
+  ++Entry.count;
+}
+
+Entry.count = 0;
+
+function reset(entry, fn, key, args) {
+  entry.fn = fn;
+  entry.key = key;
+  entry.args = args;
+  entry.value = UNKNOWN_VALUE;
+  entry.dirty = true;
+  entry.subscribe = null;
+  entry.unsubscribe = null;
+  entry.recomputing = false;
+  // Optional callback that will be invoked when entry.parents becomes
+  // empty. The Entry object is given as the first parameter. If the
+  // callback returns true, then this entry can be removed from the graph
+  // and safely recycled into the entryPool.
+  entry.reportOrphan = null;
+}
+
+Entry.acquire = function (fn, key, args) {
+  var entry = entryPool.pop();
+  if (entry) {
+    reset(entry, fn, key, args);
+    return entry;
+  }
+  return new Entry(fn, key, args);
+};
+
+function release(entry) {
+  assert(entry.parents.size === 0);
+  assert(entry.childValues.size === 0);
+  assert(entry.dirtyChildren === null);
+  if (entryPool.length < exports.POOL_TARGET_SIZE) {
+    entryPool.push(entry);
+  }
+}
+
+exports.Entry = Entry;
+
+var Ep = Entry.prototype;
+
+// The public API of Entry objects consists of the Entry constructor,
+// along with the recompute, setDirty, and dispose methods.
+
+Ep.recompute = function recompute() {
+  if (! rememberParent(this) &&
+      maybeReportOrphan(this)) {
+    // The recipient of the entry.reportOrphan callback decided to dispose
+    // of this orphan entry by calling entry.dispos(), which recycles it
+    // into the entryPool, so we don't need to (and should not) proceed
+    // with the recomputation.
+    return;
+  }
+
+  return recomputeIfDirty(this);
+};
+
+// If the given entry has a reportOrphan method, and no remaining parents,
+// call entry.reportOrphan and return true iff it returns true. The
+// reportOrphan function should return true to indicate entry.dispose()
+// has been called, and the entry has been removed from any other caches
+// (see index.js for the only current example).
+function maybeReportOrphan(entry) {
+  var report = entry.reportOrphan;
+  return typeof report === "function" &&
+    entry.parents.size === 0 &&
+    report(entry) === true;
+}
+
+Ep.setDirty = function setDirty() {
+  if (this.dirty) return;
+  this.dirty = true;
+  this.value = UNKNOWN_VALUE;
+  reportDirty(this);
+  // We can go ahead and unsubscribe here, since any further dirty
+  // notifications we receive will be redundant, and unsubscribing may
+  // free up some resources, e.g. file watchers.
+  unsubscribe(this);
+};
+
+Ep.dispose = function dispose() {
+  var entry = this;
+  forgetChildren(entry).forEach(maybeReportOrphan);
+  unsubscribe(entry);
+
+  // Because this entry has been kicked out of the cache (in index.js),
+  // we've lost the ability to find out if/when this entry becomes dirty,
+  // whether that happens through a subscription, because of a direct call
+  // to entry.setDirty(), or because one of its children becomes dirty.
+  // Because of this loss of future information, we have to assume the
+  // worst (that this entry might have become dirty very soon), so we must
+  // immediately mark this entry's parents as dirty. Normally we could
+  // just call entry.setDirty() rather than calling parent.setDirty() for
+  // each parent, but that would leave this entry in parent.childValues
+  // and parent.dirtyChildren, which would prevent the child from being
+  // truly forgotten.
+  entry.parents.forEach(function (parent) {
+    parent.setDirty();
+    forgetChild(parent, entry);
+  });
+
+  // Since this entry has no parents and no children anymore, and the
+  // caller of Entry#dispose has indicated that entry.value no longer
+  // matters, we can safely recycle this Entry object for later use.
+  release(entry);
+};
+
+function setClean(entry) {
+  entry.dirty = false;
+
+  if (mightBeDirty(entry)) {
+    // This Entry may still have dirty children, in which case we can't
+    // let our parents know we're clean just yet.
+    return;
+  }
+
+  reportClean(entry);
+}
+
+function reportDirty(entry) {
+  entry.parents.forEach(function (parent) {
+    reportDirtyChild(parent, entry);
+  });
+}
+
+function reportClean(entry) {
+  entry.parents.forEach(function (parent) {
+    reportCleanChild(parent, entry);
+  });
+}
+
+function mightBeDirty(entry) {
+  return entry.dirty ||
+    (entry.dirtyChildren &&
+     entry.dirtyChildren.size);
+}
+
+// Let a parent Entry know that one of its children may be dirty.
+function reportDirtyChild(entry, child) {
+  // Must have called rememberParent(child) before calling
+  // reportDirtyChild(parent, child).
+  assert(entry.childValues.has(child));
+  assert(mightBeDirty(child));
+
+  if (! entry.dirtyChildren) {
+    entry.dirtyChildren = emptySetPool.pop() || new Set;
+
+  } else if (entry.dirtyChildren.has(child)) {
+    // If we already know this child is dirty, then we must have already
+    // informed our own parents that we are dirty, so we can terminate
+    // the recursion early.
+    return;
+  }
+
+  entry.dirtyChildren.add(child);
+  reportDirty(entry);
+}
+
+// Let a parent Entry know that one of its children is no longer dirty.
+function reportCleanChild(entry, child) {
+  var cv = entry.childValues;
+
+  // Must have called rememberChild(child) before calling
+  // reportCleanChild(parent, child).
+  assert(cv.has(child));
+  assert(! mightBeDirty(child));
+
+  var childValue = cv.get(child);
+  if (childValue === UNKNOWN_VALUE) {
+    cv.set(child, child.value);
+  } else if (childValue !== child.value) {
+    entry.setDirty();
+  }
+
+  removeDirtyChild(entry, child);
+
+  if (mightBeDirty(entry)) {
+    return;
+  }
+
+  reportClean(entry);
+}
+
+function removeDirtyChild(entry, child) {
+  var dc = entry.dirtyChildren;
+  if (dc) {
+    dc.delete(child);
+    if (dc.size === 0) {
+      if (emptySetPool.length < exports.POOL_TARGET_SIZE) {
+        emptySetPool.push(dc);
+      }
+      entry.dirtyChildren = null;
+    }
+  }
+}
+
+function rememberParent(entry) {
+  var local = getLocal();
+  var parent = local.currentParentEntry;
+  if (parent) {
+    entry.parents.add(parent);
+
+    if (! parent.childValues.has(entry)) {
+      parent.childValues.set(entry, UNKNOWN_VALUE);
+    }
+
+    if (mightBeDirty(entry)) {
+      reportDirtyChild(parent, entry);
+    } else {
+      reportCleanChild(parent, entry);
+    }
+
+    return parent;
+  }
+}
+
+// This is the most important method of the Entry API, because it
+// determines whether the cached entry.value can be returned immediately,
+// or must be recomputed. The overall performance of the caching system
+// depends on the truth of the following observations: (1) this.dirty is
+// usually false, (2) this.dirtyChildren is usually null/empty, and thus
+// (3) this.value is usally returned very quickly, without recomputation.
+function recomputeIfDirty(entry) {
+  if (entry.dirty) {
+    // If this Entry is explicitly dirty because someone called
+    // entry.setDirty(), recompute.
+    return reallyRecompute(entry);
+  }
+
+  if (mightBeDirty(entry)) {
+    // Get fresh values for any dirty children, and if those values
+    // disagree with this.childValues, mark this Entry explicitly dirty.
+    entry.dirtyChildren.forEach(function (child) {
+      assert(entry.childValues.has(child));
+      try {
+        recomputeIfDirty(child);
+      } catch (e) {
+        entry.setDirty();
+      }
+    });
+
+    if (entry.dirty) {
+      // If this Entry has become explicitly dirty after comparing the fresh
+      // values of its dirty children against this.childValues, recompute.
+      return reallyRecompute(entry);
+    }
+  }
+
+  assert(entry.value !== UNKNOWN_VALUE);
+
+  return entry.value;
+}
+
+function reallyRecompute(entry) {
+  assert(! entry.recomputing, "already recomputing");
+  entry.recomputing = true;
+
+  // Since this recomputation is likely to re-remember some of this
+  // entry's children, we forget our children here but do not call
+  // maybeReportOrphan until after the recomputation finishes.
+  var originalChildren = forgetChildren(entry);
+
+  var local = getLocal();
+  var parent = local.currentParentEntry;
+  local.currentParentEntry = entry;
+
+  var threw = true;
+  try {
+    entry.value = entry.fn.apply(null, entry.args);
+    threw = false;
+
+  } finally {
+    entry.recomputing = false;
+
+    assert(local.currentParentEntry === entry);
+    local.currentParentEntry = parent;
+
+    if (threw || ! subscribe(entry)) {
+      // Mark this Entry dirty if entry.fn threw or we failed to
+      // resubscribe. This is important because, if we have a subscribe
+      // function and it failed, then we're going to miss important
+      // notifications about the potential dirtiness of entry.value.
+      entry.setDirty();
+    } else {
+      // If we successfully recomputed entry.value and did not fail to
+      // (re)subscribe, then this Entry is no longer explicitly dirty.
+      setClean(entry);
+    }
+  }
+
+  // Now that we've had a chance to re-remember any children that were
+  // involved in the recomputation, we can safely report any orphan
+  // children that remain.
+  originalChildren.forEach(maybeReportOrphan);
+
+  return entry.value;
+}
+
+var reusableEmptyArray = [];
+
+// Removes all children from this entry and returns an array of the
+// removed children.
+function forgetChildren(entry) {
+  var children = reusableEmptyArray;
+
+  if (entry.childValues.size > 0) {
+    children = [];
+    entry.childValues.forEach(function (value, child) {
+      forgetChild(entry, child);
+      children.push(child);
+    });
+  }
+
+  // After we forget all our children, this.dirtyChildren must be empty
+  // and therefor must have been reset to null.
+  assert(entry.dirtyChildren === null);
+
+  return children;
+}
+
+function forgetChild(entry, child) {
+  child.parents.delete(entry);
+  entry.childValues.delete(child);
+  removeDirtyChild(entry, child);
+}
+
+function subscribe(entry) {
+  if (typeof entry.subscribe === "function") {
+    try {
+      unsubscribe(entry); // Prevent double subscriptions.
+      entry.unsubscribe = entry.subscribe.apply(null, entry.args);
+    } catch (e) {
+      // If this Entry has a subscribe function and it threw an exception
+      // (or an unsubscribe function it previously returned now throws),
+      // return false to indicate that we were not able to subscribe (or
+      // unsubscribe), and this Entry should remain dirty.
+      entry.setDirty();
+      return false;
+    }
+  }
+
+  // Returning true indicates either that there was no entry.subscribe
+  // function or that it succeeded.
+  return true;
+}
+
+function unsubscribe(entry) {
+  var unsub = entry.unsubscribe;
+  if (typeof unsub === "function") {
+    entry.unsubscribe = null;
+    unsub();
+  }
+}
+});
+var entry_1 = entry.POOL_TARGET_SIZE;
+var entry_2 = entry.Entry;
+
+var entry$1 = /*#__PURE__*/Object.freeze({
+  default: entry,
+  __moduleExports: entry,
+  POOL_TARGET_SIZE: entry_1,
+  Entry: entry_2
+});
+
+var require$$0$4 = ( cache$1 && cache ) || cache$1;
+
+var require$$1 = ( tuple$1 && tuple ) || tuple$1;
+
+var require$$2 = ( entry$1 && entry ) || entry$1;
+
+var Cache$2 = require$$0$4.Cache;
+var tuple$2 = require$$1.tuple;
+var Entry = require$$2.Entry;
+var getLocal = require$$0$3.get;
+
+// Exported so that custom makeCacheKey functions can easily reuse the
+// default implementation (with different arguments).
+var defaultMakeCacheKey = tuple$2;
+
+function normalizeOptions(options) {
+  options = options || Object.create(null);
+
+  if (typeof options.makeCacheKey !== "function") {
+    options.makeCacheKey = tuple$2;
+  }
+
+  if (typeof options.max !== "number") {
+    options.max = Math.pow(2, 16);
+  }
+
+  return options;
+}
+
+function wrap$2(fn, options) {
+  options = normalizeOptions(options);
+
+  // If this wrapped function is disposable, then its creator does not
+  // care about its return value, and it should be removed from the cache
+  // immediately when it no longer has any parents that depend on it.
+  var disposable = !! options.disposable;
+
+  var cache = new Cache$2({
+    max: options.max,
+    dispose: function (key, entry) {
+      entry.dispose();
+    }
+  });
+
+  function reportOrphan(entry) {
+    if (disposable) {
+      // Triggers the entry.dispose() call above.
+      cache.delete(entry.key);
+      return true;
+    }
+  }
+
+  function optimistic() {
+    if (disposable && ! getLocal().currentParentEntry) {
+      // If there's no current parent computation, and this wrapped
+      // function is disposable (meaning we don't care about entry.value,
+      // just dependency tracking), then we can short-cut everything else
+      // in this function, because entry.recompute() is going to recycle
+      // the entry object without recomputing anything, anyway.
+      return;
+    }
+
+    var key = options.makeCacheKey.apply(null, arguments);
+    if (! key) {
+      return fn.apply(null, arguments);
+    }
+
+    var args = [], len = arguments.length;
+    while (len--) args[len] = arguments[len];
+
+    var entry = cache.get(key);
+    if (entry) {
+      entry.args = args;
+    } else {
+      cache.set(key, entry = Entry.acquire(fn, key, args));
+      entry.subscribe = options.subscribe;
+      if (disposable) {
+        entry.reportOrphan = reportOrphan;
+      }
+    }
+
+    var value = entry.recompute();
+
+    // Move this entry to the front of the least-recently used queue,
+    // since we just finished computing its value.
+    cache.set(key, entry);
+
+    // Clean up any excess entries in the cache, but only if this entry
+    // has no parents, which means we're not in the middle of a larger
+    // computation that might be flummoxed by the cleaning.
+    if (entry.parents.size === 0) {
+      cache.clean();
+    }
+
+    // If options.disposable is truthy, the caller of wrap is telling us
+    // they don't care about the result of entry.recompute(), so we should
+    // avoid returning the value, so it won't be accidentally used.
+    if (! disposable) {
+      return value;
+    }
+  }
+
+  optimistic.dirty = function () {
+    var key = options.makeCacheKey.apply(null, arguments);
+    if (! key) {
+      return;
+    }
+
+    if (! cache.has(key)) {
+      return;
+    }
+
+    cache.get(key).setDirty();
+  };
+
+  return optimistic;
+}
+
+var wrap_1 = wrap$2;
+
+var lib = {
+	defaultMakeCacheKey: defaultMakeCacheKey,
+	wrap: wrap_1
+};
+
+var wrap$3 = lib.wrap;
+var CacheKeyNode = (function () {
+    function CacheKeyNode() {
+        this.children = null;
+        this.key = null;
+    }
+    CacheKeyNode.prototype.lookup = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        return this.lookupArray(args);
+    };
+    CacheKeyNode.prototype.lookupArray = function (array) {
+        var node = this;
+        array.forEach(function (value) {
+            node = node.getOrCreate(value);
+        });
+        return node.key || (node.key = Object.create(null));
+    };
+    CacheKeyNode.prototype.getOrCreate = function (value) {
+        var map = this.children || (this.children = new Map());
+        var node = map.get(value);
+        if (!node) {
+            map.set(value, node = new CacheKeyNode());
+        }
+        return node;
+    };
+    return CacheKeyNode;
+}());
+
+var hasOwn = Object.prototype.hasOwnProperty;
+var DepTrackingCache = (function () {
+    function DepTrackingCache(data) {
+        if (data === void 0) { data = Object.create(null); }
+        var _this = this;
+        this.data = data;
+        this.depend = wrap$3(function (dataId) { return _this.data[dataId]; }, {
+            disposable: true,
+            makeCacheKey: function (dataId) {
+                return dataId;
+            }
+        });
+    }
+    DepTrackingCache.prototype.toObject = function () {
+        return this.data;
+    };
+    DepTrackingCache.prototype.get = function (dataId) {
+        this.depend(dataId);
+        return this.data[dataId];
+    };
+    DepTrackingCache.prototype.set = function (dataId, value) {
+        var oldValue = this.data[dataId];
+        if (value !== oldValue) {
+            this.data[dataId] = value;
+            this.depend.dirty(dataId);
+        }
+    };
+    DepTrackingCache.prototype.delete = function (dataId) {
+        if (hasOwn.call(this.data, dataId)) {
+            delete this.data[dataId];
+            this.depend.dirty(dataId);
+        }
+    };
+    DepTrackingCache.prototype.clear = function () {
+        this.replace(null);
+    };
+    DepTrackingCache.prototype.replace = function (newData) {
+        var _this = this;
+        if (newData) {
+            Object.keys(newData).forEach(function (dataId) {
+                _this.set(dataId, newData[dataId]);
+            });
+            Object.keys(this.data).forEach(function (dataId) {
+                if (!hasOwn.call(newData, dataId)) {
+                    _this.delete(dataId);
+                }
+            });
+        }
+        else {
+            Object.keys(this.data).forEach(function (dataId) {
+                _this.delete(dataId);
+            });
+        }
+    };
+    return DepTrackingCache;
+}());
+function defaultNormalizedCacheFactory(seed) {
+    return new DepTrackingCache(seed);
+}
+
+var __assign$8 = (undefined && undefined.__assign) || function () {
+    __assign$8 = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign$8.apply(this, arguments);
+};
+var CIRCULAR = Object.create(null);
+var objToStr = Object.prototype.toString;
+var QueryKeyMaker = (function () {
+    function QueryKeyMaker(cacheKeyRoot) {
+        this.cacheKeyRoot = cacheKeyRoot;
+        this.perQueryKeyMakers = new Map();
+    }
+    QueryKeyMaker.prototype.forQuery = function (document) {
+        if (!this.perQueryKeyMakers.has(document)) {
+            this.perQueryKeyMakers.set(document, new PerQueryKeyMaker(this.cacheKeyRoot, document));
+        }
+        return this.perQueryKeyMakers.get(document);
+    };
+    return QueryKeyMaker;
+}());
+var PerQueryKeyMaker = (function () {
+    function PerQueryKeyMaker(cacheKeyRoot, query) {
+        this.cacheKeyRoot = cacheKeyRoot;
+        this.query = query;
+        this.cache = new Map;
+        this.lookupArray = this.cacheMethod(this.lookupArray);
+        this.lookupObject = this.cacheMethod(this.lookupObject);
+        this.lookupFragmentSpread = this.cacheMethod(this.lookupFragmentSpread);
+    }
+    PerQueryKeyMaker.prototype.cacheMethod = function (method) {
+        var _this = this;
+        return function (value) {
+            if (_this.cache.has(value)) {
+                var cached = _this.cache.get(value);
+                if (cached === CIRCULAR) {
+                    throw new Error("QueryKeyMaker cannot handle circular query structures");
+                }
+                return cached;
+            }
+            _this.cache.set(value, CIRCULAR);
+            try {
+                var result = method.call(_this, value);
+                _this.cache.set(value, result);
+                return result;
+            }
+            catch (e) {
+                _this.cache.delete(value);
+                throw e;
+            }
+        };
+    };
+    PerQueryKeyMaker.prototype.lookupQuery = function (document) {
+        return this.lookupObject(document);
+    };
+    PerQueryKeyMaker.prototype.lookupSelectionSet = function (selectionSet) {
+        return this.lookupObject(selectionSet);
+    };
+    PerQueryKeyMaker.prototype.lookupFragmentSpread = function (fragmentSpread) {
+        var name = fragmentSpread.name.value;
+        var fragment = null;
+        this.query.definitions.some(function (definition) {
+            if (definition.kind === "FragmentDefinition" &&
+                definition.name.value === name) {
+                fragment = definition;
+                return true;
+            }
+            return false;
+        });
+        return this.lookupObject(__assign$8({}, fragmentSpread, { fragment: fragment }));
+    };
+    PerQueryKeyMaker.prototype.lookupAny = function (value) {
+        if (Array.isArray(value)) {
+            return this.lookupArray(value);
+        }
+        if (typeof value === "object" && value !== null) {
+            if (value.kind === "FragmentSpread") {
+                return this.lookupFragmentSpread(value);
+            }
+            return this.lookupObject(value);
+        }
+        return value;
+    };
+    PerQueryKeyMaker.prototype.lookupArray = function (array) {
+        var elements = array.map(this.lookupAny, this);
+        return this.cacheKeyRoot.lookup(objToStr.call(array), this.cacheKeyRoot.lookupArray(elements));
+    };
+    PerQueryKeyMaker.prototype.lookupObject = function (object) {
+        var _this = this;
+        var keys = safeSortedKeys(object);
+        var values = keys.map(function (key) { return _this.lookupAny(object[key]); });
+        return this.cacheKeyRoot.lookup(objToStr.call(object), this.cacheKeyRoot.lookupArray(keys), this.cacheKeyRoot.lookupArray(values));
+    };
+    return PerQueryKeyMaker;
+}());
+var queryKeyMap = Object.create(null);
+Object.keys(QueryDocumentKeys).forEach(function (parentKind) {
+    var childKeys = queryKeyMap[parentKind] = Object.create(null);
+    QueryDocumentKeys[parentKind].forEach(function (childKey) {
+        childKeys[childKey] = true;
+    });
+    if (parentKind === "FragmentSpread") {
+        childKeys["fragment"] = true;
+    }
+});
+function safeSortedKeys(object) {
+    var keys = Object.keys(object);
+    var keyCount = keys.length;
+    var knownKeys = typeof object.kind === "string" && queryKeyMap[object.kind];
+    var target = 0;
+    for (var source = target; source < keyCount; ++source) {
+        var key = keys[source];
+        var value = object[key];
+        var isObjectOrArray = value !== null && typeof value === "object";
+        if (!isObjectOrArray || !knownKeys || knownKeys[key] === true) {
+            keys[target++] = key;
+        }
+    }
+    keys.length = target;
+    return keys.sort();
+}
+
+var __assign$9 = (undefined && undefined.__assign) || function () {
+    __assign$9 = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign$9.apply(this, arguments);
+};
+var StoreReader = (function () {
+    function StoreReader(cacheKeyRoot) {
+        if (cacheKeyRoot === void 0) { cacheKeyRoot = new CacheKeyNode; }
+        var _this = this;
+        this.cacheKeyRoot = cacheKeyRoot;
+        var reader = this;
+        var executeStoreQuery = reader.executeStoreQuery, executeSelectionSet = reader.executeSelectionSet;
+        reader.keyMaker = new QueryKeyMaker(cacheKeyRoot);
+        this.executeStoreQuery = wrap$3(function (options) {
+            return executeStoreQuery.call(_this, options);
+        }, {
+            makeCacheKey: function (_a) {
+                var query = _a.query, rootValue = _a.rootValue, contextValue = _a.contextValue, variableValues = _a.variableValues, fragmentMatcher = _a.fragmentMatcher;
+                if (contextValue.store instanceof DepTrackingCache) {
+                    return reader.cacheKeyRoot.lookup(reader.keyMaker.forQuery(query).lookupQuery(query), contextValue.store, fragmentMatcher, JSON.stringify(variableValues), rootValue.id);
+                }
+                return;
+            }
+        });
+        this.executeSelectionSet = wrap$3(function (options) {
+            return executeSelectionSet.call(_this, options);
+        }, {
+            makeCacheKey: function (_a) {
+                var selectionSet = _a.selectionSet, rootValue = _a.rootValue, execContext = _a.execContext;
+                if (execContext.contextValue.store instanceof DepTrackingCache) {
+                    return reader.cacheKeyRoot.lookup(reader.keyMaker.forQuery(execContext.query).lookupSelectionSet(selectionSet), execContext.contextValue.store, execContext.fragmentMatcher, JSON.stringify(execContext.variableValues), rootValue.id);
+                }
+                return;
+            }
+        });
+    }
+    StoreReader.prototype.readQueryFromStore = function (options) {
+        var optsPatch = { returnPartialData: false };
+        return this.diffQueryAgainstStore(__assign$9({}, options, optsPatch)).result;
+    };
+    StoreReader.prototype.diffQueryAgainstStore = function (_a) {
+        var store = _a.store, query = _a.query, variables = _a.variables, previousResult = _a.previousResult, _b = _a.returnPartialData, returnPartialData = _b === void 0 ? true : _b, _c = _a.rootId, rootId = _c === void 0 ? 'ROOT_QUERY' : _c, fragmentMatcherFunction = _a.fragmentMatcherFunction, config = _a.config;
+        var queryDefinition = getQueryDefinition(query);
+        variables = assign$1({}, getDefaultValues(queryDefinition), variables);
+        var context = {
+            store: store,
+            dataIdFromObject: (config && config.dataIdFromObject) || null,
+            cacheRedirects: (config && config.cacheRedirects) || {},
+        };
+        var execResult = this.executeStoreQuery({
+            query: query,
+            rootValue: {
+                type: 'id',
+                id: rootId,
+                generated: true,
+                typename: 'Query',
+            },
+            contextValue: context,
+            variableValues: variables,
+            fragmentMatcher: fragmentMatcherFunction,
+        });
+        var hasMissingFields = execResult.missing && execResult.missing.length > 0;
+        if (hasMissingFields && !returnPartialData) {
+            execResult.missing.forEach(function (info) {
+                if (info.tolerable)
+                    return;
+                throw new Error("Can't find field " + info.fieldName + " on object " + JSON.stringify(info.object, null, 2) + ".");
+            });
+        }
+        if (previousResult) {
+            if (isEqual(previousResult, execResult.result)) {
+                execResult.result = previousResult;
+            }
+        }
+        return {
+            result: execResult.result,
+            complete: !hasMissingFields,
+        };
+    };
+    StoreReader.prototype.executeStoreQuery = function (_a) {
+        var query = _a.query, rootValue = _a.rootValue, contextValue = _a.contextValue, variableValues = _a.variableValues, _b = _a.fragmentMatcher, fragmentMatcher = _b === void 0 ? defaultFragmentMatcher : _b;
+        var mainDefinition = getMainDefinition(query);
+        var fragments = getFragmentDefinitions(query);
+        var fragmentMap = createFragmentMap(fragments);
+        var execContext = {
+            query: query,
+            fragmentMap: fragmentMap,
+            contextValue: contextValue,
+            variableValues: variableValues,
+            fragmentMatcher: fragmentMatcher,
+        };
+        return this.executeSelectionSet({
+            selectionSet: mainDefinition.selectionSet,
+            rootValue: rootValue,
+            execContext: execContext,
+        });
+    };
+    StoreReader.prototype.executeSelectionSet = function (_a) {
+        var _this = this;
+        var selectionSet = _a.selectionSet, rootValue = _a.rootValue, execContext = _a.execContext;
+        var fragmentMap = execContext.fragmentMap, contextValue = execContext.contextValue, variables = execContext.variableValues;
+        var finalResult = {
+            result: {},
+        };
+        var objectsToMerge = [];
+        var object = contextValue.store.get(rootValue.id);
+        var typename = (object && object.__typename) ||
+            (rootValue.id === 'ROOT_QUERY' && 'Query') ||
+            void 0;
+        function handleMissing(result) {
+            var _a;
+            if (result.missing) {
+                finalResult.missing = finalResult.missing || [];
+                (_a = finalResult.missing).push.apply(_a, result.missing);
+            }
+            return result.result;
+        }
+        selectionSet.selections.forEach(function (selection) {
+            var _a;
+            if (!shouldInclude(selection, variables)) {
+                return;
+            }
+            if (isField(selection)) {
+                var fieldResult = handleMissing(_this.executeField(object, typename, selection, execContext));
+                if (typeof fieldResult !== 'undefined') {
+                    objectsToMerge.push((_a = {},
+                        _a[resultKeyNameFromField(selection)] = fieldResult,
+                        _a));
+                }
+            }
+            else {
+                var fragment = void 0;
+                if (isInlineFragment(selection)) {
+                    fragment = selection;
+                }
+                else {
+                    fragment = fragmentMap[selection.name.value];
+                    if (!fragment) {
+                        throw new Error("No fragment named " + selection.name.value);
+                    }
+                }
+                var typeCondition = fragment.typeCondition.name.value;
+                var match = execContext.fragmentMatcher(rootValue, typeCondition, contextValue);
+                if (match) {
+                    var fragmentExecResult = _this.executeSelectionSet({
+                        selectionSet: fragment.selectionSet,
+                        rootValue: rootValue,
+                        execContext: execContext,
+                    });
+                    if (match === 'heuristic' && fragmentExecResult.missing) {
+                        fragmentExecResult = __assign$9({}, fragmentExecResult, { missing: fragmentExecResult.missing.map(function (info) {
+                                return __assign$9({}, info, { tolerable: true });
+                            }) });
+                    }
+                    objectsToMerge.push(handleMissing(fragmentExecResult));
+                }
+            }
+        });
+        merge(finalResult.result, objectsToMerge);
+        return finalResult;
+    };
+    StoreReader.prototype.executeField = function (object, typename, field, execContext) {
+        var variables = execContext.variableValues, contextValue = execContext.contextValue;
+        var fieldName = field.name.value;
+        var args = argumentsObjectFromField(field, variables);
+        var info = {
+            resultKey: resultKeyNameFromField(field),
+            directives: getDirectiveInfoFromField(field, variables),
+        };
+        var readStoreResult = readStoreResolver(object, typename, fieldName, args, contextValue, info);
+        if (Array.isArray(readStoreResult.result)) {
+            return this.combineExecResults(readStoreResult, this.executeSubSelectedArray(field, readStoreResult.result, execContext));
+        }
+        if (!field.selectionSet) {
+            assertSelectionSetForIdValue(field, readStoreResult.result);
+            return readStoreResult;
+        }
+        if (readStoreResult.result == null) {
+            return readStoreResult;
+        }
+        return this.combineExecResults(readStoreResult, this.executeSelectionSet({
+            selectionSet: field.selectionSet,
+            rootValue: readStoreResult.result,
+            execContext: execContext,
+        }));
+    };
+    StoreReader.prototype.combineExecResults = function () {
+        var execResults = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            execResults[_i] = arguments[_i];
+        }
+        var missing = null;
+        execResults.forEach(function (execResult) {
+            if (execResult.missing) {
+                missing = missing || [];
+                missing.push.apply(missing, execResult.missing);
+            }
+        });
+        return {
+            result: execResults.pop().result,
+            missing: missing,
+        };
+    };
+    StoreReader.prototype.executeSubSelectedArray = function (field, result, execContext) {
+        var _this = this;
+        var missing = null;
+        function handleMissing(childResult) {
+            if (childResult.missing) {
+                missing = missing || [];
+                missing.push.apply(missing, childResult.missing);
+            }
+            return childResult.result;
+        }
+        result = result.map(function (item) {
+            if (item === null) {
+                return null;
+            }
+            if (Array.isArray(item)) {
+                return handleMissing(_this.executeSubSelectedArray(field, item, execContext));
+            }
+            if (field.selectionSet) {
+                return handleMissing(_this.executeSelectionSet({
+                    selectionSet: field.selectionSet,
+                    rootValue: item,
+                    execContext: execContext,
+                }));
+            }
+            assertSelectionSetForIdValue(field, item);
+            return item;
+        });
+        return { result: result, missing: missing };
+    };
+    return StoreReader;
+}());
+function assertSelectionSetForIdValue(field, value) {
+    if (!field.selectionSet && isIdValue(value)) {
+        throw new Error("Missing selection set for object of type " + value.typename + " returned for query field " + field.name.value);
+    }
+}
+function defaultFragmentMatcher() {
+    return true;
+}
+function readStoreResolver(object, typename, fieldName, args, context, _a) {
+    var resultKey = _a.resultKey, directives = _a.directives;
+    var storeKeyName = fieldName;
+    if (args || directives) {
+        storeKeyName = getStoreKeyName(storeKeyName, args, directives);
+    }
+    var fieldValue = void 0;
+    if (object) {
+        fieldValue = object[storeKeyName];
+        if (typeof fieldValue === 'undefined' &&
+            context.cacheRedirects &&
+            typeof typename === 'string') {
+            var type = context.cacheRedirects[typename];
+            if (type) {
+                var resolver = type[fieldName];
+                if (resolver) {
+                    fieldValue = resolver(object, args, {
+                        getCacheKey: function (storeObj) {
+                            return toIdValue({
+                                id: context.dataIdFromObject(storeObj),
+                                typename: storeObj.__typename,
+                            });
+                        },
+                    });
+                }
+            }
+        }
+    }
+    if (typeof fieldValue === 'undefined') {
+        return {
+            result: fieldValue,
+            missing: [{
+                    object: object,
+                    fieldName: storeKeyName,
+                    tolerable: false,
+                }],
+        };
+    }
+    if (isJsonValue(fieldValue)) {
+        fieldValue = fieldValue.json;
+    }
+    return {
+        result: fieldValue,
+    };
+}
+var hasOwn$1 = Object.prototype.hasOwnProperty;
+function merge(target, sources) {
+    var pastCopies = [];
+    sources.forEach(function (source) {
+        mergeHelper(target, source, pastCopies);
+    });
+    return target;
+}
+function mergeHelper(target, source, pastCopies) {
+    if (source !== null && typeof source === 'object') {
+        if (Object.isExtensible && !Object.isExtensible(target)) {
+            target = shallowCopyForMerge(target, pastCopies);
+        }
+        Object.keys(source).forEach(function (sourceKey) {
+            var sourceValue = source[sourceKey];
+            if (hasOwn$1.call(target, sourceKey)) {
+                var targetValue = target[sourceKey];
+                if (sourceValue !== targetValue) {
+                    target[sourceKey] = mergeHelper(shallowCopyForMerge(targetValue, pastCopies), sourceValue, pastCopies);
+                }
+            }
+            else {
+                target[sourceKey] = sourceValue;
+            }
+        });
+    }
+    return target;
+}
+function shallowCopyForMerge(value, pastCopies) {
+    if (value !== null &&
+        typeof value === 'object' &&
+        pastCopies.indexOf(value) < 0) {
+        if (Array.isArray(value)) {
+            value = value.slice(0);
+        }
+        else {
+            value = __assign$9({}, value);
+        }
+        pastCopies.push(value);
+    }
+    return value;
+}
+
+var ObjectCache = (function () {
     function ObjectCache(data) {
         if (data === void 0) { data = Object.create(null); }
         this.data = data;
@@ -12160,29 +14015,32 @@ var ObjectCache = /** @class */ (function () {
     };
     return ObjectCache;
 }());
-function defaultNormalizedCacheFactory(seed) {
-    return new ObjectCache(seed);
-}
 
 var __extends$5 = (undefined && undefined.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
     return function (d, b) {
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-var __assign$8 = (undefined && undefined.__assign) || Object.assign || function(t) {
-    for (var s, i = 1, n = arguments.length; i < n; i++) {
-        s = arguments[i];
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-            t[p] = s[p];
-    }
-    return t;
+var __assign$a = (undefined && undefined.__assign) || function () {
+    __assign$a = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign$a.apply(this, arguments);
 };
-var WriteError = /** @class */ (function (_super) {
+var WriteError = (function (_super) {
     __extends$5(WriteError, _super);
     function WriteError() {
         var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -12192,50 +14050,61 @@ var WriteError = /** @class */ (function (_super) {
     return WriteError;
 }(Error));
 function enhanceErrorWithDocument(error, document) {
-    // XXX A bit hacky maybe ...
     var enhancedError = new WriteError("Error writing result to store for query:\n " + print(document));
     enhancedError.message += '\n' + error.message;
     enhancedError.stack = error.stack;
     return enhancedError;
 }
-function writeResultToStore(_a) {
-    var dataId = _a.dataId, result = _a.result, document = _a.document, _b = _a.storeFactory, storeFactory = _b === void 0 ? defaultNormalizedCacheFactory : _b, _c = _a.store, store = _c === void 0 ? storeFactory() : _c, variables = _a.variables, dataIdFromObject = _a.dataIdFromObject, fragmentMatcherFunction = _a.fragmentMatcherFunction;
-    // XXX TODO REFACTOR: this is a temporary workaround until query normalization is made to work with documents.
-    var operationDefinition = getOperationDefinition(document);
-    var selectionSet = operationDefinition.selectionSet;
-    var fragmentMap = createFragmentMap(getFragmentDefinitions(document));
-    variables = assign$1({}, getDefaultValues(operationDefinition), variables);
-    try {
-        return writeSelectionSetToStore({
+var StoreWriter = (function () {
+    function StoreWriter() {
+    }
+    StoreWriter.prototype.writeQueryToStore = function (_a) {
+        var query = _a.query, result = _a.result, _b = _a.store, store = _b === void 0 ? defaultNormalizedCacheFactory() : _b, variables = _a.variables, dataIdFromObject = _a.dataIdFromObject, fragmentMatcherFunction = _a.fragmentMatcherFunction;
+        return this.writeResultToStore({
+            dataId: 'ROOT_QUERY',
             result: result,
-            dataId: dataId,
-            selectionSet: selectionSet,
-            context: {
-                store: store,
-                storeFactory: storeFactory,
-                processedData: {},
-                variables: variables,
-                dataIdFromObject: dataIdFromObject,
-                fragmentMap: fragmentMap,
-                fragmentMatcherFunction: fragmentMatcherFunction,
-            },
+            document: query,
+            store: store,
+            variables: variables,
+            dataIdFromObject: dataIdFromObject,
+            fragmentMatcherFunction: fragmentMatcherFunction,
         });
-    }
-    catch (e) {
-        throw enhanceErrorWithDocument(e, document);
-    }
-}
-function writeSelectionSetToStore(_a) {
-    var result = _a.result, dataId = _a.dataId, selectionSet = _a.selectionSet, context = _a.context;
-    var variables = context.variables, store = context.store, fragmentMap = context.fragmentMap;
-    selectionSet.selections.forEach(function (selection) {
-        var included = shouldInclude(selection, variables);
-        if (isField(selection)) {
-            var resultFieldKey = resultKeyNameFromField(selection);
-            var value = result[resultFieldKey];
-            if (included) {
+    };
+    StoreWriter.prototype.writeResultToStore = function (_a) {
+        var dataId = _a.dataId, result = _a.result, document = _a.document, _b = _a.store, store = _b === void 0 ? defaultNormalizedCacheFactory() : _b, variables = _a.variables, dataIdFromObject = _a.dataIdFromObject, fragmentMatcherFunction = _a.fragmentMatcherFunction;
+        var operationDefinition = getOperationDefinition(document);
+        try {
+            return this.writeSelectionSetToStore({
+                result: result,
+                dataId: dataId,
+                selectionSet: operationDefinition.selectionSet,
+                context: {
+                    store: store,
+                    processedData: {},
+                    variables: assign$1({}, getDefaultValues(operationDefinition), variables),
+                    dataIdFromObject: dataIdFromObject,
+                    fragmentMap: createFragmentMap(getFragmentDefinitions(document)),
+                    fragmentMatcherFunction: fragmentMatcherFunction,
+                },
+            });
+        }
+        catch (e) {
+            throw enhanceErrorWithDocument(e, document);
+        }
+    };
+    StoreWriter.prototype.writeSelectionSetToStore = function (_a) {
+        var _this = this;
+        var result = _a.result, dataId = _a.dataId, selectionSet = _a.selectionSet, context = _a.context;
+        var variables = context.variables, store = context.store, fragmentMap = context.fragmentMap;
+        selectionSet.selections.forEach(function (selection) {
+            if (!shouldInclude(selection, variables)) {
+                return;
+            }
+            if (isField(selection)) {
+                var resultFieldKey = resultKeyNameFromField(selection);
+                var value = result[resultFieldKey];
                 if (typeof value !== 'undefined') {
-                    writeFieldToStore({
+                    _this.writeFieldToStore({
                         dataId: dataId,
                         value: value,
                         field: selection,
@@ -12243,82 +14112,192 @@ function writeSelectionSetToStore(_a) {
                     });
                 }
                 else {
-                    // if this is a defered field we don't need to throw / warn
                     var isDefered = selection.directives &&
                         selection.directives.length &&
                         selection.directives.some(function (directive) { return directive.name && directive.name.value === 'defer'; });
                     if (!isDefered && context.fragmentMatcherFunction) {
-                        // XXX We'd like to throw an error, but for backwards compatibility's sake
-                        // we just print a warning for the time being.
-                        //throw new WriteError(`Missing field ${resultFieldKey} in ${JSON.stringify(result, null, 2).substring(0, 100)}`);
                         if (!isProduction()) {
                             console.warn("Missing field " + resultFieldKey + " in " + JSON.stringify(result, null, 2).substring(0, 100));
                         }
                     }
                 }
             }
+            else {
+                var fragment = void 0;
+                if (isInlineFragment(selection)) {
+                    fragment = selection;
+                }
+                else {
+                    fragment = (fragmentMap || {})[selection.name.value];
+                    if (!fragment) {
+                        throw new Error("No fragment named " + selection.name.value + ".");
+                    }
+                }
+                var matches = true;
+                if (context.fragmentMatcherFunction && fragment.typeCondition) {
+                    var idValue = toIdValue({ id: 'self', typename: undefined });
+                    var fakeContext = {
+                        store: new ObjectCache({ self: result }),
+                        cacheRedirects: {},
+                    };
+                    var match = context.fragmentMatcherFunction(idValue, fragment.typeCondition.name.value, fakeContext);
+                    if (!isProduction() && match === 'heuristic') {
+                        console.error('WARNING: heuristic fragment matching going on!');
+                    }
+                    matches = !!match;
+                }
+                if (matches) {
+                    _this.writeSelectionSetToStore({
+                        result: result,
+                        selectionSet: fragment.selectionSet,
+                        dataId: dataId,
+                        context: context,
+                    });
+                }
+            }
+        });
+        return store;
+    };
+    StoreWriter.prototype.writeFieldToStore = function (_a) {
+        var field = _a.field, value = _a.value, dataId = _a.dataId, context = _a.context;
+        var _b;
+        var variables = context.variables, dataIdFromObject = context.dataIdFromObject, store = context.store;
+        var storeValue;
+        var storeObject;
+        var storeFieldName = storeKeyNameFromField(field, variables);
+        if (!field.selectionSet || value === null) {
+            storeValue =
+                value != null && typeof value === 'object'
+                    ?
+                        { type: 'json', json: value }
+                    :
+                        value;
+        }
+        else if (Array.isArray(value)) {
+            var generatedId = dataId + "." + storeFieldName;
+            storeValue = this.processArrayValue(value, generatedId, field.selectionSet, context);
         }
         else {
-            // This is not a field, so it must be a fragment, either inline or named
-            var fragment = void 0;
-            if (isInlineFragment(selection)) {
-                fragment = selection;
+            var valueDataId = dataId + "." + storeFieldName;
+            var generated = true;
+            if (!isGeneratedId(valueDataId)) {
+                valueDataId = '$' + valueDataId;
             }
-            else {
-                // Named fragment
-                fragment = (fragmentMap || {})[selection.name.value];
-                if (!fragment) {
-                    throw new Error("No fragment named " + selection.name.value + ".");
+            if (dataIdFromObject) {
+                var semanticId = dataIdFromObject(value);
+                if (semanticId && isGeneratedId(semanticId)) {
+                    throw new Error('IDs returned by dataIdFromObject cannot begin with the "$" character.');
+                }
+                if (semanticId ||
+                    (typeof semanticId === 'number' && semanticId === 0)) {
+                    valueDataId = semanticId;
+                    generated = false;
                 }
             }
-            var matches = true;
-            if (context.fragmentMatcherFunction && fragment.typeCondition) {
-                // TODO we need to rewrite the fragment matchers for this to work properly and efficiently
-                // Right now we have to pretend that we're passing in an idValue and that there's a store
-                // on the context.
-                var idValue = toIdValue({ id: 'self', typename: undefined });
-                var fakeContext = {
-                    // NOTE: fakeContext always uses ObjectCache
-                    // since this is only to ensure the return value of 'matches'
-                    store: new ObjectCache({ self: result }),
-                    returnPartialData: false,
-                    hasMissingField: false,
-                    cacheRedirects: {},
-                };
-                matches = context.fragmentMatcherFunction(idValue, fragment.typeCondition.name.value, fakeContext);
-                if (!isProduction() && fakeContext.returnPartialData) {
-                    console.error('WARNING: heuristic fragment matching going on!');
-                }
-            }
-            if (included && matches) {
-                writeSelectionSetToStore({
-                    result: result,
-                    selectionSet: fragment.selectionSet,
-                    dataId: dataId,
+            if (!isDataProcessed(valueDataId, field, context.processedData)) {
+                this.writeSelectionSetToStore({
+                    dataId: valueDataId,
+                    result: value,
+                    selectionSet: field.selectionSet,
                     context: context,
                 });
             }
+            var typename = value.__typename;
+            storeValue = toIdValue({ id: valueDataId, typename: typename }, generated);
+            storeObject = store.get(dataId);
+            var escapedId = storeObject && storeObject[storeFieldName];
+            if (escapedId !== storeValue && isIdValue(escapedId)) {
+                var hadTypename = escapedId.typename !== undefined;
+                var hasTypename = typename !== undefined;
+                var typenameChanged = hadTypename && hasTypename && escapedId.typename !== typename;
+                if (generated && !escapedId.generated && !typenameChanged) {
+                    throw new Error("Store error: the application attempted to write an object with no provided id" +
+                        (" but the store already contains an id of " + escapedId.id + " for this object. The selectionSet") +
+                        " that was trying to be written is:\n" +
+                        print(field));
+                }
+                if (hadTypename && !hasTypename) {
+                    throw new Error("Store error: the application attempted to write an object with no provided typename" +
+                        (" but the store already contains an object with typename of " + escapedId.typename + " for the object of id " + escapedId.id + ". The selectionSet") +
+                        " that was trying to be written is:\n" +
+                        print(field));
+                }
+                if (escapedId.generated) {
+                    if (typenameChanged) {
+                        if (!generated) {
+                            store.delete(escapedId.id);
+                        }
+                    }
+                    else {
+                        mergeWithGenerated(escapedId.id, storeValue.id, store);
+                    }
+                }
+            }
         }
-    });
-    return store;
-}
-// Checks if the id given is an id that was generated by Apollo
-// rather than by dataIdFromObject.
+        storeObject = store.get(dataId);
+        if (!storeObject || !isEqual(storeValue, storeObject[storeFieldName])) {
+            store.set(dataId, __assign$a({}, storeObject, (_b = {}, _b[storeFieldName] = storeValue, _b)));
+        }
+    };
+    StoreWriter.prototype.processArrayValue = function (value, generatedId, selectionSet, context) {
+        var _this = this;
+        return value.map(function (item, index) {
+            if (item === null) {
+                return null;
+            }
+            var itemDataId = generatedId + "." + index;
+            if (Array.isArray(item)) {
+                return _this.processArrayValue(item, itemDataId, selectionSet, context);
+            }
+            var generated = true;
+            if (context.dataIdFromObject) {
+                var semanticId = context.dataIdFromObject(item);
+                if (semanticId) {
+                    itemDataId = semanticId;
+                    generated = false;
+                }
+            }
+            if (!isDataProcessed(itemDataId, selectionSet, context.processedData)) {
+                _this.writeSelectionSetToStore({
+                    dataId: itemDataId,
+                    result: item,
+                    selectionSet: selectionSet,
+                    context: context,
+                });
+            }
+            return toIdValue({ id: itemDataId, typename: item.__typename }, generated);
+        });
+    };
+    return StoreWriter;
+}());
 function isGeneratedId(id) {
     return id[0] === '$';
 }
 function mergeWithGenerated(generatedKey, realKey, cache) {
+    if (generatedKey === realKey) {
+        return false;
+    }
     var generated = cache.get(generatedKey);
     var real = cache.get(realKey);
+    var madeChanges = false;
     Object.keys(generated).forEach(function (key) {
         var value = generated[key];
         var realValue = real[key];
-        if (isIdValue(value) && isGeneratedId(value.id) && isIdValue(realValue)) {
-            mergeWithGenerated(value.id, realValue.id, cache);
+        if (isIdValue(value) &&
+            isGeneratedId(value.id) &&
+            isIdValue(realValue) &&
+            !isEqual(value, realValue) &&
+            mergeWithGenerated(value.id, realValue.id, cache)) {
+            madeChanges = true;
         }
-        cache.delete(generatedKey);
-        cache.set(realKey, __assign$8({}, generated, real));
     });
+    cache.delete(generatedKey);
+    var newRealValue = __assign$a({}, generated, real);
+    if (isEqual(newRealValue, real)) {
+        return madeChanges;
+    }
+    cache.set(realKey, newRealValue);
+    return true;
 }
 function isDataProcessed(dataId, field, processedData) {
     if (!processedData) {
@@ -12337,543 +14316,19 @@ function isDataProcessed(dataId, field, processedData) {
     }
     return false;
 }
-function writeFieldToStore(_a) {
-    var field = _a.field, value = _a.value, dataId = _a.dataId, context = _a.context;
-    var variables = context.variables, dataIdFromObject = context.dataIdFromObject, store = context.store;
-    var storeValue;
-    var storeObject;
-    var storeFieldName = storeKeyNameFromField(field, variables);
-    // specifies if we need to merge existing keys in the store
-    var shouldMerge = false;
-    // If we merge, this will be the generatedKey
-    var generatedKey = '';
-    // If this is a scalar value...
-    if (!field.selectionSet || value === null) {
-        storeValue =
-            value != null && typeof value === 'object'
-                ? // If the scalar value is a JSON blob, we have to "escape" it so it can’t pretend to be
-                    // an id.
-                    { type: 'json', json: value }
-                : // Otherwise, just store the scalar directly in the store.
-                    value;
-    }
-    else if (Array.isArray(value)) {
-        var generatedId = dataId + "." + storeFieldName;
-        storeValue = processArrayValue(value, generatedId, field.selectionSet, context);
-    }
-    else {
-        // It's an object
-        var valueDataId = dataId + "." + storeFieldName;
-        var generated = true;
-        // We only prepend the '$' if the valueDataId isn't already a generated
-        // id.
-        if (!isGeneratedId(valueDataId)) {
-            valueDataId = '$' + valueDataId;
-        }
-        if (dataIdFromObject) {
-            var semanticId = dataIdFromObject(value);
-            // We throw an error if the first character of the id is '$. This is
-            // because we use that character to designate an Apollo-generated id
-            // and we use the distinction between user-desiginated and application-provided
-            // ids when managing overwrites.
-            if (semanticId && isGeneratedId(semanticId)) {
-                throw new Error('IDs returned by dataIdFromObject cannot begin with the "$" character.');
-            }
-            if (semanticId) {
-                valueDataId = semanticId;
-                generated = false;
-            }
-        }
-        if (!isDataProcessed(valueDataId, field, context.processedData)) {
-            writeSelectionSetToStore({
-                dataId: valueDataId,
-                result: value,
-                selectionSet: field.selectionSet,
-                context: context,
-            });
-        }
-        // We take the id and escape it (i.e. wrap it with an enclosing object).
-        // This allows us to distinguish IDs from normal scalars.
-        var typename = value.__typename;
-        storeValue = toIdValue({ id: valueDataId, typename: typename }, generated);
-        // check if there was a generated id at the location where we're
-        // about to place this new id. If there was, we have to merge the
-        // data from that id with the data we're about to write in the store.
-        storeObject = store.get(dataId);
-        var escapedId = storeObject && storeObject[storeFieldName];
-        if (escapedId !== storeValue && isIdValue(escapedId)) {
-            var hadTypename = escapedId.typename !== undefined;
-            var hasTypename = typename !== undefined;
-            var typenameChanged = hadTypename && hasTypename && escapedId.typename !== typename;
-            // If there is already a real id in the store and the current id we
-            // are dealing with is generated, we throw an error.
-            // One exception we allow is when the typename has changed, which occurs
-            // when schema defines a union, both with and without an ID in the same place.
-            // checks if we "lost" the read id
-            if (generated && !escapedId.generated && !typenameChanged) {
-                throw new Error("Store error: the application attempted to write an object with no provided id" +
-                    (" but the store already contains an id of " + escapedId.id + " for this object. The selectionSet") +
-                    " that was trying to be written is:\n" +
-                    print(field));
-            }
-            // checks if we "lost" the typename
-            if (hadTypename && !hasTypename) {
-                throw new Error("Store error: the application attempted to write an object with no provided typename" +
-                    (" but the store already contains an object with typename of " + escapedId.typename + " for the object of id " + escapedId.id + ". The selectionSet") +
-                    " that was trying to be written is:\n" +
-                    print(field));
-            }
-            if (escapedId.generated) {
-                generatedKey = escapedId.id;
-                // We should only merge if it's an object of the same type,
-                // otherwise we should delete the generated object
-                if (typenameChanged) {
-                    // Only delete the generated object when the old object was
-                    // inlined, and the new object is not. This is indicated by
-                    // the old id being generated, and the new id being real.
-                    if (!generated) {
-                        store.delete(generatedKey);
-                    }
-                }
-                else {
-                    shouldMerge = true;
-                }
-            }
-        }
-    }
-    var newStoreObj = __assign$8({}, store.get(dataId), (_b = {}, _b[storeFieldName] = storeValue, _b));
-    if (shouldMerge) {
-        mergeWithGenerated(generatedKey, storeValue.id, store);
-    }
-    storeObject = store.get(dataId);
-    if (!storeObject || storeValue !== storeObject[storeFieldName]) {
-        store.set(dataId, newStoreObj);
-    }
-    var _b;
-}
-function processArrayValue(value, generatedId, selectionSet, context) {
-    return value.map(function (item, index) {
-        if (item === null) {
-            return null;
-        }
-        var itemDataId = generatedId + "." + index;
-        if (Array.isArray(item)) {
-            return processArrayValue(item, itemDataId, selectionSet, context);
-        }
-        var generated = true;
-        if (context.dataIdFromObject) {
-            var semanticId = context.dataIdFromObject(item);
-            if (semanticId) {
-                itemDataId = semanticId;
-                generated = false;
-            }
-        }
-        if (!isDataProcessed(itemDataId, selectionSet, context.processedData)) {
-            writeSelectionSetToStore({
-                dataId: itemDataId,
-                result: item,
-                selectionSet: selectionSet,
-                context: context,
-            });
-        }
-        return toIdValue({ id: itemDataId, typename: item.__typename }, generated);
-    });
-}
 
-/* Based on graphql function from graphql-js:
- *
- * graphql(
- *   schema: GraphQLSchema,
- *   requestString: string,
- *   rootValue?: ?any,
- *   contextValue?: ?any,
- *   variableValues?: ?{[key: string]: any},
- *   operationName?: ?string
- * ): Promise<GraphQLResult>
- *
- * The default export as of graphql-anywhere is sync as of 4.0,
- * but below is an exported alternative that is async.
- * In the 5.0 version, this will be the only export again
- * and it will be async
- *
- */
-function graphql(resolver, document, rootValue, contextValue, variableValues, execOptions) {
-    if (execOptions === void 0) { execOptions = {}; }
-    var mainDefinition = getMainDefinition(document);
-    var fragments = getFragmentDefinitions(document);
-    var fragmentMap = createFragmentMap(fragments);
-    var resultMapper = execOptions.resultMapper;
-    // Default matcher always matches all fragments
-    var fragmentMatcher = execOptions.fragmentMatcher || (function () { return true; });
-    var execContext = {
-        fragmentMap: fragmentMap,
-        contextValue: contextValue,
-        variableValues: variableValues,
-        resultMapper: resultMapper,
-        resolver: resolver,
-        fragmentMatcher: fragmentMatcher,
+var __assign$b = (undefined && undefined.__assign) || function () {
+    __assign$b = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
     };
-    return executeSelectionSet(mainDefinition.selectionSet, rootValue, execContext);
-}
-function executeSelectionSet(selectionSet, rootValue, execContext) {
-    var fragmentMap = execContext.fragmentMap, contextValue = execContext.contextValue, variables = execContext.variableValues;
-    var result = {};
-    selectionSet.selections.forEach(function (selection) {
-        if (!shouldInclude(selection, variables)) {
-            // Skip this entirely
-            return;
-        }
-        if (isField(selection)) {
-            var fieldResult = executeField(selection, rootValue, execContext);
-            var resultFieldKey = resultKeyNameFromField(selection);
-            if (fieldResult !== undefined) {
-                if (result[resultFieldKey] === undefined) {
-                    result[resultFieldKey] = fieldResult;
-                }
-                else {
-                    merge(result[resultFieldKey], fieldResult);
-                }
-            }
-        }
-        else {
-            var fragment = void 0;
-            if (isInlineFragment(selection)) {
-                fragment = selection;
-            }
-            else {
-                // This is a named fragment
-                fragment = fragmentMap[selection.name.value];
-                if (!fragment) {
-                    throw new Error("No fragment named " + selection.name.value);
-                }
-            }
-            var typeCondition = fragment.typeCondition.name.value;
-            if (execContext.fragmentMatcher(rootValue, typeCondition, contextValue)) {
-                var fragmentResult = executeSelectionSet(fragment.selectionSet, rootValue, execContext);
-                merge(result, fragmentResult);
-            }
-        }
-    });
-    if (execContext.resultMapper) {
-        return execContext.resultMapper(result, rootValue);
-    }
-    return result;
-}
-function executeField(field, rootValue, execContext) {
-    var variables = execContext.variableValues, contextValue = execContext.contextValue, resolver = execContext.resolver;
-    var fieldName = field.name.value;
-    var args = argumentsObjectFromField(field, variables);
-    var info = {
-        isLeaf: !field.selectionSet,
-        resultKey: resultKeyNameFromField(field),
-        directives: getDirectiveInfoFromField(field, variables),
-    };
-    var result = resolver(fieldName, rootValue, args, contextValue, info);
-    // Handle all scalar types here
-    if (!field.selectionSet) {
-        return result;
-    }
-    // From here down, the field has a selection set, which means it's trying to
-    // query a GraphQLObjectType
-    if (result == null) {
-        // Basically any field in a GraphQL response can be null, or missing
-        return result;
-    }
-    if (Array.isArray(result)) {
-        return executeSubSelectedArray(field, result, execContext);
-    }
-    // Returned value is an object, and the query has a sub-selection. Recurse.
-    return executeSelectionSet(field.selectionSet, result, execContext);
-}
-function executeSubSelectedArray(field, result, execContext) {
-    return result.map(function (item) {
-        // null value in array
-        if (item === null) {
-            return null;
-        }
-        // This is a nested array, recurse
-        if (Array.isArray(item)) {
-            return executeSubSelectedArray(field, item, execContext);
-        }
-        // This is an object, run the selection set on it
-        return executeSelectionSet(field.selectionSet, item, execContext);
-    });
-}
-var hasOwn = Object.prototype.hasOwnProperty;
-function merge(dest, src) {
-    if (src !== null && typeof src === 'object') {
-        Object.keys(src).forEach(function (key) {
-            var srcVal = src[key];
-            if (!hasOwn.call(dest, key)) {
-                dest[key] = srcVal;
-            }
-            else {
-                merge(dest[key], srcVal);
-            }
-        });
-    }
-}
-
-var __assign$9 = (undefined && undefined.__assign) || Object.assign || function(t) {
-    for (var s, i = 1, n = arguments.length; i < n; i++) {
-        s = arguments[i];
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-            t[p] = s[p];
-    }
-    return t;
+    return __assign$b.apply(this, arguments);
 };
-/**
- * The key which the cache id for a given value is stored in the result object. This key is private
- * and should not be used by Apollo client users.
- *
- * Uses a symbol if available in the environment.
- *
- * @private
- */
-var ID_KEY = typeof Symbol !== 'undefined' ? Symbol('id') : '@@id';
-/**
- * Resolves the result of a query solely from the store (i.e. never hits the server).
- *
- * @param {Store} store The {@link NormalizedCache} used by Apollo for the `data` portion of the
- * store.
- *
- * @param {DocumentNode} query The query document to resolve from the data available in the store.
- *
- * @param {Object} [variables] A map from the name of a variable to its value. These variables can
- * be referenced by the query document.
- *
- * @param {any} previousResult The previous result returned by this function for the same query.
- * If nothing in the store changed since that previous result then values from the previous result
- * will be returned to preserve referential equality.
- */
-function readQueryFromStore(options) {
-    var optsPatch = { returnPartialData: false };
-    return diffQueryAgainstStore(__assign$9({}, options, optsPatch)).result;
-}
-var readStoreResolver = function (fieldName, idValue, args, context, _a) {
-    var resultKey = _a.resultKey, directives = _a.directives;
-    assertIdValue(idValue);
-    var objId = idValue.id;
-    var obj = context.store.get(objId);
-    var storeKeyName = fieldName;
-    if (args || directives) {
-        // We happen to know here that getStoreKeyName returns its first
-        // argument unmodified if there are no args or directives, so we can
-        // avoid calling the function at all in that case, as a small but
-        // important optimization to this frequently executed code.
-        storeKeyName = getStoreKeyName(storeKeyName, args, directives);
-    }
-    var fieldValue = void 0;
-    if (obj) {
-        fieldValue = obj[storeKeyName];
-        if (typeof fieldValue === 'undefined' &&
-            context.cacheRedirects &&
-            (obj.__typename || objId === 'ROOT_QUERY')) {
-            var typename = obj.__typename || 'Query';
-            // Look for the type in the custom resolver map
-            var type = context.cacheRedirects[typename];
-            if (type) {
-                // Look for the field in the custom resolver map
-                var resolver = type[fieldName];
-                if (resolver) {
-                    fieldValue = resolver(obj, args, {
-                        getCacheKey: function (storeObj) {
-                            return toIdValue({
-                                id: context.dataIdFromObject(storeObj),
-                                typename: storeObj.__typename,
-                            });
-                        },
-                    });
-                }
-            }
-        }
-    }
-    if (typeof fieldValue === 'undefined') {
-        if (!context.returnPartialData) {
-            throw new Error("Can't find field " + storeKeyName + " on object (" + objId + ") " + JSON.stringify(obj, null, 2) + ".");
-        }
-        context.hasMissingField = true;
-        return fieldValue;
-    }
-    // if this is an object scalar, it must be a json blob and we have to unescape it
-    if (isJsonValue(fieldValue)) {
-        // If the JSON blob is the same now as in the previous result, return the previous result to
-        // maintain referential equality.
-        //
-        // `isEqual` will first perform a referential equality check (with `===`) in case the JSON
-        // value has not changed in the store, and then a deep equality check if that fails in case a
-        // new JSON object was returned by the API but that object may still be the same.
-        if (idValue.previousResult &&
-            isEqual(idValue.previousResult[resultKey], fieldValue.json)) {
-            return idValue.previousResult[resultKey];
-        }
-        return fieldValue.json;
-    }
-    // If we had a previous result, try adding that previous result value for this field to our field
-    // value. This will create a new value without mutating the old one.
-    if (idValue.previousResult) {
-        fieldValue = addPreviousResultToIdValues(fieldValue, idValue.previousResult[resultKey]);
-    }
-    return fieldValue;
-};
-/**
- * Given a store and a query, return as much of the result as possible and
- * identify if any data was missing from the store.
- * @param  {DocumentNode} query A parsed GraphQL query document
- * @param  {Store} store The Apollo Client store object
- * @param  {any} previousResult The previous result returned by this function for the same query
- * @return {result: Object, complete: [boolean]}
- */
-function diffQueryAgainstStore(_a) {
-    var store = _a.store, query = _a.query, variables = _a.variables, previousResult = _a.previousResult, _b = _a.returnPartialData, returnPartialData = _b === void 0 ? true : _b, _c = _a.rootId, rootId = _c === void 0 ? 'ROOT_QUERY' : _c, fragmentMatcherFunction = _a.fragmentMatcherFunction, config = _a.config;
-    // Throw the right validation error by trying to find a query in the document
-    var queryDefinition = getQueryDefinition(query);
-    variables = assign$1({}, getDefaultValues(queryDefinition), variables);
-    var context = {
-        // Global settings
-        store: store,
-        returnPartialData: returnPartialData,
-        dataIdFromObject: (config && config.dataIdFromObject) || null,
-        cacheRedirects: (config && config.cacheRedirects) || {},
-        // Flag set during execution
-        hasMissingField: false,
-    };
-    var rootIdValue = {
-        type: 'id',
-        id: rootId,
-        previousResult: previousResult,
-    };
-    var result = graphql(readStoreResolver, query, rootIdValue, context, variables, {
-        fragmentMatcher: fragmentMatcherFunction,
-        resultMapper: resultMapper,
-    });
-    return {
-        result: result,
-        complete: !context.hasMissingField,
-    };
-}
-function assertIdValue(idValue) {
-    if (!isIdValue(idValue)) {
-        throw new Error("Encountered a sub-selection on the query, but the store doesn't have an object reference. This should never happen during normal use unless you have custom code that is directly manipulating the store; please file an issue.");
-    }
-}
-/**
- * Adds a previous result value to id values in a nested array. For a single id value and a single
- * previous result then the previous value is added directly.
- *
- * For arrays we put all of the ids from the previous result array in a map and add them to id
- * values with the same id.
- *
- * This function does not mutate. Instead it returns new instances of modified values.
- *
- * @private
- */
-function addPreviousResultToIdValues(value, previousResult) {
-    // If the value is an `IdValue`, add the previous result to it whether or not that
-    // `previousResult` is undefined.
-    //
-    // If the value is an array, recurse over each item trying to add the `previousResult` for that
-    // item.
-    if (isIdValue(value)) {
-        return __assign$9({}, value, { previousResult: previousResult });
-    }
-    else if (Array.isArray(value)) {
-        var idToPreviousResult_1 = new Map();
-        // If the previous result was an array, we want to build up our map of ids to previous results
-        // using the private `ID_KEY` property that is added in `resultMapper`.
-        if (Array.isArray(previousResult)) {
-            previousResult.forEach(function (item) {
-                // item can be null
-                if (item && item[ID_KEY]) {
-                    idToPreviousResult_1.set(item[ID_KEY], item);
-                    // idToPreviousResult[item[ID_KEY]] = item;
-                }
-            });
-        }
-        // For every value we want to add the previous result.
-        return value.map(function (item, i) {
-            // By default the previous result for this item will be in the same array position as this
-            // item.
-            var itemPreviousResult = previousResult && previousResult[i];
-            // If the item is an id value, we should check to see if there is a previous result for this
-            // specific id. If there is, that will be the value for `itemPreviousResult`.
-            if (isIdValue(item)) {
-                itemPreviousResult =
-                    idToPreviousResult_1.get(item.id) || itemPreviousResult;
-            }
-            return addPreviousResultToIdValues(item, itemPreviousResult);
-        });
-    }
-    // Return the value, nothing changed.
-    return value;
-}
-/**
- * Maps a result from `graphql-anywhere` to a final result value.
- *
- * If the result and the previous result from the `idValue` pass a shallow equality test, we just
- * return the `previousResult` to maintain referential equality.
- *
- * We also add a private id property to the result that we can use later on.
- *
- * @private
- */
-function resultMapper(resultFields, idValue) {
-    // If we had a previous result, we may be able to return that and preserve referential equality
-    if (idValue.previousResult) {
-        var currentResultKeys_1 = Object.keys(resultFields);
-        var sameAsPreviousResult = 
-        // Confirm that we have the same keys in both the current result and the previous result.
-        Object.keys(idValue.previousResult).every(function (key) { return currentResultKeys_1.indexOf(key) > -1; }) &&
-            // Perform a shallow comparison of the result fields with the previous result. If all of
-            // the shallow fields are referentially equal to the fields of the previous result we can
-            // just return the previous result.
-            //
-            // While we do a shallow comparison of objects, but we do a deep comparison of arrays.
-            currentResultKeys_1.every(function (key) {
-                return areNestedArrayItemsStrictlyEqual(resultFields[key], idValue.previousResult[key]);
-            });
-        if (sameAsPreviousResult) {
-            return idValue.previousResult;
-        }
-    }
-    Object.defineProperty(resultFields, ID_KEY, {
-        enumerable: false,
-        configurable: true,
-        writable: false,
-        value: idValue.id,
-    });
-    return resultFields;
-}
-/**
- * Compare all the items to see if they are all referentially equal in two arrays no matter how
- * deeply nested the arrays are.
- *
- * @private
- */
-function areNestedArrayItemsStrictlyEqual(a, b) {
-    // If `a` and `b` are referentially equal, return true.
-    if (a === b) {
-        return true;
-    }
-    // If either `a` or `b` are not an array or not of the same length return false. `a` and `b` are
-    // known to not be equal here, we checked above.
-    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
-        return false;
-    }
-    // Otherwise let us compare all of the array items (which are potentially nested arrays!) to see
-    // if they are equal.
-    return a.every(function (item, i) { return areNestedArrayItemsStrictlyEqual(item, b[i]); });
-}
-
-var __assign$a = (undefined && undefined.__assign) || Object.assign || function(t) {
-    for (var s, i = 1, n = arguments.length; i < n; i++) {
-        s = arguments[i];
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-            t[p] = s[p];
-    }
-    return t;
-};
-var RecordingCache = /** @class */ (function () {
+var RecordingCache = (function () {
     function RecordingCache(data) {
         if (data === void 0) { data = {}; }
         this.data = data;
@@ -12886,11 +14341,10 @@ var RecordingCache = /** @class */ (function () {
         return recordedData;
     };
     RecordingCache.prototype.toObject = function () {
-        return __assign$a({}, this.data, this.recordedData);
+        return __assign$b({}, this.data, this.recordedData);
     };
     RecordingCache.prototype.get = function (dataId) {
         if (this.recordedData.hasOwnProperty(dataId)) {
-            // recording always takes precedence:
             return this.recordedData[dataId];
         }
         return this.data[dataId];
@@ -12910,7 +14364,7 @@ var RecordingCache = /** @class */ (function () {
     };
     RecordingCache.prototype.replace = function (newData) {
         this.clear();
-        this.recordedData = __assign$a({}, newData);
+        this.recordedData = __assign$b({}, newData);
     };
     return RecordingCache;
 }());
@@ -12920,28 +14374,33 @@ function record(startingState, transaction) {
 }
 
 var __extends$6 = (undefined && undefined.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
     return function (d, b) {
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-var __assign$b = (undefined && undefined.__assign) || Object.assign || function(t) {
-    for (var s, i = 1, n = arguments.length; i < n; i++) {
-        s = arguments[i];
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-            t[p] = s[p];
-    }
-    return t;
+var __assign$c = (undefined && undefined.__assign) || function () {
+    __assign$c = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign$c.apply(this, arguments);
 };
 var defaultConfig = {
     fragmentMatcher: new HeuristicFragmentMatcher(),
     dataIdFromObject: defaultDataIdFromObject,
     addTypename: true,
-    storeFactory: defaultNormalizedCacheFactory,
 };
 function defaultDataIdFromObject(result) {
     if (result.__typename) {
@@ -12954,19 +14413,17 @@ function defaultDataIdFromObject(result) {
     }
     return null;
 }
-var InMemoryCache = /** @class */ (function (_super) {
+var InMemoryCache = (function (_super) {
     __extends$6(InMemoryCache, _super);
     function InMemoryCache(config) {
         if (config === void 0) { config = {}; }
         var _this = _super.call(this) || this;
         _this.optimistic = [];
-        _this.watches = [];
-        _this.typenameDocumentCache = new WeakMap();
-        // Set this while in a transaction to prevent broadcasts...
-        // don't forget to turn it back on!
+        _this.watches = new Set();
+        _this.typenameDocumentCache = new Map();
+        _this.cacheKeyRoot = new CacheKeyNode();
         _this.silenceBroadcast = false;
-        _this.config = __assign$b({}, defaultConfig, config);
-        // backwards compat
+        _this.config = __assign$c({}, defaultConfig, config);
         if (_this.config.customResolvers) {
             console.warn('customResolvers have been renamed to cacheRedirects. Please update your config as we will be deprecating customResolvers in the next major version.');
             _this.config.cacheRedirects = _this.config.customResolvers;
@@ -12976,7 +14433,26 @@ var InMemoryCache = /** @class */ (function (_super) {
             _this.config.cacheRedirects = _this.config.cacheResolvers;
         }
         _this.addTypename = _this.config.addTypename;
-        _this.data = _this.config.storeFactory();
+        _this.data = defaultNormalizedCacheFactory();
+        _this.storeReader = new StoreReader(_this.cacheKeyRoot);
+        _this.storeWriter = new StoreWriter();
+        var cache = _this;
+        var maybeBroadcastWatch = cache.maybeBroadcastWatch;
+        _this.maybeBroadcastWatch = wrap$3(function (c) {
+            return maybeBroadcastWatch.call(_this, c);
+        }, {
+            makeCacheKey: function (c) {
+                if (c.optimistic && cache.optimistic.length > 0) {
+                    return;
+                }
+                if (c.previousResult) {
+                    return;
+                }
+                if (cache.data instanceof DepTrackingCache) {
+                    return cache.cacheKeyRoot.lookup(c.query, JSON.stringify(c.variables));
+                }
+            }
+        });
         return _this;
     }
     InMemoryCache.prototype.restore = function (data) {
@@ -12996,8 +14472,11 @@ var InMemoryCache = /** @class */ (function (_super) {
         if (query.rootId && this.data.get(query.rootId) === undefined) {
             return null;
         }
-        return readQueryFromStore({
-            store: this.config.storeFactory(this.extract(query.optimistic)),
+        var store = (query.optimistic && this.optimistic.length)
+            ? defaultNormalizedCacheFactory(this.extract(true))
+            : this.data;
+        return this.storeReader.readQueryFromStore({
+            store: store,
             query: this.transformDocument(query.query),
             variables: query.variables,
             rootId: query.rootId,
@@ -13007,7 +14486,7 @@ var InMemoryCache = /** @class */ (function (_super) {
         });
     };
     InMemoryCache.prototype.write = function (write) {
-        writeResultToStore({
+        this.storeWriter.writeResultToStore({
             dataId: write.dataId,
             result: write.result,
             variables: write.variables,
@@ -13019,8 +14498,11 @@ var InMemoryCache = /** @class */ (function (_super) {
         this.broadcastWatches();
     };
     InMemoryCache.prototype.diff = function (query) {
-        return diffQueryAgainstStore({
-            store: this.config.storeFactory(this.extract(query.optimistic)),
+        var store = (query.optimistic && this.optimistic.length)
+            ? defaultNormalizedCacheFactory(this.extract(true))
+            : this.data;
+        return this.storeReader.diffQueryAgainstStore({
+            store: store,
             query: this.transformDocument(query.query),
             variables: query.variables,
             returnPartialData: query.returnPartialData,
@@ -13031,9 +14513,9 @@ var InMemoryCache = /** @class */ (function (_super) {
     };
     InMemoryCache.prototype.watch = function (watch) {
         var _this = this;
-        this.watches.push(watch);
+        this.watches.add(watch);
         return function () {
-            _this.watches = _this.watches.filter(function (c) { return c !== watch; });
+            _this.watches.delete(watch);
         };
     };
     InMemoryCache.prototype.evict = function (query) {
@@ -13046,23 +14528,18 @@ var InMemoryCache = /** @class */ (function (_super) {
     };
     InMemoryCache.prototype.removeOptimistic = function (id) {
         var _this = this;
-        // Throw away optimistic changes of that particular mutation
         var toPerform = this.optimistic.filter(function (item) { return item.id !== id; });
         this.optimistic = [];
-        // Re-run all of our optimistic data actions on top of one another.
         toPerform.forEach(function (change) {
             _this.recordOptimisticTransaction(change.transaction, change.id);
         });
         this.broadcastWatches();
     };
     InMemoryCache.prototype.performTransaction = function (transaction) {
-        // TODO: does this need to be different, or is this okay for an in-memory cache?
         var alreadySilenced = this.silenceBroadcast;
         this.silenceBroadcast = true;
         transaction(this);
         if (!alreadySilenced) {
-            // Don't un-silence since this is a nested transaction
-            // (for example, a transaction inside an optimistic record)
             this.silenceBroadcast = false;
         }
         this.broadcastWatches();
@@ -13071,8 +14548,6 @@ var InMemoryCache = /** @class */ (function (_super) {
         var _this = this;
         this.silenceBroadcast = true;
         var patch = record(this.extract(true), function (recordingCache) {
-            // swapping data instance on 'this' is currently necessary
-            // because of the current architecture
             var dataCache = _this.data;
             _this.data = recordingCache;
             _this.performTransaction(transaction);
@@ -13090,7 +14565,9 @@ var InMemoryCache = /** @class */ (function (_super) {
         if (this.addTypename) {
             var result = this.typenameDocumentCache.get(document);
             if (!result) {
-                this.typenameDocumentCache.set(document, (result = addTypenameToDocument(document)));
+                result = addTypenameToDocument(document);
+                this.typenameDocumentCache.set(document, result);
+                this.typenameDocumentCache.set(result, result);
             }
             return result;
         }
@@ -13131,24 +14608,307 @@ var InMemoryCache = /** @class */ (function (_super) {
     };
     InMemoryCache.prototype.broadcastWatches = function () {
         var _this = this;
-        // Skip this when silenced (like inside a transaction)
-        if (this.silenceBroadcast)
-            return;
-        // right now, we invalidate all queries whenever anything changes
-        this.watches.forEach(function (c) {
-            var newData = _this.diff({
-                query: c.query,
-                variables: c.variables,
-                // TODO: previousResult isn't in the types - this will only work
-                // with ObservableQuery which is in a different package
-                previousResult: c.previousResult && c.previousResult(),
-                optimistic: c.optimistic,
+        if (!this.silenceBroadcast) {
+            var optimistic_1 = this.optimistic.length > 0;
+            this.watches.forEach(function (c) {
+                _this.maybeBroadcastWatch(c);
+                if (optimistic_1) {
+                    _this.maybeBroadcastWatch.dirty(c);
+                }
             });
-            c.callback(newData);
-        });
+        }
+    };
+    InMemoryCache.prototype.maybeBroadcastWatch = function (c) {
+        c.callback(this.diff({
+            query: c.query,
+            variables: c.variables,
+            previousResult: c.previousResult && c.previousResult(),
+            optimistic: c.optimistic,
+        }));
     };
     return InMemoryCache;
 }(ApolloCache));
+
+var __assign$d = (undefined && undefined.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
+var defaultHttpOptions = {
+    includeQuery: true,
+    includeExtensions: false,
+};
+var defaultHeaders = {
+    // headers are case insensitive (https://stackoverflow.com/a/5259004)
+    accept: '*/*',
+    'content-type': 'application/json',
+};
+var defaultOptions = {
+    method: 'POST',
+};
+var fallbackHttpConfig = {
+    http: defaultHttpOptions,
+    headers: defaultHeaders,
+    options: defaultOptions,
+};
+var throwServerError = function (response, result, message) {
+    var error = new Error(message);
+    error.response = response;
+    error.statusCode = response.status;
+    error.result = result;
+    throw error;
+};
+//TODO: when conditional types come in ts 2.8, operations should be a generic type that extends Operation | Array<Operation>
+var parseAndCheckHttpResponse = function (operations) { return function (response) {
+    return (response
+        .text()
+        .then(function (bodyText) {
+        try {
+            return JSON.parse(bodyText);
+        }
+        catch (err) {
+            var parseError = err;
+            parseError.response = response;
+            parseError.statusCode = response.status;
+            parseError.bodyText = bodyText;
+            return Promise.reject(parseError);
+        }
+    })
+        .then(function (result) {
+        if (response.status >= 300) {
+            //Network error
+            throwServerError(response, result, "Response not successful: Received status code " + response.status);
+        }
+        //TODO should really error per response in a Batch based on properties
+        //    - could be done in a validation link
+        if (!Array.isArray(result) &&
+            !result.hasOwnProperty('data') &&
+            !result.hasOwnProperty('errors')) {
+            //Data error
+            throwServerError(response, result, "Server response was missing for query '" + (Array.isArray(operations)
+                ? operations.map(function (op) { return op.operationName; })
+                : operations.operationName) + "'.");
+        }
+        return result;
+    }));
+}; };
+var checkFetcher = function (fetcher) {
+    if (!fetcher && typeof fetch === 'undefined') {
+        var library = 'unfetch';
+        if (typeof window === 'undefined')
+            library = 'node-fetch';
+        throw new Error("\nfetch is not found globally and no fetcher passed, to fix pass a fetch for\nyour environment like https://www.npmjs.com/package/" + library + ".\n\nFor example:\nimport fetch from '" + library + "';\nimport { createHttpLink } from 'apollo-link-http';\n\nconst link = createHttpLink({ uri: '/graphql', fetch: fetch });");
+    }
+};
+var createSignalIfSupported = function () {
+    if (typeof AbortController === 'undefined')
+        return { controller: false, signal: false };
+    var controller = new AbortController();
+    var signal = controller.signal;
+    return { controller: controller, signal: signal };
+};
+var selectHttpOptionsAndBody = function (operation, fallbackConfig) {
+    var configs = [];
+    for (var _i = 2; _i < arguments.length; _i++) {
+        configs[_i - 2] = arguments[_i];
+    }
+    var options = __assign$d({}, fallbackConfig.options, { headers: fallbackConfig.headers, credentials: fallbackConfig.credentials });
+    var http = fallbackConfig.http;
+    /*
+     * use the rest of the configs to populate the options
+     * configs later in the list will overwrite earlier fields
+     */
+    configs.forEach(function (config) {
+        options = __assign$d({}, options, config.options, { headers: __assign$d({}, options.headers, config.headers) });
+        if (config.credentials)
+            options.credentials = config.credentials;
+        http = __assign$d({}, http, config.http);
+    });
+    //The body depends on the http options
+    var operationName = operation.operationName, extensions = operation.extensions, variables = operation.variables, query = operation.query;
+    var body = { operationName: operationName, variables: variables };
+    if (http.includeExtensions)
+        body.extensions = extensions;
+    // not sending the query (i.e persisted queries)
+    if (http.includeQuery)
+        body.query = print(query);
+    return {
+        options: options,
+        body: body,
+    };
+};
+var serializeFetchParameter = function (p, label) {
+    var serialized;
+    try {
+        serialized = JSON.stringify(p);
+    }
+    catch (e) {
+        var parseError = new Error("Network request failed. " + label + " is not serializable: " + e.message);
+        parseError.parseError = e;
+        throw parseError;
+    }
+    return serialized;
+};
+//selects "/graphql" by default
+var selectURI = function (operation, fallbackURI) {
+    var context = operation.getContext();
+    var contextURI = context.uri;
+    if (contextURI) {
+        return contextURI;
+    }
+    else if (typeof fallbackURI === 'function') {
+        return fallbackURI(operation);
+    }
+    else {
+        return fallbackURI || '/graphql';
+    }
+};
+
+var __extends$7 = (undefined && undefined.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __rest = (undefined && undefined.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) if (e.indexOf(p[i]) < 0)
+            t[p[i]] = s[p[i]];
+    return t;
+};
+var createHttpLink = function (linkOptions) {
+    if (linkOptions === void 0) { linkOptions = {}; }
+    var _a = linkOptions.uri, uri = _a === void 0 ? '/graphql' : _a, fetcher = linkOptions.fetch, includeExtensions = linkOptions.includeExtensions, useGETForQueries = linkOptions.useGETForQueries, requestOptions = __rest(linkOptions, ["uri", "fetch", "includeExtensions", "useGETForQueries"]);
+    checkFetcher(fetcher);
+    if (!fetcher) {
+        fetcher = fetch;
+    }
+    var linkConfig = {
+        http: { includeExtensions: includeExtensions },
+        options: requestOptions.fetchOptions,
+        credentials: requestOptions.credentials,
+        headers: requestOptions.headers,
+    };
+    return new ApolloLink(function (operation) {
+        var chosenURI = selectURI(operation, uri);
+        var context = operation.getContext();
+        var contextConfig = {
+            http: context.http,
+            options: context.fetchOptions,
+            credentials: context.credentials,
+            headers: context.headers,
+        };
+        var _a = selectHttpOptionsAndBody(operation, fallbackHttpConfig, linkConfig, contextConfig), options = _a.options, body = _a.body;
+        var _b = createSignalIfSupported(), controller = _b.controller, signal = _b.signal;
+        if (controller)
+            options.signal = signal;
+        var definitionIsMutation = function (d) {
+            return d.kind === 'OperationDefinition' && d.operation === 'mutation';
+        };
+        if (useGETForQueries &&
+            !operation.query.definitions.some(definitionIsMutation)) {
+            options.method = 'GET';
+        }
+        if (options.method === 'GET') {
+            var _c = rewriteURIForGET(chosenURI, body), newURI = _c.newURI, parseError = _c.parseError;
+            if (parseError) {
+                return fromError(parseError);
+            }
+            chosenURI = newURI;
+        }
+        else {
+            try {
+                options.body = serializeFetchParameter(body, 'Payload');
+            }
+            catch (parseError) {
+                return fromError(parseError);
+            }
+        }
+        return new Observable$2(function (observer) {
+            fetcher(chosenURI, options)
+                .then(function (response) {
+                operation.setContext({ response: response });
+                return response;
+            })
+                .then(parseAndCheckHttpResponse(operation))
+                .then(function (result) {
+                observer.next(result);
+                observer.complete();
+                return result;
+            })
+                .catch(function (err) {
+                if (err.name === 'AbortError')
+                    return;
+                if (err.result && err.result.errors && err.result.data) {
+                    observer.next(err.result);
+                }
+                observer.error(err);
+            });
+            return function () {
+                if (controller)
+                    controller.abort();
+            };
+        });
+    });
+};
+function rewriteURIForGET(chosenURI, body) {
+    var queryParams = [];
+    var addQueryParam = function (key, value) {
+        queryParams.push(key + "=" + encodeURIComponent(value));
+    };
+    if ('query' in body) {
+        addQueryParam('query', body.query);
+    }
+    if (body.operationName) {
+        addQueryParam('operationName', body.operationName);
+    }
+    if (body.variables) {
+        var serializedVariables = void 0;
+        try {
+            serializedVariables = serializeFetchParameter(body.variables, 'Variables map');
+        }
+        catch (parseError) {
+            return { parseError: parseError };
+        }
+        addQueryParam('variables', serializedVariables);
+    }
+    if (body.extensions) {
+        var serializedExtensions = void 0;
+        try {
+            serializedExtensions = serializeFetchParameter(body.extensions, 'Extensions map');
+        }
+        catch (parseError) {
+            return { parseError: parseError };
+        }
+        addQueryParam('extensions', serializedExtensions);
+    }
+    var fragment = '', preFragment = chosenURI;
+    var fragmentStart = chosenURI.indexOf('#');
+    if (fragmentStart !== -1) {
+        fragment = chosenURI.substr(fragmentStart);
+        preFragment = chosenURI.substr(0, fragmentStart);
+    }
+    var queryParamsPrefix = preFragment.indexOf('?') === -1 ? '?' : '&';
+    var newURI = preFragment + queryParamsPrefix + queryParams.join('&') + fragment;
+    return { newURI: newURI };
+}
+var HttpLink = (function (_super) {
+    __extends$7(HttpLink, _super);
+    function HttpLink(opts) {
+        return _super.call(this, createHttpLink(opts).request) || this;
+    }
+    return HttpLink;
+}(ApolloLink));
 
 /**
  * Expose `Backoff`.
@@ -14299,7 +16059,7 @@ exports.SubscriptionClient = SubscriptionClient;
 unwrapExports(client);
 var client_1 = client.SubscriptionClient;
 
-var __extends$7 = (undefined && undefined.__extends) || (function () {
+var __extends$8 = (undefined && undefined.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
         ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
         function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
@@ -14310,7 +16070,7 @@ var __extends$7 = (undefined && undefined.__extends) || (function () {
     };
 })();
 var WebSocketLink = /** @class */ (function (_super) {
-    __extends$7(WebSocketLink, _super);
+    __extends$8(WebSocketLink, _super);
     function WebSocketLink(paramsOrClient) {
         var _this = _super.call(this) || this;
         if (paramsOrClient instanceof client_1) {
@@ -14330,15 +16090,33 @@ var WebSocketLink = /** @class */ (function (_super) {
 // Set up the WebSocket Link
 const { host } = location;
 const protocol$3 = host.includes('localhost') ? 'ws' : 'wss';
-const uri = `${protocol$3}://${host}/graphql`;
 const options = { reconnect: true };
 
-const link = new WebSocketLink({ uri, options });
+const httpLink = new HttpLink({
+  uri: `http://${host}/graphql`
+});
 
-const cache = new InMemoryCache();
+const wsLink = new WebSocketLink({
+  uri: `${protocol$3}://${host}/graphql`,
+  options
+});
+
+const link = split(
+  ({ query }) => {
+    const { kind, operation } = getMainDefinition(query);
+    return kind === 'OperationDefinition' && operation === 'subscription';
+  },
+  wsLink,
+  httpLink,
+);
+
+const cache$2 = new InMemoryCache();
 
 // Create the Apollo Client
-const client$2 = new ApolloClient({ cache, link });
+const client$2 = new ApolloClient({ cache: cache$2, link });
+
+// Hook into apollo dev tools
+window.__APOLLO_CLIENT__ = client$2;
 
 const style = html`
   <style>
@@ -16223,15 +18001,6 @@ class ChatMutation extends ApolloMutation {
     super();
     this.userinput = '';
     this.client = client$2;
-    this.mutation = src`
-      mutation sendMessage($user: String, $message: String) {
-        sendMessage(user: $user, message: $message) {
-          date
-          message
-          user
-        }
-      }
-    `;
   }
 
   get input() {
@@ -27675,6 +29444,22 @@ const styleMap = directive((styleInfo) => (part) => {
     styleMapCache.set(part, styleInfo);
 });
 
+class ChatSubscription extends ApolloSubscription {
+  render() {
+  }
+
+  constructor() {
+    super();
+    this.client = client$2;
+  }
+
+  updated() {
+    this.scrollIntoView(false);
+  }
+}
+
+customElements.define('chat-subscription', ChatSubscription);
+
 const msgTime = format$1('HH:mm');
 
 const errorTemplate = ({ message = 'Unknown Error' } = {}) => html`
@@ -27688,13 +29473,13 @@ const messageTemplate = ({ message, user, date }) => html`
   </div>
 `;
 
-class ChatSubscription extends ApolloSubscription {
+/**
+ * <chat-query>
+ * @customElement
+ * @extends LitElement
+ */
+class ChatQuery extends ApolloQuery {
   render() {
-    const view =
-      this.loading ? html`Loading...`
-      : this.error ? errorTemplate(this.error)
-      : html`<dl>${this.data.messageSent.map(messageTemplate)}</dl>`;
-
     return html`
     ${style}
     <style>
@@ -27710,1832 +29495,59 @@ class ChatSubscription extends ApolloSubscription {
         font-family: monospace;
       }
     </style>
-    ${view}`;
 
+    <chat-subscription .onSubscriptionData=${this.onSubscriptionData}>
+      <script type="application/graphql">
+        subscription {
+          messageSent {
+            date
+            message
+            user
+          }
+        }
+      </script>
+    </chat-subscription>
+
+    ${(
+    this.loading ? html`Loading...`
+    : this.error ? errorTemplate(this.error)
+    : html`<dl>${this.data.messages.map(messageTemplate)}</dl>`
+  )}
+    `;
+
+  }
+
+  static get is() {
+    return 'chat-query';
   }
 
   constructor() {
     super();
     this.client = client$2;
-    this.subscription = src`
-      subscription {
-        messageSent {
-          date
-          message
-          user
-        }
-      }
-    `;
+    this.onSubscriptionData = this.onSubscriptionData.bind(this);
   }
 
-  updated() {
-    this.scrollIntoView(false);
+  shouldUpdate() {
+    return this.data || this.error || this.loading != null;
+  }
+
+  onSubscriptionData({ client, subscriptionData }) {
+    const { query } = this;
+    const { data: { messageSent: messages } } = subscriptionData;
+    client.writeQuery({ query, data: { messages } });
   }
 }
 
-customElements.define('chat-subscription', ChatSubscription);
-
-/**
- * @license
- * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
- * This code may only be used under the BSD style license found at
- * http://polymer.github.io/LICENSE.txt
- * The complete set of authors may be found at
- * http://polymer.github.io/AUTHORS.txt
- * The complete set of contributors may be found at
- * http://polymer.github.io/CONTRIBUTORS.txt
- * Code distributed by Google as part of the polymer project is also
- * subject to an additional IP rights grant found at
- * http://polymer.github.io/PATENTS.txt
- */
-const directives$1 = new WeakMap();
-const isDirective$1 = (o) => typeof o === 'function' && directives$1.has(o);
-
-/**
- * @license
- * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
- * This code may only be used under the BSD style license found at
- * http://polymer.github.io/LICENSE.txt
- * The complete set of authors may be found at
- * http://polymer.github.io/AUTHORS.txt
- * The complete set of contributors may be found at
- * http://polymer.github.io/CONTRIBUTORS.txt
- * Code distributed by Google as part of the polymer project is also
- * subject to an additional IP rights grant found at
- * http://polymer.github.io/PATENTS.txt
- */
-const isCEPolyfill$1 = window.customElements !== undefined &&
-    window.customElements.polyfillWrapFlushCallback !== undefined;
-/**
- * Removes nodes, starting from `startNode` (inclusive) to `endNode`
- * (exclusive), from `container`.
- */
-const removeNodes$1 = (container, startNode, endNode = null) => {
-    let node = startNode;
-    while (node !== endNode) {
-        const n = node.nextSibling;
-        container.removeChild(node);
-        node = n;
-    }
-};
-
-/**
- * A sentinel value that signals that a value was handled by a directive and
- * should not be written to the DOM.
- */
-const noChange$1 = {};
-
-/**
- * @license
- * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
- * This code may only be used under the BSD style license found at
- * http://polymer.github.io/LICENSE.txt
- * The complete set of authors may be found at
- * http://polymer.github.io/AUTHORS.txt
- * The complete set of contributors may be found at
- * http://polymer.github.io/CONTRIBUTORS.txt
- * Code distributed by Google as part of the polymer project is also
- * subject to an additional IP rights grant found at
- * http://polymer.github.io/PATENTS.txt
- */
-/**
- * An expression marker with embedded unique key to avoid collision with
- * possible text in templates.
- */
-const marker$1 = `{{lit-${String(Math.random()).slice(2)}}}`;
-/**
- * An expression marker used text-positions, not attribute positions,
- * in template.
- */
-const nodeMarker$1 = `<!--${marker$1}-->`;
-const markerRegex$1 = new RegExp(`${marker$1}|${nodeMarker$1}`);
-const rewritesStyleAttribute = (() => {
-    const el = document.createElement('div');
-    el.setAttribute('style', '{{bad value}}');
-    return el.getAttribute('style') !== '{{bad value}}';
-})();
-/**
- * An updateable Template that tracks the location of dynamic parts.
- */
-class Template$1 {
-    constructor(result, element) {
-        this.parts = [];
-        this.element = element;
-        let index = -1;
-        let partIndex = 0;
-        const nodesToRemove = [];
-        const _prepareTemplate = (template) => {
-            const content = template.content;
-            // Edge needs all 4 parameters present; IE11 needs 3rd parameter to be
-            // null
-            const walker = document.createTreeWalker(content, 133 /* NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_COMMENT |
-                   NodeFilter.SHOW_TEXT */, null, false);
-            // The actual previous node, accounting for removals: if a node is removed
-            // it will never be the previousNode.
-            let previousNode;
-            // Used to set previousNode at the top of the loop.
-            let currentNode;
-            while (walker.nextNode()) {
-                index++;
-                previousNode = currentNode;
-                const node = currentNode = walker.currentNode;
-                if (node.nodeType === 1 /* Node.ELEMENT_NODE */) {
-                    if (node.hasAttributes()) {
-                        const attributes = node.attributes;
-                        // Per
-                        // https://developer.mozilla.org/en-US/docs/Web/API/NamedNodeMap,
-                        // attributes are not guaranteed to be returned in document order.
-                        // In particular, Edge/IE can return them out of order, so we cannot
-                        // assume a correspondance between part index and attribute index.
-                        let count = 0;
-                        for (let i = 0; i < attributes.length; i++) {
-                            if (attributes[i].value.indexOf(marker$1) >= 0) {
-                                count++;
-                            }
-                        }
-                        while (count-- > 0) {
-                            // Get the template literal section leading up to the first
-                            // expression in this attribute
-                            const stringForPart = result.strings[partIndex];
-                            // Find the attribute name
-                            const name = lastAttributeNameRegex$1.exec(stringForPart)[2];
-                            // Find the corresponding attribute
-                            // If the attribute name contains special characters, lower-case
-                            // it so that on XML nodes with case-sensitive getAttribute() we
-                            // can still find the attribute, which will have been lower-cased
-                            // by the parser.
-                            //
-                            // If the attribute name doesn't contain special character, it's
-                            // important to _not_ lower-case it, in case the name is
-                            // case-sensitive, like with XML attributes like "viewBox".
-                            const attributeLookupName = (rewritesStyleAttribute && name === 'style') ?
-                                'style$' :
-                                /^[a-zA-Z-]*$/.test(name) ? name : name.toLowerCase();
-                            const attributeValue = node.getAttribute(attributeLookupName);
-                            const strings = attributeValue.split(markerRegex$1);
-                            this.parts.push({ type: 'attribute', index, name, strings });
-                            node.removeAttribute(attributeLookupName);
-                            partIndex += strings.length - 1;
-                        }
-                    }
-                    if (node.tagName === 'TEMPLATE') {
-                        _prepareTemplate(node);
-                    }
-                }
-                else if (node.nodeType === 3 /* Node.TEXT_NODE */) {
-                    const nodeValue = node.nodeValue;
-                    if (nodeValue.indexOf(marker$1) < 0) {
-                        continue;
-                    }
-                    const parent = node.parentNode;
-                    const strings = nodeValue.split(markerRegex$1);
-                    const lastIndex = strings.length - 1;
-                    // We have a part for each match found
-                    partIndex += lastIndex;
-                    // Generate a new text node for each literal section
-                    // These nodes are also used as the markers for node parts
-                    for (let i = 0; i < lastIndex; i++) {
-                        parent.insertBefore((strings[i] === '') ? createMarker$1() :
-                            document.createTextNode(strings[i]), node);
-                        this.parts.push({ type: 'node', index: index++ });
-                    }
-                    parent.insertBefore(strings[lastIndex] === '' ?
-                        createMarker$1() :
-                        document.createTextNode(strings[lastIndex]), node);
-                    nodesToRemove.push(node);
-                }
-                else if (node.nodeType === 8 /* Node.COMMENT_NODE */) {
-                    if (node.nodeValue === marker$1) {
-                        const parent = node.parentNode;
-                        // Add a new marker node to be the startNode of the Part if any of
-                        // the following are true:
-                        //  * We don't have a previousSibling
-                        //  * previousSibling is being removed (thus it's not the
-                        //    `previousNode`)
-                        //  * previousSibling is not a Text node
-                        //
-                        // TODO(justinfagnani): We should be able to use the previousNode
-                        // here as the marker node and reduce the number of extra nodes we
-                        // add to a template. See
-                        // https://github.com/PolymerLabs/lit-html/issues/147
-                        const previousSibling = node.previousSibling;
-                        if (previousSibling === null || previousSibling !== previousNode ||
-                            previousSibling.nodeType !== Node.TEXT_NODE) {
-                            parent.insertBefore(createMarker$1(), node);
-                        }
-                        else {
-                            index--;
-                        }
-                        this.parts.push({ type: 'node', index: index++ });
-                        nodesToRemove.push(node);
-                        // If we don't have a nextSibling add a marker node.
-                        // We don't have to check if the next node is going to be removed,
-                        // because that node will induce a new marker if so.
-                        if (node.nextSibling === null) {
-                            parent.insertBefore(createMarker$1(), node);
-                        }
-                        else {
-                            index--;
-                        }
-                        currentNode = previousNode;
-                        partIndex++;
-                    }
-                    else {
-                        let i = -1;
-                        while ((i = node.nodeValue.indexOf(marker$1, i + 1)) !== -1) {
-                            // Comment node has a binding marker inside, make an inactive part
-                            // The binding won't work, but subsequent bindings will
-                            // TODO (justinfagnani): consider whether it's even worth it to
-                            // make bindings in comments work
-                            this.parts.push({ type: 'node', index: -1 });
-                        }
-                    }
-                }
-            }
-        };
-        _prepareTemplate(element);
-        // Remove text binding nodes after the walk to not disturb the TreeWalker
-        for (const n of nodesToRemove) {
-            n.parentNode.removeChild(n);
-        }
-    }
-}
-const isTemplatePartActive$1 = (part) => part.index !== -1;
-// Allows `document.createComment('')` to be renamed for a
-// small manual size-savings.
-const createMarker$1 = () => document.createComment('');
-/**
- * This regex extracts the attribute name preceding an attribute-position
- * expression. It does this by matching the syntax allowed for attributes
- * against the string literal directly preceding the expression, assuming that
- * the expression is in an attribute-value position.
- *
- * See attributes in the HTML spec:
- * https://www.w3.org/TR/html5/syntax.html#attributes-0
- *
- * "\0-\x1F\x7F-\x9F" are Unicode control characters
- *
- * " \x09\x0a\x0c\x0d" are HTML space characters:
- * https://www.w3.org/TR/html5/infrastructure.html#space-character
- *
- * So an attribute is:
- *  * The name: any character except a control character, space character, ('),
- *    ("), ">", "=", or "/"
- *  * Followed by zero or more space characters
- *  * Followed by "="
- *  * Followed by zero or more space characters
- *  * Followed by:
- *    * Any character except space, ('), ("), "<", ">", "=", (`), or
- *    * (") then any non-("), or
- *    * (') then any non-(')
- */
-const lastAttributeNameRegex$1 = /([ \x09\x0a\x0c\x0d])([^\0-\x1F\x7F-\x9F \x09\x0a\x0c\x0d"'>=/]+)([ \x09\x0a\x0c\x0d]*=[ \x09\x0a\x0c\x0d]*(?:[^ \x09\x0a\x0c\x0d"'`<>=]*|"[^"]*|'[^']*))$/;
-
-/**
- * @license
- * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
- * This code may only be used under the BSD style license found at
- * http://polymer.github.io/LICENSE.txt
- * The complete set of authors may be found at
- * http://polymer.github.io/AUTHORS.txt
- * The complete set of contributors may be found at
- * http://polymer.github.io/CONTRIBUTORS.txt
- * Code distributed by Google as part of the polymer project is also
- * subject to an additional IP rights grant found at
- * http://polymer.github.io/PATENTS.txt
- */
-/**
- * An instance of a `Template` that can be attached to the DOM and updated
- * with new values.
- */
-class TemplateInstance$1 {
-    constructor(template, processor, options) {
-        this._parts = [];
-        this.template = template;
-        this.processor = processor;
-        this.options = options;
-    }
-    update(values) {
-        let i = 0;
-        for (const part of this._parts) {
-            if (part !== undefined) {
-                part.setValue(values[i]);
-            }
-            i++;
-        }
-        for (const part of this._parts) {
-            if (part !== undefined) {
-                part.commit();
-            }
-        }
-    }
-    _clone() {
-        // When using the Custom Elements polyfill, clone the node, rather than
-        // importing it, to keep the fragment in the template's document. This
-        // leaves the fragment inert so custom elements won't upgrade and
-        // potentially modify their contents by creating a polyfilled ShadowRoot
-        // while we traverse the tree.
-        const fragment = isCEPolyfill$1 ?
-            this.template.element.content.cloneNode(true) :
-            document.importNode(this.template.element.content, true);
-        const parts = this.template.parts;
-        let partIndex = 0;
-        let nodeIndex = 0;
-        const _prepareInstance = (fragment) => {
-            // Edge needs all 4 parameters present; IE11 needs 3rd parameter to be
-            // null
-            const walker = document.createTreeWalker(fragment, 133 /* NodeFilter.SHOW_{ELEMENT|COMMENT|TEXT} */, null, false);
-            let node = walker.nextNode();
-            // Loop through all the nodes and parts of a template
-            while (partIndex < parts.length && node !== null) {
-                const part = parts[partIndex];
-                // Consecutive Parts may have the same node index, in the case of
-                // multiple bound attributes on an element. So each iteration we either
-                // increment the nodeIndex, if we aren't on a node with a part, or the
-                // partIndex if we are. By not incrementing the nodeIndex when we find a
-                // part, we allow for the next part to be associated with the current
-                // node if neccessasry.
-                if (!isTemplatePartActive$1(part)) {
-                    this._parts.push(undefined);
-                    partIndex++;
-                }
-                else if (nodeIndex === part.index) {
-                    if (part.type === 'node') {
-                        const part = this.processor.handleTextExpression(this.options);
-                        part.insertAfterNode(node);
-                        this._parts.push(part);
-                    }
-                    else {
-                        this._parts.push(...this.processor.handleAttributeExpressions(node, part.name, part.strings, this.options));
-                    }
-                    partIndex++;
-                }
-                else {
-                    nodeIndex++;
-                    if (node.nodeName === 'TEMPLATE') {
-                        _prepareInstance(node.content);
-                    }
-                    node = walker.nextNode();
-                }
-            }
-        };
-        _prepareInstance(fragment);
-        if (isCEPolyfill$1) {
-            document.adoptNode(fragment);
-            customElements.upgrade(fragment);
-        }
-        return fragment;
-    }
-}
-
-/**
- * @license
- * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
- * This code may only be used under the BSD style license found at
- * http://polymer.github.io/LICENSE.txt
- * The complete set of authors may be found at
- * http://polymer.github.io/AUTHORS.txt
- * The complete set of contributors may be found at
- * http://polymer.github.io/CONTRIBUTORS.txt
- * Code distributed by Google as part of the polymer project is also
- * subject to an additional IP rights grant found at
- * http://polymer.github.io/PATENTS.txt
- */
-/**
- * The return type of `html`, which holds a Template and the values from
- * interpolated expressions.
- */
-class TemplateResult$1 {
-    constructor(strings, values, type, processor) {
-        this.strings = strings;
-        this.values = values;
-        this.type = type;
-        this.processor = processor;
-    }
-    /**
-     * Returns a string of HTML used to create a `<template>` element.
-     */
-    getHTML() {
-        const l = this.strings.length - 1;
-        let html = '';
-        let isTextBinding = true;
-        for (let i = 0; i < l; i++) {
-            const s = this.strings[i];
-            html += s;
-            const close = s.lastIndexOf('>');
-            // We're in a text position if the previous string closed its last tag, an
-            // attribute position if the string opened an unclosed tag, and unchanged
-            // if the string had no brackets at all:
-            //
-            // "...>...": text position. open === -1, close > -1
-            // "...<...": attribute position. open > -1
-            // "...": no change. open === -1, close === -1
-            isTextBinding =
-                (close > -1 || isTextBinding) && s.indexOf('<', close + 1) === -1;
-            if (!isTextBinding && rewritesStyleAttribute) {
-                html = html.replace(lastAttributeNameRegex$1, (match, p1, p2, p3) => {
-                    return (p2 === 'style') ? `${p1}style$${p3}` : match;
-                });
-            }
-            html += isTextBinding ? nodeMarker$1 : marker$1;
-        }
-        html += this.strings[l];
-        return html;
-    }
-    getTemplateElement() {
-        const template = document.createElement('template');
-        template.innerHTML = this.getHTML();
-        return template;
-    }
-}
-
-/**
- * @license
- * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
- * This code may only be used under the BSD style license found at
- * http://polymer.github.io/LICENSE.txt
- * The complete set of authors may be found at
- * http://polymer.github.io/AUTHORS.txt
- * The complete set of contributors may be found at
- * http://polymer.github.io/CONTRIBUTORS.txt
- * Code distributed by Google as part of the polymer project is also
- * subject to an additional IP rights grant found at
- * http://polymer.github.io/PATENTS.txt
- */
-const isPrimitive$1 = (value) => (value === null ||
-    !(typeof value === 'object' || typeof value === 'function'));
-/**
- * Sets attribute values for AttributeParts, so that the value is only set once
- * even if there are multiple parts for an attribute.
- */
-class AttributeCommitter$1 {
-    constructor(element, name, strings) {
-        this.dirty = true;
-        this.element = element;
-        this.name = name;
-        this.strings = strings;
-        this.parts = [];
-        for (let i = 0; i < strings.length - 1; i++) {
-            this.parts[i] = this._createPart();
-        }
-    }
-    /**
-     * Creates a single part. Override this to create a differnt type of part.
-     */
-    _createPart() {
-        return new AttributePart$1(this);
-    }
-    _getValue() {
-        const strings = this.strings;
-        const l = strings.length - 1;
-        let text = '';
-        for (let i = 0; i < l; i++) {
-            text += strings[i];
-            const part = this.parts[i];
-            if (part !== undefined) {
-                const v = part.value;
-                if (v != null &&
-                    (Array.isArray(v) || typeof v !== 'string' && v[Symbol.iterator])) {
-                    for (const t of v) {
-                        text += typeof t === 'string' ? t : String(t);
-                    }
-                }
-                else {
-                    text += typeof v === 'string' ? v : String(v);
-                }
-            }
-        }
-        text += strings[l];
-        return text;
-    }
-    commit() {
-        if (this.dirty) {
-            this.dirty = false;
-            this.element.setAttribute(this.name, this._getValue());
-        }
-    }
-}
-class AttributePart$1 {
-    constructor(comitter) {
-        this.value = undefined;
-        this.committer = comitter;
-    }
-    setValue(value) {
-        if (value !== noChange$1 && (!isPrimitive$1(value) || value !== this.value)) {
-            this.value = value;
-            // If the value is a not a directive, dirty the committer so that it'll
-            // call setAttribute. If the value is a directive, it'll dirty the
-            // committer if it calls setValue().
-            if (!isDirective$1(value)) {
-                this.committer.dirty = true;
-            }
-        }
-    }
-    commit() {
-        while (isDirective$1(this.value)) {
-            const directive = this.value;
-            this.value = noChange$1;
-            directive(this);
-        }
-        if (this.value === noChange$1) {
-            return;
-        }
-        this.committer.commit();
-    }
-}
-class NodePart$1 {
-    constructor(options) {
-        this.value = undefined;
-        this._pendingValue = undefined;
-        this.options = options;
-    }
-    /**
-     * Inserts this part into a container.
-     *
-     * This part must be empty, as its contents are not automatically moved.
-     */
-    appendInto(container) {
-        this.startNode = container.appendChild(createMarker$1());
-        this.endNode = container.appendChild(createMarker$1());
-    }
-    /**
-     * Inserts this part between `ref` and `ref`'s next sibling. Both `ref` and
-     * its next sibling must be static, unchanging nodes such as those that appear
-     * in a literal section of a template.
-     *
-     * This part must be empty, as its contents are not automatically moved.
-     */
-    insertAfterNode(ref) {
-        this.startNode = ref;
-        this.endNode = ref.nextSibling;
-    }
-    /**
-     * Appends this part into a parent part.
-     *
-     * This part must be empty, as its contents are not automatically moved.
-     */
-    appendIntoPart(part) {
-        part._insert(this.startNode = createMarker$1());
-        part._insert(this.endNode = createMarker$1());
-    }
-    /**
-     * Appends this part after `ref`
-     *
-     * This part must be empty, as its contents are not automatically moved.
-     */
-    insertAfterPart(ref) {
-        ref._insert(this.startNode = createMarker$1());
-        this.endNode = ref.endNode;
-        ref.endNode = this.startNode;
-    }
-    setValue(value) {
-        this._pendingValue = value;
-    }
-    commit() {
-        while (isDirective$1(this._pendingValue)) {
-            const directive = this._pendingValue;
-            this._pendingValue = noChange$1;
-            directive(this);
-        }
-        const value = this._pendingValue;
-        if (value === noChange$1) {
-            return;
-        }
-        if (isPrimitive$1(value)) {
-            if (value !== this.value) {
-                this._commitText(value);
-            }
-        }
-        else if (value instanceof TemplateResult$1) {
-            this._commitTemplateResult(value);
-        }
-        else if (value instanceof Node) {
-            this._commitNode(value);
-        }
-        else if (Array.isArray(value) || value[Symbol.iterator]) {
-            this._commitIterable(value);
-        }
-        else if (value.then !== undefined) {
-            this._commitPromise(value);
-        }
-        else {
-            // Fallback, will render the string representation
-            this._commitText(value);
-        }
-    }
-    _insert(node) {
-        this.endNode.parentNode.insertBefore(node, this.endNode);
-    }
-    _commitNode(value) {
-        if (this.value === value) {
-            return;
-        }
-        this.clear();
-        this._insert(value);
-        this.value = value;
-    }
-    _commitText(value) {
-        const node = this.startNode.nextSibling;
-        value = value == null ? '' : value;
-        if (node === this.endNode.previousSibling &&
-            node.nodeType === Node.TEXT_NODE) {
-            // If we only have a single text node between the markers, we can just
-            // set its value, rather than replacing it.
-            // TODO(justinfagnani): Can we just check if this.value is primitive?
-            node.textContent = value;
-        }
-        else {
-            this._commitNode(document.createTextNode(typeof value === 'string' ? value : String(value)));
-        }
-        this.value = value;
-    }
-    _commitTemplateResult(value) {
-        const template = this.options.templateFactory(value);
-        if (this.value && this.value.template === template) {
-            this.value.update(value.values);
-        }
-        else {
-            // Make sure we propagate the template processor from the TemplateResult
-            // so that we use its syntax extension, etc. The template factory comes
-            // from the render function options so that it can control template
-            // caching and preprocessing.
-            const instance = new TemplateInstance$1(template, value.processor, this.options);
-            const fragment = instance._clone();
-            instance.update(value.values);
-            this._commitNode(fragment);
-            this.value = instance;
-        }
-    }
-    _commitIterable(value) {
-        // For an Iterable, we create a new InstancePart per item, then set its
-        // value to the item. This is a little bit of overhead for every item in
-        // an Iterable, but it lets us recurse easily and efficiently update Arrays
-        // of TemplateResults that will be commonly returned from expressions like:
-        // array.map((i) => html`${i}`), by reusing existing TemplateInstances.
-        // If _value is an array, then the previous render was of an
-        // iterable and _value will contain the NodeParts from the previous
-        // render. If _value is not an array, clear this part and make a new
-        // array for NodeParts.
-        if (!Array.isArray(this.value)) {
-            this.value = [];
-            this.clear();
-        }
-        // Lets us keep track of how many items we stamped so we can clear leftover
-        // items from a previous render
-        const itemParts = this.value;
-        let partIndex = 0;
-        let itemPart;
-        for (const item of value) {
-            // Try to reuse an existing part
-            itemPart = itemParts[partIndex];
-            // If no existing part, create a new one
-            if (itemPart === undefined) {
-                itemPart = new NodePart$1(this.options);
-                itemParts.push(itemPart);
-                if (partIndex === 0) {
-                    itemPart.appendIntoPart(this);
-                }
-                else {
-                    itemPart.insertAfterPart(itemParts[partIndex - 1]);
-                }
-            }
-            itemPart.setValue(item);
-            itemPart.commit();
-            partIndex++;
-        }
-        if (partIndex < itemParts.length) {
-            // Truncate the parts array so _value reflects the current state
-            itemParts.length = partIndex;
-            this.clear(itemPart && itemPart.endNode);
-        }
-    }
-    _commitPromise(value) {
-        this.value = value;
-        value.then((v) => {
-            if (this.value === value) {
-                this.setValue(v);
-                this.commit();
-            }
-        });
-    }
-    clear(startNode = this.startNode) {
-        removeNodes$1(this.startNode.parentNode, startNode.nextSibling, this.endNode);
-    }
-}
-/**
- * Implements a boolean attribute, roughly as defined in the HTML
- * specification.
- *
- * If the value is truthy, then the attribute is present with a value of
- * ''. If the value is falsey, the attribute is removed.
- */
-class BooleanAttributePart$1 {
-    constructor(element, name, strings) {
-        this.value = undefined;
-        this._pendingValue = undefined;
-        if (strings.length !== 2 || strings[0] !== '' || strings[1] !== '') {
-            throw new Error('Boolean attributes can only contain a single expression');
-        }
-        this.element = element;
-        this.name = name;
-        this.strings = strings;
-    }
-    setValue(value) {
-        this._pendingValue = value;
-    }
-    commit() {
-        while (isDirective$1(this._pendingValue)) {
-            const directive = this._pendingValue;
-            this._pendingValue = noChange$1;
-            directive(this);
-        }
-        if (this._pendingValue === noChange$1) {
-            return;
-        }
-        const value = !!this._pendingValue;
-        if (this.value !== value) {
-            if (value) {
-                this.element.setAttribute(this.name, '');
-            }
-            else {
-                this.element.removeAttribute(this.name);
-            }
-        }
-        this.value = value;
-        this._pendingValue = noChange$1;
-    }
-}
-/**
- * Sets attribute values for PropertyParts, so that the value is only set once
- * even if there are multiple parts for a property.
- *
- * If an expression controls the whole property value, then the value is simply
- * assigned to the property under control. If there are string literals or
- * multiple expressions, then the strings are expressions are interpolated into
- * a string first.
- */
-class PropertyCommitter$1 extends AttributeCommitter$1 {
-    constructor(element, name, strings) {
-        super(element, name, strings);
-        this.single =
-            (strings.length === 2 && strings[0] === '' && strings[1] === '');
-    }
-    _createPart() {
-        return new PropertyPart$1(this);
-    }
-    _getValue() {
-        if (this.single) {
-            return this.parts[0].value;
-        }
-        return super._getValue();
-    }
-    commit() {
-        if (this.dirty) {
-            this.dirty = false;
-            this.element[this.name] = this._getValue();
-        }
-    }
-}
-class PropertyPart$1 extends AttributePart$1 {
-}
-// Detect event listener options support. If the `capture` property is read
-// from the options object, then options are supported. If not, then the thrid
-// argument to add/removeEventListener is interpreted as the boolean capture
-// value so we should only pass the `capture` property.
-let eventOptionsSupported$1 = false;
-try {
-    const options = {
-        get capture() {
-            eventOptionsSupported$1 = true;
-            return false;
-        }
-    };
-    window.addEventListener('test', options, options);
-    window.removeEventListener('test', options, options);
-}
-catch (_e) {
-}
-class EventPart$1 {
-    constructor(element, eventName, eventContext) {
-        this.value = undefined;
-        this._pendingValue = undefined;
-        this.element = element;
-        this.eventName = eventName;
-        this.eventContext = eventContext;
-        this._boundHandleEvent = (e) => this.handleEvent(e);
-    }
-    setValue(value) {
-        this._pendingValue = value;
-    }
-    commit() {
-        while (isDirective$1(this._pendingValue)) {
-            const directive = this._pendingValue;
-            this._pendingValue = noChange$1;
-            directive(this);
-        }
-        if (this._pendingValue === noChange$1) {
-            return;
-        }
-        const newListener = this._pendingValue;
-        const oldListener = this.value;
-        const shouldRemoveListener = newListener == null ||
-            oldListener != null &&
-                (newListener.capture !== oldListener.capture ||
-                    newListener.once !== oldListener.once ||
-                    newListener.passive !== oldListener.passive);
-        const shouldAddListener = newListener != null && (oldListener == null || shouldRemoveListener);
-        if (shouldRemoveListener) {
-            this.element.removeEventListener(this.eventName, this._boundHandleEvent, this._options);
-        }
-        this._options = getOptions$1(newListener);
-        if (shouldAddListener) {
-            this.element.addEventListener(this.eventName, this._boundHandleEvent, this._options);
-        }
-        this.value = newListener;
-        this._pendingValue = noChange$1;
-    }
-    handleEvent(event) {
-        if (typeof this.value === 'function') {
-            this.value.call(this.eventContext || this.element, event);
-        }
-        else {
-            this.value.handleEvent(event);
-        }
-    }
-}
-// We copy options because of the inconsistent behavior of browsers when reading
-// the third argument of add/removeEventListener. IE11 doesn't support options
-// at all. Chrome 41 only reads `capture` if the argument is an object.
-const getOptions$1 = (o) => o &&
-    (eventOptionsSupported$1 ?
-        { capture: o.capture, passive: o.passive, once: o.once } :
-        o.capture);
-
-/**
- * @license
- * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
- * This code may only be used under the BSD style license found at
- * http://polymer.github.io/LICENSE.txt
- * The complete set of authors may be found at
- * http://polymer.github.io/AUTHORS.txt
- * The complete set of contributors may be found at
- * http://polymer.github.io/CONTRIBUTORS.txt
- * Code distributed by Google as part of the polymer project is also
- * subject to an additional IP rights grant found at
- * http://polymer.github.io/PATENTS.txt
- */
-/**
- * Creates Parts when a template is instantiated.
- */
-class DefaultTemplateProcessor$1 {
-    /**
-     * Create parts for an attribute-position binding, given the event, attribute
-     * name, and string literals.
-     *
-     * @param element The element containing the binding
-     * @param name  The attribute name
-     * @param strings The string literals. There are always at least two strings,
-     *   event for fully-controlled bindings with a single expression.
-     */
-    handleAttributeExpressions(element, name, strings, options) {
-        const prefix = name[0];
-        if (prefix === '.') {
-            const comitter = new PropertyCommitter$1(element, name.slice(1), strings);
-            return comitter.parts;
-        }
-        if (prefix === '@') {
-            return [new EventPart$1(element, name.slice(1), options.eventContext)];
-        }
-        if (prefix === '?') {
-            return [new BooleanAttributePart$1(element, name.slice(1), strings)];
-        }
-        const comitter = new AttributeCommitter$1(element, name, strings);
-        return comitter.parts;
-    }
-    /**
-     * Create parts for a text-position binding.
-     * @param templateFactory
-     */
-    handleTextExpression(options) {
-        return new NodePart$1(options);
-    }
-}
-const defaultTemplateProcessor$1 = new DefaultTemplateProcessor$1();
-
-/**
- * @license
- * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
- * This code may only be used under the BSD style license found at
- * http://polymer.github.io/LICENSE.txt
- * The complete set of authors may be found at
- * http://polymer.github.io/AUTHORS.txt
- * The complete set of contributors may be found at
- * http://polymer.github.io/CONTRIBUTORS.txt
- * Code distributed by Google as part of the polymer project is also
- * subject to an additional IP rights grant found at
- * http://polymer.github.io/PATENTS.txt
- */
-/**
- * The default TemplateFactory which caches Templates keyed on
- * result.type and result.strings.
- */
-function templateFactory$1(result) {
-    let templateCache = templateCaches$1.get(result.type);
-    if (templateCache === undefined) {
-        templateCache = new Map();
-        templateCaches$1.set(result.type, templateCache);
-    }
-    let template = templateCache.get(result.strings);
-    if (template === undefined) {
-        template = new Template$1(result, result.getTemplateElement());
-        templateCache.set(result.strings, template);
-    }
-    return template;
-}
-// The first argument to JS template tags retain identity across multiple
-// calls to a tag for the same literal, so we can cache work done per literal
-// in a Map.
-const templateCaches$1 = new Map();
-
-/**
- * @license
- * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
- * This code may only be used under the BSD style license found at
- * http://polymer.github.io/LICENSE.txt
- * The complete set of authors may be found at
- * http://polymer.github.io/AUTHORS.txt
- * The complete set of contributors may be found at
- * http://polymer.github.io/CONTRIBUTORS.txt
- * Code distributed by Google as part of the polymer project is also
- * subject to an additional IP rights grant found at
- * http://polymer.github.io/PATENTS.txt
- */
-const parts$1 = new WeakMap();
-/**
- * Renders a template to a container.
- *
- * To update a container with new values, reevaluate the template literal and
- * call `render` with the new result.
- *
- * @param result a TemplateResult created by evaluating a template tag like
- *     `html` or `svg`.
- * @param container A DOM parent to render to. The entire contents are either
- *     replaced, or efficiently updated if the same result type was previous
- *     rendered there.
- * @param options RenderOptions for the entire render tree rendered to this
- *     container. Render options must *not* change between renders to the same
- *     container, as those changes will not effect previously rendered DOM.
- */
-const render$2 = (result, container, options) => {
-    let part = parts$1.get(container);
-    if (part === undefined) {
-        removeNodes$1(container, container.firstChild);
-        parts$1.set(container, part = new NodePart$1(Object.assign({ templateFactory: templateFactory$1 }, options)));
-        part.appendInto(container);
-    }
-    part.setValue(result);
-    part.commit();
-};
-
-/**
- * @license
- * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
- * This code may only be used under the BSD style license found at
- * http://polymer.github.io/LICENSE.txt
- * The complete set of authors may be found at
- * http://polymer.github.io/AUTHORS.txt
- * The complete set of contributors may be found at
- * http://polymer.github.io/CONTRIBUTORS.txt
- * Code distributed by Google as part of the polymer project is also
- * subject to an additional IP rights grant found at
- * http://polymer.github.io/PATENTS.txt
- */
-/**
- * Interprets a template literal as an HTML template that can efficiently
- * render to and update a container.
- */
-const html$1 = (strings, ...values) => new TemplateResult$1(strings, values, 'html', defaultTemplateProcessor$1);
-
-/**
- * @license
- * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
- * This code may only be used under the BSD style license found at
- * http://polymer.github.io/LICENSE.txt
- * The complete set of authors may be found at
- * http://polymer.github.io/AUTHORS.txt
- * The complete set of contributors may be found at
- * http://polymer.github.io/CONTRIBUTORS.txt
- * Code distributed by Google as part of the polymer project is also
- * subject to an additional IP rights grant found at
- * http://polymer.github.io/PATENTS.txt
- */
-const walkerNodeFilter$1 = NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_COMMENT | NodeFilter.SHOW_TEXT;
-/**
- * Removes the list of nodes from a Template safely. In addition to removing
- * nodes from the Template, the Template part indices are updated to match
- * the mutated Template DOM.
- *
- * As the template is walked the removal state is tracked and
- * part indices are adjusted as needed.
- *
- * div
- *   div#1 (remove) <-- start removing (removing node is div#1)
- *     div
- *       div#2 (remove)  <-- continue removing (removing node is still div#1)
- *         div
- * div <-- stop removing since previous sibling is the removing node (div#1,
- * removed 4 nodes)
- */
-function removeNodesFromTemplate$1(template, nodesToRemove) {
-    const { element: { content }, parts } = template;
-    const walker = document.createTreeWalker(content, walkerNodeFilter$1, null, false);
-    let partIndex = nextActiveIndexInTemplateParts$1(parts);
-    let part = parts[partIndex];
-    let nodeIndex = -1;
-    let removeCount = 0;
-    const nodesToRemoveInTemplate = [];
-    let currentRemovingNode = null;
-    while (walker.nextNode()) {
-        nodeIndex++;
-        const node = walker.currentNode;
-        // End removal if stepped past the removing node
-        if (node.previousSibling === currentRemovingNode) {
-            currentRemovingNode = null;
-        }
-        // A node to remove was found in the template
-        if (nodesToRemove.has(node)) {
-            nodesToRemoveInTemplate.push(node);
-            // Track node we're removing
-            if (currentRemovingNode === null) {
-                currentRemovingNode = node;
-            }
-        }
-        // When removing, increment count by which to adjust subsequent part indices
-        if (currentRemovingNode !== null) {
-            removeCount++;
-        }
-        while (part !== undefined && part.index === nodeIndex) {
-            // If part is in a removed node deactivate it by setting index to -1 or
-            // adjust the index as needed.
-            part.index = currentRemovingNode !== null ? -1 : part.index - removeCount;
-            // go to the next active part.
-            partIndex = nextActiveIndexInTemplateParts$1(parts, partIndex);
-            part = parts[partIndex];
-        }
-    }
-    nodesToRemoveInTemplate.forEach((n) => n.parentNode.removeChild(n));
-}
-const countNodes$1 = (node) => {
-    let count = (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) ? 0 : 1;
-    const walker = document.createTreeWalker(node, walkerNodeFilter$1, null, false);
-    while (walker.nextNode()) {
-        count++;
-    }
-    return count;
-};
-const nextActiveIndexInTemplateParts$1 = (parts, startIndex = -1) => {
-    for (let i = startIndex + 1; i < parts.length; i++) {
-        const part = parts[i];
-        if (isTemplatePartActive$1(part)) {
-            return i;
-        }
-    }
-    return -1;
-};
-/**
- * Inserts the given node into the Template, optionally before the given
- * refNode. In addition to inserting the node into the Template, the Template
- * part indices are updated to match the mutated Template DOM.
- */
-function insertNodeIntoTemplate$1(template, node, refNode = null) {
-    const { element: { content }, parts } = template;
-    // If there's no refNode, then put node at end of template.
-    // No part indices need to be shifted in this case.
-    if (refNode === null || refNode === undefined) {
-        content.appendChild(node);
-        return;
-    }
-    const walker = document.createTreeWalker(content, walkerNodeFilter$1, null, false);
-    let partIndex = nextActiveIndexInTemplateParts$1(parts);
-    let insertCount = 0;
-    let walkerIndex = -1;
-    while (walker.nextNode()) {
-        walkerIndex++;
-        const walkerNode = walker.currentNode;
-        if (walkerNode === refNode) {
-            insertCount = countNodes$1(node);
-            refNode.parentNode.insertBefore(node, refNode);
-        }
-        while (partIndex !== -1 && parts[partIndex].index === walkerIndex) {
-            // If we've inserted the node, simply adjust all subsequent parts
-            if (insertCount > 0) {
-                while (partIndex !== -1) {
-                    parts[partIndex].index += insertCount;
-                    partIndex = nextActiveIndexInTemplateParts$1(parts, partIndex);
-                }
-                return;
-            }
-            partIndex = nextActiveIndexInTemplateParts$1(parts, partIndex);
-        }
-    }
-}
-
-/**
- * @license
- * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
- * This code may only be used under the BSD style license found at
- * http://polymer.github.io/LICENSE.txt
- * The complete set of authors may be found at
- * http://polymer.github.io/AUTHORS.txt
- * The complete set of contributors may be found at
- * http://polymer.github.io/CONTRIBUTORS.txt
- * Code distributed by Google as part of the polymer project is also
- * subject to an additional IP rights grant found at
- * http://polymer.github.io/PATENTS.txt
- */
-// Get a key to lookup in `templateCaches`.
-const getTemplateCacheKey$1 = (type, scopeName) => `${type}--${scopeName}`;
-let compatibleShadyCSSVersion$1 = true;
-if (typeof window.ShadyCSS === 'undefined') {
-    compatibleShadyCSSVersion$1 = false;
-}
-else if (typeof window.ShadyCSS.prepareTemplateDom === 'undefined') {
-    console.warn(`Incompatible ShadyCSS version detected.` +
-        `Please update to at least @webcomponents/webcomponentsjs@2.0.2 and` +
-        `@webcomponents/shadycss@1.3.1.`);
-    compatibleShadyCSSVersion$1 = false;
-}
-/**
- * Template factory which scopes template DOM using ShadyCSS.
- * @param scopeName {string}
- */
-const shadyTemplateFactory$1 = (scopeName) => (result) => {
-    const cacheKey = getTemplateCacheKey$1(result.type, scopeName);
-    let templateCache = templateCaches$1.get(cacheKey);
-    if (templateCache === undefined) {
-        templateCache = new Map();
-        templateCaches$1.set(cacheKey, templateCache);
-    }
-    let template = templateCache.get(result.strings);
-    if (template === undefined) {
-        const element = result.getTemplateElement();
-        if (compatibleShadyCSSVersion$1) {
-            window.ShadyCSS.prepareTemplateDom(element, scopeName);
-        }
-        template = new Template$1(result, element);
-        templateCache.set(result.strings, template);
-    }
-    return template;
-};
-const TEMPLATE_TYPES$1 = ['html', 'svg'];
-/**
- * Removes all style elements from Templates for the given scopeName.
- */
-const removeStylesFromLitTemplates$1 = (scopeName) => {
-    TEMPLATE_TYPES$1.forEach((type) => {
-        const templates = templateCaches$1.get(getTemplateCacheKey$1(type, scopeName));
-        if (templates !== undefined) {
-            templates.forEach((template) => {
-                const { element: { content } } = template;
-                // IE 11 doesn't support the iterable param Set constructor
-                const styles = new Set();
-                Array.from(content.querySelectorAll('style')).forEach((s) => {
-                    styles.add(s);
-                });
-                removeNodesFromTemplate$1(template, styles);
-            });
-        }
-    });
-};
-const shadyRenderSet$1 = new Set();
-/**
- * For the given scope name, ensures that ShadyCSS style scoping is performed.
- * This is done just once per scope name so the fragment and template cannot
- * be modified.
- * (1) extracts styles from the rendered fragment and hands them to ShadyCSS
- * to be scoped and appended to the document
- * (2) removes style elements from all lit-html Templates for this scope name.
- *
- * Note, <style> elements can only be placed into templates for the
- * initial rendering of the scope. If <style> elements are included in templates
- * dynamically rendered to the scope (after the first scope render), they will
- * not be scoped and the <style> will be left in the template and rendered
- * output.
- */
-const prepareTemplateStyles$1 = (renderedDOM, template, scopeName) => {
-    shadyRenderSet$1.add(scopeName);
-    // Move styles out of rendered DOM and store.
-    const styles = renderedDOM.querySelectorAll('style');
-    // If there are no styles, there's no work to do.
-    if (styles.length === 0) {
-        return;
-    }
-    const condensedStyle = document.createElement('style');
-    // Collect styles into a single style. This helps us make sure ShadyCSS
-    // manipulations will not prevent us from being able to fix up template
-    // part indices.
-    // NOTE: collecting styles is inefficient for browsers but ShadyCSS
-    // currently does this anyway. When it does not, this should be changed.
-    for (let i = 0; i < styles.length; i++) {
-        const style = styles[i];
-        style.parentNode.removeChild(style);
-        condensedStyle.textContent += style.textContent;
-    }
-    // Remove styles from nested templates in this scope.
-    removeStylesFromLitTemplates$1(scopeName);
-    // And then put the condensed style into the "root" template passed in as
-    // `template`.
-    insertNodeIntoTemplate$1(template, condensedStyle, template.element.content.firstChild);
-    // Note, it's important that ShadyCSS gets the template that `lit-html`
-    // will actually render so that it can update the style inside when
-    // needed (e.g. @apply native Shadow DOM case).
-    window.ShadyCSS.prepareTemplateStyles(template.element, scopeName);
-    if (window.ShadyCSS.nativeShadow) {
-        // When in native Shadow DOM, re-add styling to rendered content using
-        // the style ShadyCSS produced.
-        const style = template.element.content.querySelector('style');
-        renderedDOM.insertBefore(style.cloneNode(true), renderedDOM.firstChild);
-    }
-    else {
-        // When not in native Shadow DOM, at this point ShadyCSS will have
-        // removed the style from the lit template and parts will be broken as a
-        // result. To fix this, we put back the style node ShadyCSS removed
-        // and then tell lit to remove that node from the template.
-        // NOTE, ShadyCSS creates its own style so we can safely add/remove
-        // `condensedStyle` here.
-        template.element.content.insertBefore(condensedStyle, template.element.content.firstChild);
-        const removes = new Set();
-        removes.add(condensedStyle);
-        removeNodesFromTemplate$1(template, removes);
-    }
-};
-const render$3 = (result, container, options) => {
-    const scopeName = options.scopeName;
-    const hasRendered = parts$1.has(container);
-    render$2(result, container, Object.assign({ templateFactory: shadyTemplateFactory$1(scopeName) }, options));
-    // When rendering a TemplateResult, scope the template with ShadyCSS
-    if (container instanceof ShadowRoot && compatibleShadyCSSVersion$1 &&
-        result instanceof TemplateResult$1) {
-        // Scope the element template one time only for this scope.
-        if (!shadyRenderSet$1.has(scopeName)) {
-            const part = parts$1.get(container);
-            const instance = part.value;
-            prepareTemplateStyles$1(container, instance.template, scopeName);
-        }
-        // Update styling if this is the initial render to this container.
-        if (!hasRendered) {
-            window.ShadyCSS.styleElement(container.host);
-        }
-    }
-};
-
-/**
- * @license
- * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
- * This code may only be used under the BSD style license found at
- * http://polymer.github.io/LICENSE.txt
- * The complete set of authors may be found at
- * http://polymer.github.io/AUTHORS.txt
- * The complete set of contributors may be found at
- * http://polymer.github.io/CONTRIBUTORS.txt
- * Code distributed by Google as part of the polymer project is also
- * subject to an additional IP rights grant found at
- * http://polymer.github.io/PATENTS.txt
- */
-// serializer/deserializers for boolean attribute
-const fromBooleanAttribute$3 = (value) => value !== null;
-const toBooleanAttribute$3 = (value) => value ? '' : null;
-/**
- * Change function that returns true if `value` is different from `oldValue`.
- * This method is used as the default for a property's `hasChanged` function.
- */
-const notEqual$3 = (value, old) => {
-    // This ensures (old==NaN, value==NaN) always returns false
-    return old !== value && (old === old || value === value);
-};
-const defaultPropertyDeclaration$3 = {
-    attribute: true,
-    type: String,
-    reflect: false,
-    hasChanged: notEqual$3
-};
-const microtaskPromise$3 = new Promise((resolve) => resolve(true));
-const STATE_HAS_UPDATED$3 = 1;
-const STATE_UPDATE_REQUESTED$3 = 1 << 2;
-const STATE_IS_REFLECTING$3 = 1 << 3;
-/**
- * Base element class which manages element properties and attributes. When
- * properties change, the `update` method is asynchronously called. This method
- * should be supplied by subclassers to render updates as desired.
- */
-class UpdatingElement$3 extends HTMLElement {
-    constructor() {
-        super();
-        this._updateState = 0;
-        this._instanceProperties = undefined;
-        this._updatePromise = microtaskPromise$3;
-        /**
-         * Map with keys for any properties that have changed since the last
-         * update cycle with previous values.
-         */
-        this._changedProperties = new Map();
-        /**
-         * Map with keys of properties that should be reflected when updated.
-         */
-        this._reflectingProperties = undefined;
-        this.initialize();
-    }
-    /**
-     * Returns a list of attributes corresponding to the registered properties.
-     */
-    static get observedAttributes() {
-        // note: piggy backing on this to ensure we're _finalized.
-        this._finalize();
-        const attributes = [];
-        for (const [p, v] of this._classProperties) {
-            const attr = this._attributeNameForProperty(p, v);
-            if (attr !== undefined) {
-                this._attributeToPropertyMap.set(attr, p);
-                attributes.push(attr);
-            }
-        }
-        return attributes;
-    }
-    /**
-     * Creates a property accessor on the element prototype if one does not exist.
-     * The property setter calls the property's `hasChanged` property option
-     * or uses a strict identity check to determine whether or not to request
-     * an update.
-     */
-    static createProperty(name, options = defaultPropertyDeclaration$3) {
-        // ensure private storage for property declarations.
-        if (!this.hasOwnProperty('_classProperties')) {
-            this._classProperties = new Map();
-            // NOTE: Workaround IE11 not supporting Map constructor argument.
-            const superProperties = Object.getPrototypeOf(this)._classProperties;
-            if (superProperties !== undefined) {
-                superProperties.forEach((v, k) => this._classProperties.set(k, v));
-            }
-        }
-        this._classProperties.set(name, options);
-        // Allow user defined accessors by not replacing an existing own-property
-        // accessor.
-        if (this.prototype.hasOwnProperty(name)) {
-            return;
-        }
-        const key = typeof name === 'symbol' ? Symbol() : `__${name}`;
-        Object.defineProperty(this.prototype, name, {
-            get() { return this[key]; },
-            set(value) {
-                const oldValue = this[name];
-                this[key] = value;
-                this._requestPropertyUpdate(name, oldValue, options);
-            },
-            configurable: true,
-            enumerable: true
-        });
-    }
-    /**
-     * Creates property accessors for registered properties and ensures
-     * any superclasses are also finalized.
-     */
-    static _finalize() {
-        if (this.hasOwnProperty('_finalized') && this._finalized) {
-            return;
-        }
-        // finalize any superclasses
-        const superCtor = Object.getPrototypeOf(this);
-        if (typeof superCtor._finalize === 'function') {
-            superCtor._finalize();
-        }
-        this._finalized = true;
-        // initialize Map populated in observedAttributes
-        this._attributeToPropertyMap = new Map();
-        // make any properties
-        const props = this.properties;
-        // support symbols in properties (IE11 does not support this)
-        const propKeys = [
-            ...Object.getOwnPropertyNames(props),
-            ...(typeof Object.getOwnPropertySymbols === 'function')
-                ? Object.getOwnPropertySymbols(props)
-                : []
-        ];
-        for (const p of propKeys) {
-            // note, use of `any` is due to TypeSript lack of support for symbol in
-            // index types
-            this.createProperty(p, props[p]);
-        }
-    }
-    /**
-     * Returns the property name for the given attribute `name`.
-     */
-    static _attributeNameForProperty(name, options) {
-        const attribute = options !== undefined && options.attribute;
-        return attribute === false
-            ? undefined
-            : (typeof attribute === 'string'
-                ? attribute
-                : (typeof name === 'string' ? name.toLowerCase()
-                    : undefined));
-    }
-    /**
-     * Returns true if a property should request an update.
-     * Called when a property value is set and uses the `hasChanged`
-     * option for the property if present or a strict identity check.
-     */
-    static _valueHasChanged(value, old, hasChanged = notEqual$3) {
-        return hasChanged(value, old);
-    }
-    /**
-     * Returns the property value for the given attribute value.
-     * Called via the `attributeChangedCallback` and uses the property's `type`
-     * or `type.fromAttribute` property option.
-     */
-    static _propertyValueFromAttribute(value, options) {
-        const type = options && options.type;
-        if (type === undefined) {
-            return value;
-        }
-        // Note: special case `Boolean` so users can use it as a `type`.
-        const fromAttribute = type === Boolean
-            ? fromBooleanAttribute$3
-            : (typeof type === 'function' ? type : type.fromAttribute);
-        return fromAttribute ? fromAttribute(value) : value;
-    }
-    /**
-     * Returns the attribute value for the given property value. If this
-     * returns undefined, the property will *not* be reflected to an attribute.
-     * If this returns null, the attribute will be removed, otherwise the
-     * attribute will be set to the value.
-     * This uses the property's `reflect` and `type.toAttribute` property options.
-     */
-    static _propertyValueToAttribute(value, options) {
-        if (options === undefined || options.reflect === undefined) {
-            return;
-        }
-        // Note: special case `Boolean` so users can use it as a `type`.
-        const toAttribute = options.type === Boolean
-            ? toBooleanAttribute$3
-            : (options.type &&
-                options.type.toAttribute ||
-                String);
-        return toAttribute(value);
-    }
-    /**
-     * Performs element initialization. By default this calls `createRenderRoot`
-     * to create the element `renderRoot` node and captures any pre-set values for
-     * registered properties.
-     */
-    initialize() {
-        this.renderRoot = this.createRenderRoot();
-        this._saveInstanceProperties();
-    }
-    /**
-     * Fixes any properties set on the instance before upgrade time.
-     * Otherwise these would shadow the accessor and break these properties.
-     * The properties are stored in a Map which is played back after the
-     * constructor runs. Note, on very old versions of Safari (<=9) or Chrome
-     * (<=41), properties created for native platform properties like (`id` or
-     * `name`) may not have default values set in the element constructor. On
-     * these browsers native properties appear on instances and therefore their
-     * default value will overwrite any element default (e.g. if the element sets
-     * this.id = 'id' in the constructor, the 'id' will become '' since this is
-     * the native platform default).
-     */
-    _saveInstanceProperties() {
-        for (const [p] of this.constructor
-            ._classProperties) {
-            if (this.hasOwnProperty(p)) {
-                const value = this[p];
-                delete this[p];
-                if (!this._instanceProperties) {
-                    this._instanceProperties = new Map();
-                }
-                this._instanceProperties.set(p, value);
-            }
-        }
-    }
-    /**
-     * Applies previously saved instance properties.
-     */
-    _applyInstanceProperties() {
-        for (const [p, v] of this._instanceProperties) {
-            this[p] = v;
-        }
-        this._instanceProperties = undefined;
-    }
-    /**
-     * Returns the node into which the element should render and by default
-     * creates and returns an open shadowRoot. Implement to customize where the
-     * element's DOM is rendered. For example, to render into the element's
-     * childNodes, return `this`.
-     * @returns {Element|DocumentFragment} Returns a node into which to render.
-     */
-    createRenderRoot() {
-        return this.attachShadow({ mode: 'open' });
-    }
-    /**
-     * Uses ShadyCSS to keep element DOM updated.
-     */
-    connectedCallback() {
-        if ((this._updateState & STATE_HAS_UPDATED$3)) {
-            if (window.ShadyCSS !== undefined) {
-                window.ShadyCSS.styleElement(this);
-            }
-        }
-        else {
-            this.requestUpdate();
-        }
-    }
-    /**
-     * Allows for `super.disconnectedCallback()` in extensions while
-     * reserving the possibility of making non-breaking feature additions
-     * when disconnecting at some point in the future.
-     */
-    disconnectedCallback() { }
-    /**
-     * Synchronizes property values when attributes change.
-     */
-    attributeChangedCallback(name, old, value) {
-        if (old !== value) {
-            this._attributeToProperty(name, value);
-        }
-    }
-    _propertyToAttribute(name, value, options = defaultPropertyDeclaration$3) {
-        const ctor = this.constructor;
-        const attrValue = ctor._propertyValueToAttribute(value, options);
-        if (attrValue !== undefined) {
-            const attr = ctor._attributeNameForProperty(name, options);
-            if (attr !== undefined) {
-                // Track if the property is being reflected to avoid
-                // setting the property again via `attributeChangedCallback`. Note:
-                // 1. this takes advantage of the fact that the callback is synchronous.
-                // 2. will behave incorrectly if multiple attributes are in the reaction
-                // stack at time of calling. However, since we process attributes
-                // in `update` this should not be possible (or an extreme corner case
-                // that we'd like to discover).
-                // mark state reflecting
-                this._updateState = this._updateState | STATE_IS_REFLECTING$3;
-                if (attrValue === null) {
-                    this.removeAttribute(attr);
-                }
-                else {
-                    this.setAttribute(attr, attrValue);
-                }
-                // mark state not reflecting
-                this._updateState = this._updateState & ~STATE_IS_REFLECTING$3;
-            }
-        }
-    }
-    _attributeToProperty(name, value) {
-        // Use tracking info to avoid deserializing attribute value if it was
-        // just set from a property setter.
-        if (!(this._updateState & STATE_IS_REFLECTING$3)) {
-            const ctor = this.constructor;
-            const propName = ctor._attributeToPropertyMap.get(name);
-            if (propName !== undefined) {
-                const options = ctor._classProperties.get(propName);
-                this[propName] =
-                    ctor._propertyValueFromAttribute(value, options);
-            }
-        }
-    }
-    /**
-     * Requests an update which is processed asynchronously. This should
-     * be called when an element should update based on some state not triggered
-     * by setting a property. In this case, pass no arguments. It should also be
-     * called when manually implementing a property setter. In this case, pass the
-     * property `name` and `oldValue` to ensure that any configured property
-     * options are honored. Returns the `updateComplete` Promise which is resolved
-     * when the update completes.
-     *
-     * @param name {PropertyKey} (optional) name of requesting property
-     * @param oldValue {any} (optional) old value of requesting property
-     * @returns {Promise} A Promise that is resolved when the update completes.
-     */
-    requestUpdate(name, oldValue) {
-        if (name !== undefined) {
-            const options = this.constructor
-                ._classProperties.get(name) ||
-                defaultPropertyDeclaration$3;
-            return this._requestPropertyUpdate(name, oldValue, options);
-        }
-        return this._invalidate();
-    }
-    /**
-     * Requests an update for a specific property and records change information.
-     * @param name {PropertyKey} name of requesting property
-     * @param oldValue {any} old value of requesting property
-     * @param options {PropertyDeclaration}
-     */
-    _requestPropertyUpdate(name, oldValue, options) {
-        if (!this.constructor
-            ._valueHasChanged(this[name], oldValue, options.hasChanged)) {
-            return this.updateComplete;
-        }
-        // track old value when changing.
-        if (!this._changedProperties.has(name)) {
-            this._changedProperties.set(name, oldValue);
-        }
-        // add to reflecting properties set
-        if (options.reflect === true) {
-            if (this._reflectingProperties === undefined) {
-                this._reflectingProperties = new Map();
-            }
-            this._reflectingProperties.set(name, options);
-        }
-        return this._invalidate();
-    }
-    /**
-     * Invalidates the element causing it to asynchronously update regardless
-     * of whether or not any property changes are pending. This method is
-     * automatically called when any registered property changes.
-     */
-    async _invalidate() {
-        if (!this._hasRequestedUpdate) {
-            // mark state updating...
-            this._updateState = this._updateState | STATE_UPDATE_REQUESTED$3;
-            let resolver;
-            const previousValidatePromise = this._updatePromise;
-            this._updatePromise = new Promise((r) => resolver = r);
-            await previousValidatePromise;
-            this._validate();
-            resolver(!this._hasRequestedUpdate);
-        }
-        return this.updateComplete;
-    }
-    get _hasRequestedUpdate() {
-        return (this._updateState & STATE_UPDATE_REQUESTED$3);
-    }
-    /**
-     * Validates the element by updating it.
-     */
-    _validate() {
-        // Mixin instance properties once, if they exist.
-        if (this._instanceProperties) {
-            this._applyInstanceProperties();
-        }
-        if (this.shouldUpdate(this._changedProperties)) {
-            const changedProperties = this._changedProperties;
-            this.update(changedProperties);
-            this._markUpdated();
-            if (!(this._updateState & STATE_HAS_UPDATED$3)) {
-                this._updateState = this._updateState | STATE_HAS_UPDATED$3;
-                this.firstUpdated(changedProperties);
-            }
-            this.updated(changedProperties);
-        }
-        else {
-            this._markUpdated();
-        }
-    }
-    _markUpdated() {
-        this._changedProperties = new Map();
-        this._updateState = this._updateState & ~STATE_UPDATE_REQUESTED$3;
-    }
-    /**
-     * Returns a Promise that resolves when the element has completed updating.
-     * The Promise value is a boolean that is `true` if the element completed the
-     * update without triggering another update. The Promise result is `false` if
-     * a property was set inside `updated()`. This getter can be implemented to
-     * await additional state. For example, it is sometimes useful to await a
-     * rendered element before fulfilling this Promise. To do this, first await
-     * `super.updateComplete` then any subsequent state.
-     *
-     * @returns {Promise} The Promise returns a boolean that indicates if the
-     * update resolved without triggering another update.
-     */
-    get updateComplete() { return this._updatePromise; }
-    /**
-     * Controls whether or not `update` should be called when the element requests
-     * an update. By default, this method always returns `true`, but this can be
-     * customized to control when to update.
-     *
-     * * @param _changedProperties Map of changed properties with old values
-     */
-    shouldUpdate(_changedProperties) {
-        return true;
-    }
-    /**
-     * Updates the element. This method reflects property values to attributes.
-     * It can be overridden to render and keep updated DOM in the element's
-     * `renderRoot`. Setting properties inside this method will *not* trigger
-     * another update.
-     *
-     * * @param _changedProperties Map of changed properties with old values
-     */
-    update(_changedProperties) {
-        if (this._reflectingProperties !== undefined &&
-            this._reflectingProperties.size > 0) {
-            for (const [k, v] of this._reflectingProperties) {
-                this._propertyToAttribute(k, this[k], v);
-            }
-            this._reflectingProperties = undefined;
-        }
-    }
-    /**
-     * Invoked whenever the element is updated. Implement to perform
-     * post-updating tasks via DOM APIs, for example, focusing an element.
-     *
-     * Setting properties inside this method will trigger the element to update
-     * again after this update cycle completes.
-     *
-     * * @param _changedProperties Map of changed properties with old values
-     */
-    updated(_changedProperties) { }
-    /**
-     * Invoked when the element is first updated. Implement to perform one time
-     * work on the element after update.
-     *
-     * Setting properties inside this method will trigger the element to update
-     * again after this update cycle completes.
-     *
-     * * @param _changedProperties Map of changed properties with old values
-     */
-    firstUpdated(_changedProperties) { }
-}
-/**
- * Maps attribute names to properties; for example `foobar` attribute
- * to `fooBar` property.
- */
-UpdatingElement$3._attributeToPropertyMap = new Map();
-/**
- * Marks class as having finished creating properties.
- */
-UpdatingElement$3._finalized = true;
-/**
- * Memoized list of all class properties, including any superclass properties.
- */
-UpdatingElement$3._classProperties = new Map();
-UpdatingElement$3.properties = {};
-
-/**
- * @license
- * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
- * This code may only be used under the BSD style license found at
- * http://polymer.github.io/LICENSE.txt
- * The complete set of authors may be found at
- * http://polymer.github.io/AUTHORS.txt
- * The complete set of contributors may be found at
- * http://polymer.github.io/CONTRIBUTORS.txt
- * Code distributed by Google as part of the polymer project is also
- * subject to an additional IP rights grant found at
- * http://polymer.github.io/PATENTS.txt
- */
-
-/**
- * @license
- * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
- * This code may only be used under the BSD style license found at
- * http://polymer.github.io/LICENSE.txt
- * The complete set of authors may be found at
- * http://polymer.github.io/AUTHORS.txt
- * The complete set of contributors may be found at
- * http://polymer.github.io/CONTRIBUTORS.txt
- * Code distributed by Google as part of the polymer project is also
- * subject to an additional IP rights grant found at
- * http://polymer.github.io/PATENTS.txt
- */
-class LitElement$3 extends UpdatingElement$3 {
-    /**
-     * Updates the element. This method reflects property values to attributes
-     * and calls `render` to render DOM via lit-html. Setting properties inside
-     * this method will *not* trigger another update.
-     * * @param _changedProperties Map of changed properties with old values
-     */
-    update(changedProperties) {
-        super.update(changedProperties);
-        const templateResult = this.render();
-        if (templateResult instanceof TemplateResult$1) {
-            this.constructor
-                .render(templateResult, this.renderRoot, { scopeName: this.localName, eventContext: this });
-        }
-    }
-    /**
-     * Invoked on each update to perform rendering tasks. This method must return
-     * a lit-html TemplateResult. Setting properties inside this method will *not*
-     * trigger the element to update.
-     * @returns {TemplateResult} Must return a lit-html TemplateResult.
-     */
-    render() { }
-}
-/**
- * Render method used to render the lit-html TemplateResult to the element's
- * DOM.
- * @param {TemplateResult} Template to render.
- * @param {Element|DocumentFragment} Node into which to render.
- * @param {String} Element name.
- */
-LitElement$3.render = render$3;
+customElements.define(ChatQuery.is, ChatQuery);
 
 /**
  * <info-box>
  * @customElement
  * @extends LitElement
  */
-class InfoBox extends LitElement$3 {
+class InfoBox extends LitElement {
   render() {
-    return html$1`
+    return html`
       <style>
         :host {
           display: block;

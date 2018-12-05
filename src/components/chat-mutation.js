@@ -1,5 +1,4 @@
 import { ApolloMutation, html } from 'lit-apollo';
-import gql from 'graphql-tag';
 
 import { client } from '../client.js';
 import { style } from './shared-styles';
@@ -69,15 +68,6 @@ class ChatMutation extends ApolloMutation {
     super();
     this.userinput = '';
     this.client = client;
-    this.mutation = gql`
-      mutation sendMessage($user: String, $message: String) {
-        sendMessage(user: $user, message: $message) {
-          date
-          message
-          user
-        }
-      }
-    `;
   }
 
   get input() {
