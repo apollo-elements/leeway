@@ -11,7 +11,7 @@
     "start": "node index.js",
     "watch": "nodemon -x 'npm run build && npm start'",
     "patch": "patch-package",
-    "postinstall": "run-s patch build",
+    "-postinstall": "run-s patch build",
     "heroku-prebuild": "npm install --dev"
   },
   "author": "",
@@ -31,7 +31,8 @@
     "graphql": "^14.0.2",
     "graphql-tag": "^2.10.0",
     "lit-apollo": "^0.7.2",
-    "lit-html": "^0.14.0"
+    "lit-html": "^0.14.0",
+    "subscriptions-transport-ws": "^0.9.15"
   },
   "devDependencies": {
     "eslint": "^5.9.0",
