@@ -1,4 +1,4 @@
-image: timbru31/docker-ruby-node
+image: timbru31/ruby-node
 deploy:
   type: deploy
   only: [master]
