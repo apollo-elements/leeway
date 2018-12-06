@@ -5,8 +5,7 @@ import { style } from './shared-styles';
 
 import { format } from 'date-fns/fp';
 import { styleMap } from 'lit-html/directives/style-map';
-
-import './chat-subscription.js';
+import gql from 'graphql-tag';
 
 const msgTime = format('HH:mm');
 
@@ -24,7 +23,7 @@ const messageTemplate = ({ message, user, date }) => html`
 /**
  * <chat-query>
  * @customElement
- * @extends LitElement
+ * @extends ApolloQuery
  */
 class ChatQuery extends ApolloQuery {
   render() {
@@ -44,18 +43,6 @@ class ChatQuery extends ApolloQuery {
       }
     </style>
 
-    <chat-subscription .onSubscriptionData=${this.onSubscriptionData}>
-      <script type="application/graphql">
-        subscription {
-          messageSent {
-            date
-            message
-            user
-          }
-        }
-      </script>
-    </chat-subscription>
-
     ${(
     this.loading ? html`Loading...`
     : this.error ? errorTemplate(this.error)
@@ -72,18 +59,33 @@ class ChatQuery extends ApolloQuery {
   constructor() {
     super();
     this.client = client;
-    this.onSubscriptionData = this.onSubscriptionData.bind(this);
+  }
+
+  updateQuery(prev, { subscriptionData }) {
+    if (!subscriptionData.data) return prev;
+    return {
+      ...prev,
+      messages: [...prev.messages, subscriptionData.data.messageSent]
+    };
+  }
+
+  firstUpdated() {
+    const { updateQuery } = this;
+    this.subscribeToMore({
+      updateQuery,
+      document: gql`
+        subscription {
+          messageSent {
+            date
+            message
+            user
+          }
+        }`
+    });
   }
 
   shouldUpdate() {
     return this.data || this.error || this.loading != null;
-  }
-
-  onSubscriptionData({ client, subscriptionData }) {
-    const { query } = this;
-    const { data: { messageSent } } = subscriptionData;
-    const { messages } = client.readQuery({ query });
-    client.writeQuery({ query, data: { messages: [...messages, messageSent] } });
   }
 }
 
