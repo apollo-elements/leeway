@@ -1,0 +1,10 @@
+image: ruby:latest
+deploy:
+  type: deploy
+  only: [master]
+  script: 
+    - npm ci
+    - apt-get update -qy
+    - apt-get install -y ruby-dev
+    - gem install dpl
+    - dpl --provider=heroku --app=lit-apollo-subscriptions --api-key=$HEROKU_API_KEY
