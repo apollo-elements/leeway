@@ -1,7 +1,8 @@
-image: kahwee/node-ruby-dpl
+image: timbru31/docker-ruby-node
 deploy:
   type: deploy
   only: [master]
   script: 
+    - gem install dpl
     - npm ci
     - dpl --provider=heroku --app=lit-apollo-subscriptions --api-key=$HEROKU_API_KEY
