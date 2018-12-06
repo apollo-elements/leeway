@@ -1,26 +1,21 @@
 patch-package
 --- a/node_modules/subscriptions-transport-ws/dist/client.js
 +++ b/node_modules/subscriptions-transport-ws/dist/client.js
-@@ -47,14 +47,19 @@ var _global = typeof global !== 'undefined' ? global : (typeof window !== 'undef
+@@ -47,14 +47,14 @@ var _global = typeof global !== 'undefined' ? global : (typeof window !== 'undef
  var NativeWebSocket = _global.WebSocket || _global.MozWebSocket;
  var Backoff = require("backo2");
  var eventemitter3_1 = require("eventemitter3");
 -var is_string_1 = require("./utils/is-string");
 -var is_object_1 = require("./utils/is-object");
-+
 +var is_string_1 = require("./utils/is-string").default;
-+
 +var is_object_1 = require("./utils/is-object").default;
-+
  var printer_1 = require("graphql/language/printer");
  var getOperationAST_1 = require("graphql/utilities/getOperationAST");
  var symbol_observable_1 = require("symbol-observable");
  var protocol_1 = require("./protocol");
  var defaults_1 = require("./defaults");
 -var message_types_1 = require("./message-types");
-+
 +var message_types_1 = require("./message-types").default;
-+
  var SubscriptionClient = (function () {
      function SubscriptionClient(url, options, webSocketImpl) {
          var _a = (options || {}), _b = _a.connectionCallback, connectionCallback = _b === void 0 ? undefined : _b, _c = _a.connectionParams, connectionParams = _c === void 0 ? {} : _c, _d = _a.timeout, timeout = _d === void 0 ? defaults_1.WS_TIMEOUT : _d, _e = _a.reconnect, reconnect = _e === void 0 ? false : _e, _f = _a.reconnectionAttempts, reconnectionAttempts = _f === void 0 ? Infinity : _f, _g = _a.lazy, lazy = _g === void 0 ? false : _g, _h = _a.inactivityTimeout, inactivityTimeout = _h === void 0 ? 0 : _h;
