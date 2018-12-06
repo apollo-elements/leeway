@@ -1,7 +1,7 @@
 patch-package
 --- a/node_modules/subscriptions-transport-ws/dist/client.js
 +++ b/node_modules/subscriptions-transport-ws/dist/client.js
-@@ -1,539 +1,544 @@
+@@ -1,539 +1,545 @@
  "use strict";
  var __assign = (this && this.__assign) || Object.assign || function(t) {
 -    for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -94,6 +94,7 @@ patch-package
 -var is_object_1 = require("./utils/is-object");
 +var is_string_1 = require("./utils/is-string").default;
 +var is_object_1 = require("./utils/is-object").default;
++
  var printer_1 = require("graphql/language/printer");
  var getOperationAST_1 = require("graphql/utilities/getOperationAST");
  var symbol_observable_1 = require("symbol-observable");
