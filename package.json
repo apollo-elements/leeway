@@ -11,7 +11,7 @@
     "start": "node index.js",
     "watch": "nodemon -x 'npm run build && npm start'",
     "patch": "patch-package",
-    "-postinstall": "run-s patch build",
+    "postinstall": "run-s patch build",
     "heroku-prebuild": "npm install --dev"
   },
   "author": "",
