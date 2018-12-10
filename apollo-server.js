@@ -3,7 +3,8 @@ import { ApolloServer, PubSub, gql } from 'apollo-server-express';
 import Redis from 'ioredis';
 import map from 'crocks/pointfree/map';
 
-const mutatingReverse = xs => xs.reverse();
+const reverse = xs => [...xs].reverse();
+
 const redis = new Redis(process.env.REDIS_URL);
 
 const pubsub = new PubSub();
@@ -25,8 +26,8 @@ const resolvers = {
   },
 
   Query: {
-    messages: () => redis.lrange(MESSAGES, -1, 0)
-      .then(mutatingReverse)
+    messages: () => redis.lrange(MESSAGES, 0, -1)
+      .then(reverse)
       .then(map(JSON.parse)),
   },
 
