@@ -7,4 +7,6 @@ deploy:
     - npm ci
     - npm run patch
     - npm run build
+    - cp -r node_modules/@webcomponents public/assets
+    - rm -rf node_modules
     - dpl --provider=heroku --app=lit-apollo-subscriptions --api-key=$HEROKU_API_KEY --skip_cleanup
