@@ -5,6 +5,7 @@ deploy:
   script:
     - gem install dpl
     - npm ci
+    - npm dedupe
     - npm run patch
     - npm run build
     - cp -r node_modules/@webcomponents public/assets
