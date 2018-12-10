@@ -29,7 +29,7 @@
     "express": "^4.16.4",
     "graphql": "^14.0.2",
     "graphql-tag": "^2.10.0",
-    "lit-apollo": "^0.7.2",
+    "lit-apollo": "github:bennypowers/lit-apollo#typings",
     "lit-html": "^0.14.0",
     "subscriptions-transport-ws": "^0.9.15"
   },

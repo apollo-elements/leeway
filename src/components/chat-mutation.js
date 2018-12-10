@@ -15,7 +15,7 @@ class ChatMutation extends ApolloMutation {
         }
 
         div {
-          font-face: ubuntu arial sans;
+          font-family: ubuntu arial sans;
           display: flex;
         }
 
