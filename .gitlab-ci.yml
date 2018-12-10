@@ -2,7 +2,9 @@ image: timbru31/ruby-node
 deploy:
   type: deploy
   only: [master]
-  script: 
+  script:
     - gem install dpl
     - npm ci
+    - npm run patch
+    - npm run build
     - dpl --provider=heroku --app=lit-apollo-subscriptions --api-key=$HEROKU_API_KEY

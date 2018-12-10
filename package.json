@@ -10,8 +10,7 @@
     "build": "rollup -c && cp src/index.html public && cp -r node_modules/@webcomponents public/assets",
     "start": "node index.js",
     "watch": "nodemon -x 'npm run build && npm start'",
-    "patch": "patch-package",
-    "prepare": "run-s patch build"
+    "patch": "patch-package"
   },
   "author": "",
   "license": "ISC",
