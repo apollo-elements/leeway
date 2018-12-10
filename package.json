@@ -29,7 +29,8 @@
     "express": "^4.16.4",
     "graphql": "^14.0.2",
     "graphql-tag": "^2.10.0",
-    "lit-apollo": "github:bennypowers/lit-apollo#typings",
+    "ioredis": "^4.3.0",
+    "lit-apollo": "github:bennypowers/lit-apollo#d25817f03ff0577f2f16da93e922bfc8c935155a",
     "lit-html": "^0.14.0",
     "subscriptions-transport-ws": "^0.9.15"
   },
