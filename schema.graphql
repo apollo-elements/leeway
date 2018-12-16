@@ -1,17 +1,35 @@
+enum Status {
+  ONLINE
+  OFFLINE
+  AWAY
+}
+
 type Message {
-  message: String
-  user: String
-  date: String
+  message: String!
+  user: User!
+  date: String!
+}
+
+type User {
+  id: ID
+  nick: String!
+  status: Status
 }
 
 type Query {
   messages: [Message]
+  users: [User]
 }
 
 type Subscription {
   messageSent: Message
+  userStatusUpdated: User
 }
 
 type Mutation {
-  sendMessage(user: String, message: String): Message
+  sendMessage(user: String!, message: String!): Message
+  changeNickname(nick: String!, newNick: String!): User
+  join(nick: String!): User
+  # Such sweet sorrow. Returns null.
+  part: String
 }

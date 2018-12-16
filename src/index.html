@@ -3,23 +3,41 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Chat Over GraphQL</title>
+    <title>🤷‍♂️ Leeway: Chat over GraphQL</title>
     <link rel="stylesheet" href="/style.css">
     <script type="module" src="/bundle.js"></script>
     <script src="/assets/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
   </head>
   <body unresolved>
+    <leeway-user-status-toast>
+      <script type="application/graphql">
+        subscription UserStatusUpdated {
+          userStatusUpdated {
+            nick
+            status
+          }
+        }
+      </script>
+    </leeway-user-status-toast>
 
-    <info-box heading="About This Demo">
-      <p>
-        This is a demo of <code>lit-apollo</code> using GraphQL subscriptions to create a simple chat app.
+    <leeway-userlist>
+      <info-box heading="About This Demo">
+        Leeway is a demo of <code>lit-apollo</code> using GraphQL subscriptions to create a simple chat app.
         The source code is available on <a href="https://gitlab.com/bennyp/demo-lit-apollo-subscriptions">GitLab</a>.
         Alternately, source maps are enabled, so just open dev tools to peruse the source.
-      </p>
-      <p>Change your username with <code>/nick {new name}</code>.</p>
-    </info-box>
+      </info-box>
 
-    <chat-query>
+      <script type="application/graphql">
+        query Users {
+          users {
+            nick
+            status
+          }
+        }
+      </script>
+    </leeway-userlist>
+
+    <leeway-messages>
       <script type="application/graphql">
         query Messages {
           messages {
@@ -29,9 +47,9 @@
           }
         }
       </script>
-    </chat-query>
+    </leeway-messages>
 
-    <chat-mutation>
+    <leeway-input>
       <script type="application/graphql">
         mutation sendMessage($user: String, $message: String) {
           sendMessage(user: $user, message: $message) {
@@ -41,18 +59,18 @@
           }
         }
       </script>
-    </chat-mutation>
+    </leeway-input>
 
     <script defer>
       WebComponents.waitFor(async function resolveBody() {
         await Promise.all([
-          customElements.whenDefined('chat-mutation'),
-          customElements.whenDefined('chat-query'),
-          customElements.whenDefined('chat-subscription'),
+          customElements.whenDefined('leeway-mutation'),
+          customElements.whenDefined('leeway-query'),
+          customElements.whenDefined('leeway-subscription'),
           customElements.whenDefined('info-box'),
         ])
         document.body.removeAttribute('unresolved');
-        document.body.querySelector('chat-mutation').userInput.focus();
+        document.body.querySelector('leeway-mutation').userInput.focus();
       })
     </script>
 

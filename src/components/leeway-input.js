@@ -5,7 +5,11 @@ import { style } from './shared-styles';
 
 import '@material/mwc-button';
 
-class ChatMutation extends ApolloMutation {
+class LeewayInput extends ApolloMutation {
+  static get is() {
+    return 'leeway-mutation';
+  }
+
   render() {
     return html`
       ${style}
@@ -88,7 +92,7 @@ class ChatMutation extends ApolloMutation {
     this.input.value = '';
   }
 
-  onSubmitUsername(event) {
+  onSubmitUsername() {
     this.username = this.userinput;
     setTimeout(() => {
       this.input.focus();
@@ -117,4 +121,4 @@ class ChatMutation extends ApolloMutation {
   }
 }
 
-customElements.define('chat-mutation', ChatMutation);
+customElements.define(LeewayInput.is, LeewayInput);

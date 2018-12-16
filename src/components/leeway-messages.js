@@ -21,11 +21,11 @@ const messageTemplate = ({ message, user, date }) => html`
 `;
 
 /**
- * <chat-query>
+ * <leeway-messages>
  * @customElement
  * @extends ApolloQuery
  */
-class ChatQuery extends ApolloQuery {
+class LeewayMessages extends ApolloQuery {
   render() {
     return html`
     ${style}
@@ -53,7 +53,7 @@ class ChatQuery extends ApolloQuery {
   }
 
   static get is() {
-    return 'chat-query';
+    return 'leeway-messages';
   }
 
   constructor() {
@@ -89,4 +89,4 @@ class ChatQuery extends ApolloQuery {
   }
 }
 
-customElements.define(ChatQuery.is, ChatQuery);
+customElements.define(LeewayMessages.is, LeewayMessages);
