@@ -4,8 +4,6 @@ import Redis from 'ioredis';
 import map from 'crocks/pointfree/map';
 import uuidv4 from 'uuid/v4';
 
-const reverse = xs => [...xs].reverse();
-
 const redis = new Redis(process.env.REDIS_URL);
 
 const pubsub = new PubSub();
@@ -23,7 +21,7 @@ async function join(_, { nick }, { user: { create }, pubsub }) {
   const id = uuidv4();
   const user = { id, nick, status: ONLINE };
   await create(user);
-  pubsub.publish(USER_STATUS_UPDATED, { user });
+  pubsub.publish(USER_STATUS_UPDATED, { userStatusUpdated: user });
   return user;
 }
 
@@ -33,8 +31,8 @@ async function part(_, { id }, { user: { getUser, update } }) {
   return;
 }
 
-async function changeNickname(_, { id, newNick }, { user: { getUser, changeNickname } }) {
-  await changeNickname(id, newNick);
+async function changeNickname(_, { id, nick }, { user: { getUser, changeNickname } }) {
+  await changeNickname(id, nick);
   return await getUser(id);
 }
 
@@ -85,23 +83,27 @@ const resolvers = {
   },
 };
 
+const trace = tag => x => console.log(tag, x) || x;
+const traceMap = (f, tag) => x => console.log(tag, f(x)) || x;
+
 export const apolloServer = new ApolloServer({
   typeDefs,
   resolvers,
   context: {
     pubsub,
     message: {
-      getMessages: () => redis.lrange(MESSAGES, 0, -1)
-        .then(reverse)
+      getMessages: () => redis.zrangebyscore(MESSAGES, Infinity, -Infinity)
         .then(map(JSON.parse)),
       addMessage: ({ user, message, date }) =>
         redis.zadd(MESSAGES, new Date(date).getTime(), JSON.stringify({ user, message, date }))
     },
     user: {
       changeNickname: (id, nick) => redis.hset(USERS, id, { nick }),
-      create: user => redis.hmset(USERS, user.id, user),
+      create: user => redis.hmset(USERS, user.id, JSON.stringify(user)),
       getUser: id => redis.hget(USERS, id),
-      getUsers: () => redis.hgetall(USERS),
+      getUsers: () => redis.hgetall(USERS)
+        .then(Object.values)
+        .then(map(JSON.parse)),
       update: (id, user) => redis.hmset(USERS, id, user),
     }
   }

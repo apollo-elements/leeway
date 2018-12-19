@@ -5,10 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>🤷‍♂️ Leeway: Chat over GraphQL</title>
     <link rel="stylesheet" href="/style.css">
-    <script type="module" src="/bundle.js"></script>
+    <script>
+      // so embarassed: graphql/jsutils/instanceOf.mjs:16
+      window.process = { env: { PRODUCTION: true } }
+    </script>
     <script src="/assets/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+    <script type="module" src="/bundle.js"></script>
   </head>
   <body unresolved>
+    <info-box>
+      Leeway is a demo of <code>lit-apollo</code> using GraphQL subscriptions to create a simple chat app.
+      The source code is available on <a href="https://gitlab.com/bennyp/demo-lit-apollo-subscriptions">GitLab</a>.
+      Alternately, source maps are enabled, so just open dev tools to peruse the source.
+    </info-box>
+
+    <leeway-username-input>
+      <script type="application/graphql">
+        mutation Join($nick: String!) {
+          join(nick: $nick) {
+            id
+            nick
+            status
+          }
+        }
+      </script>
+    </leeway-username-input>
+
     <leeway-user-status-toast>
       <script type="application/graphql">
         subscription UserStatusUpdated {
@@ -21,15 +43,11 @@
     </leeway-user-status-toast>
 
     <leeway-userlist>
-      <info-box heading="About This Demo">
-        Leeway is a demo of <code>lit-apollo</code> using GraphQL subscriptions to create a simple chat app.
-        The source code is available on <a href="https://gitlab.com/bennyp/demo-lit-apollo-subscriptions">GitLab</a>.
-        Alternately, source maps are enabled, so just open dev tools to peruse the source.
-      </info-box>
-
       <script type="application/graphql">
         query Users {
+          user @client { id nick status }
           users {
+            id
             nick
             status
           }
@@ -40,6 +58,7 @@
     <leeway-messages>
       <script type="application/graphql">
         query Messages {
+          user @client { id nick status }
           messages {
             date
             message
@@ -51,7 +70,7 @@
 
     <leeway-input>
       <script type="application/graphql">
-        mutation sendMessage($user: String, $message: String) {
+        mutation sendMessage($user: ID!, $message: String!) {
           sendMessage(user: $user, message: $message) {
             date
             message
@@ -61,18 +80,17 @@
       </script>
     </leeway-input>
 
-    <script defer>
-      WebComponents.waitFor(async function resolveBody() {
-        await Promise.all([
-          customElements.whenDefined('leeway-mutation'),
-          customElements.whenDefined('leeway-query'),
-          customElements.whenDefined('leeway-subscription'),
-          customElements.whenDefined('info-box'),
-        ])
-        document.body.removeAttribute('unresolved');
-        document.body.querySelector('leeway-mutation').userInput.focus();
-      })
-    </script>
+    <leeway-status-notifier>
+      <script type="application/graphql">
+        mutation UserStatusUpdated($id: ID, $status: Status) {
+          userStatusUpdated(id: $id, status: $status) {
+            id
+            nick
+            status
+          }
+        }
+      </script>
+    </leeway-status-notifier>
 
   </body>
 </html>

@@ -8,6 +8,8 @@ const getStatusMessage = ({ user: { status = '' } = {} } = {}) =>
   : status === 'OFFLINE' ? 'left'
   : 'did something interesting';
 
+const getUserNick = ({ user: { nick = '' } = {} } = {}) => nick;
+
 class LeewayUserStatusToast extends ApolloSubscription {
   render() {
     return html`
@@ -28,7 +30,10 @@ class LeewayUserStatusToast extends ApolloSubscription {
           opacity: 1;
         }
       </style>
-      <div id="toast" active>${this.data.user.nick} ${getStatusMessage(this.data)}</div>
+      <div id="toast" active>
+        ${getUserNick(this.data)}
+        ${getStatusMessage(this.data)}
+      </div>
     `;
   }
 

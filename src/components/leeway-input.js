@@ -3,23 +3,16 @@ import { ApolloMutation, html } from 'lit-apollo';
 import { client } from '../client.js';
 import { style } from './shared-styles';
 
+import gql from 'graphql-tag';
 import '@material/mwc-button';
 
 class LeewayInput extends ApolloMutation {
-  static get is() {
-    return 'leeway-mutation';
-  }
-
   render() {
     return html`
       ${style}
       <style>
         :host {
           max-width: 100%;
-        }
-
-        div {
-          font-family: ubuntu arial sans;
           display: flex;
         }
 
@@ -33,35 +26,31 @@ class LeewayInput extends ApolloMutation {
         }
       </style>
 
-      <div ?hidden="${this.username}">
-        <input id="user-input"
-            aria-label="Username"
-            placeholder="Username"
-            @keyup="${this.onUserKeyup}"/>
-        <mwc-button id="submit-user"
-            icon="check"
-            ?disabled="${!this.userinput}"
-            @click="${this.onSubmitUsername}">OK</mwc-button>
-      </div>
+      ${this.error && this.error}
 
-      <div ?hidden="${!this.username}">
-        <input id="message-input"
-            aria-label="Message"
-            placeholder="Message"
-            @keyup="${this.onMessageKeyup}"/>
-        <mwc-button id="submit-message"
-            icon="send"
-            @click="${this.send}">Send</mwc-button>
-      </div>
-
+      <input id="input"
+          aria-label="Message"
+          placeholder="${this.user.nick}: "
+          @keyup="${this.onKeyup}"/>
+      <mwc-button id="submit-message"
+          icon="send"
+          @click="${this.mutate}">Send</mwc-button>
     `;
+  }
+
+  static get is() {
+    return 'leeway-input';
   }
 
   static get properties() {
     return {
+      user: { type: Object },
       userinput: { type: String },
-      username: { type: String },
     };
+  }
+
+  get input() {
+    return this.$('input');
   }
 
   $(id) {
@@ -72,53 +61,55 @@ class LeewayInput extends ApolloMutation {
     super();
     this.userinput = '';
     this.client = client;
+    this.user = {};
   }
 
-  get userInput() {
-    return this.$('user-input');
-  }
-
-  get input() {
-    return this.$('message-input');
+  connectedCallback() {
+    super.connectedCallback();
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || !user.id) return;
+    this.user = user;
   }
 
   firstUpdated() {
-    const input = this.$('user-input');
-    input && input.focus();
+    this.input.focus();
   }
 
-  changeUsername() {
-    this.username = this.input.value.replace('/nick ', '');
-    this.input.value = '';
-  }
-
-  onSubmitUsername() {
-    this.username = this.userinput;
-    setTimeout(() => {
-      this.input.focus();
-    });
-  }
-
-  onMessageKeyup({ key }) {
-    if (key !== 'Enter') return;
-    if (this.input.value.startsWith('/nick ')) return this.changeUsername();
-    this.send();
-  }
-
-  onUserKeyup({ key, target: { value: username } }) {
-    (username && key === 'Enter')
-      ? this.$('submit-user').click()
-      : this.userinput = username;
-  }
-
-  async send() {
-    const user = this.username;
-    const message = this.input.value;
-    this.variables = { user, message };
-    await this.mutate();
+  async changeUsername() {
+    const nick = this.input.value.replace('/nick ', '');
+    const variables = { nick };
+    const mutation = gql`
+      mutation ChangeNickname($id: ID!, $nick: String!) {
+        join(id: $id, nick: $nick) {
+          id
+          nick
+          status
+        }
+      }`;
+    const user = await this.mutate({ mutation, variables });
+    localStorage.setItem('user', JSON.stringify(user));
     this.input.value = '';
     this.input.focus();
   }
+
+  onKeyup({ key, target: { value: message } }) {
+    if (key !== 'Enter') return;
+    if (this.input.value.startsWith('/nick ')) return this.changeUsername();
+    const { id: user } = this.user;
+    this.variables = { message, user };
+    this.mutate();
+  }
+
+  onUserKeyup({ key, target: { value } }) {
+    (value && key === 'Enter')
+      ? this.mutate()
+      : this.userinput = value;
+  }
+
+  onCompletedMutation({ data }) {
+    this.input.value = '';
+  }
+
 }
 
 customElements.define(LeewayInput.is, LeewayInput);

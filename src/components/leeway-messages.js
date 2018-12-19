@@ -6,6 +6,9 @@ import { style } from './shared-styles';
 import { format } from 'date-fns/fp';
 import { styleMap } from 'lit-html/directives/style-map';
 import gql from 'graphql-tag';
+import compose from 'crocks/helpers/compose';
+import propOr from 'crocks/helpers/propOr';
+import isSame from 'crocks/predicates/isSame';
 
 const msgTime = format('HH:mm');
 
@@ -13,12 +16,26 @@ const errorTemplate = ({ message = 'Unknown Error' } = {}) => html`
   <h1>😢 Such Sad, Very Error! 😰</h1>
   <div>${message}</div>`;
 
-const messageTemplate = ({ message, user, date }) => html`
-  <div style=${styleMap({ '--hue-coeff': user.length })}>
-    <dt><time>${msgTime(date)}</time> ${user}:</dt>
-    <dd>${message}</dd>
-  </div>
-`;
+const isSameUserId = user => compose(isSame(user), propOr(null, 'id'));
+
+const messageTemplate = cache => ({ message, user, date }) => {
+  const { query } = document.querySelector('leeway-userlist');
+  const { nick } = cache.readQuery({ query }).users.find(isSameUserId(user));
+  return html`
+    <div class="user-border" style=${styleMap({ '--hue-coeff': nick.length })}>
+      <dt><time>${msgTime(date)}</time> ${nick}:</dt>
+      <dd>${message}</dd>
+    </div>
+  `;
+};
+
+const updateQuery = (prev, { subscriptionData: { data } }) => !data ? prev : ({
+  ...prev,
+  messages: [
+    ...prev.messages,
+    data.messageSent
+  ]
+});
 
 /**
  * <leeway-messages>
@@ -30,14 +47,6 @@ class LeewayMessages extends ApolloQuery {
     return html`
     ${style}
     <style>
-      dl > div {
-        display: flex;
-        border-radius: 4px;
-        margin: 10px;
-        padding: 14px;
-        background: hsla(calc(var(--hue-coeff) * var(--primary-hue)) 50% 50% / 0.3);
-      }
-
       time {
         font-family: monospace;
       }
@@ -46,7 +55,7 @@ class LeewayMessages extends ApolloQuery {
     ${(
     this.loading ? html`Loading...`
     : this.error ? errorTemplate(this.error)
-    : html`<dl>${this.data.messages.map(messageTemplate)}</dl>`
+    : html`<dl>${this.data && this.data.messages.map(messageTemplate(this.client.cache))}</dl>`
   )}
     `;
 
@@ -61,16 +70,7 @@ class LeewayMessages extends ApolloQuery {
     this.client = client;
   }
 
-  updateQuery(prev, { subscriptionData }) {
-    if (!subscriptionData.data) return prev;
-    return {
-      ...prev,
-      messages: [...prev.messages, subscriptionData.data.messageSent]
-    };
-  }
-
   firstUpdated() {
-    const { updateQuery } = this;
     this.subscribeToMore({
       updateQuery,
       document: gql`

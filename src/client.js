@@ -1,9 +1,10 @@
 import ApolloClient from 'apollo-client';
 import { InMemoryCache } from 'apollo-cache-inmemory';
-import { split } from 'apollo-link';
+import { ApolloLink, split } from 'apollo-link';
 import { HttpLink } from 'apollo-link-http';
 import { WebSocketLink } from 'apollo-link-ws';
 import { getMainDefinition } from 'apollo-utilities';
+import { withClientState } from 'apollo-link-state';
 
 import compose from 'crocks/helpers/compose';
 import isSame from 'crocks/predicates/isSame';
@@ -42,9 +43,21 @@ const isWsOperation = compose(
   getQuery
 );
 
-const link = split(isWsOperation, getWsLink(), getHttpLink());
-
 const cache = new InMemoryCache();
+
+const stateLink = withClientState({
+  cache,
+  resolvers: {},
+  defaults: {
+    user() {
+      return { __typename: 'User', ...JSON.parse(localStorage.getItem('user')) };
+    }
+  }
+});
+
+const terminal = split(isWsOperation, getWsLink(), getHttpLink());
+
+const link = ApolloLink.from([stateLink, terminal]);
 
 // Create the Apollo Client
 export const client = new ApolloClient({ cache, link });
