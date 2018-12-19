@@ -19,7 +19,12 @@ export default {
       module: true,
     }),
 
-    commonjs()
+    commonjs({
+      namedExports: {
+        // Necessary to roll apollo-link-state up.
+        'graphql-anywhere/lib/async': ['graphql']
+      }
+    })
 
   ]
 };

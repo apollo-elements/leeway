@@ -1,15 +1,20 @@
 {
-  "name": "demo-lit-apollo-subscriptions",
+  "name": "leeway",
   "version": "1.0.0",
-  "description": "",
+  "description": "Where work is avoided.",
   "main": "index.js",
   "engines": {
     "node": "10.3.0"
   },
   "scripts": {
-    "build": "rollup -c && cp src/index.html public && cp -r node_modules/@webcomponents public/assets",
+    "postinstall": "patch-package",
+    "build:copy": "cp src/index.html public && cp src/style.css public && cp -r node_modules/@webcomponents public/assets",
+    "build:rollup": "rollup -c",
+    "build": "run-s build:*",
     "start": "node index.js",
-    "watch": "nodemon -x 'npm run build && npm start'",
+    "watch:server": "nodemon -x 'heroku local' --signal SIGTERM --config server.nodemon.json",
+    "watch:client": "nodemon -x 'npm run build' --config client.nodemon.json",
+    "watch": "run-p watch:*",
     "patch": "patch-package"
   },
   "author": "",
@@ -21,6 +26,7 @@
     "apollo-cache-inmemory": "^1.3.0",
     "apollo-client": "^2.3.5",
     "apollo-link-http": "^1.5.3",
+    "apollo-link-state": "^0.4.2",
     "apollo-link-ws": "^1.0.8",
     "apollo-server": "^2.2.5",
     "date-fns": "^2.0.0-alpha.23",
@@ -34,6 +40,7 @@
     "subscriptions-transport-ws": "^0.9.15"
   },
   "devDependencies": {
+    "@types/ioredis": "^4.0.4",
     "eslint": "^5.9.0",
     "nodemon": "^1.18.7",
     "npm-run-all": "^4.1.5",

@@ -1,0 +1,8 @@
+{
+  "ignore": ["src/**/*", "public/**/*.*", ".git", "node_modules/**/node_modules"],
+  "watch": [
+    "server.js",
+    "apollo-server.js",
+    "package-lock.json"
+  ]
+}
