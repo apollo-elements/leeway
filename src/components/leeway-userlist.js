@@ -37,13 +37,12 @@ class LeewayUserlist extends ApolloQuery {
     return html`
       ${style}
       <style>
-        :host {
-          display: block;
+        .user-border {
+          padding: 4px;
         }
       </style>
       <slot></slot>
       ${this.error && this.error}
-
       ${showUsers(this.data)}
     `;
   }

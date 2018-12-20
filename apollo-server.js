@@ -33,7 +33,7 @@ async function part(_, { id }, { user: { getUser, update } }) {
 
 async function changeNickname(_, { id, nick }, { user: { getUser, changeNickname } }) {
   await changeNickname(id, nick);
-  return await getUser(id);
+  return await getUser(id).then(traceMap(x => JSON.stringify(x, null, 2), 'user'));
 }
 
 async function users(_, __, { user: { getUsers } }) {
@@ -98,9 +98,9 @@ export const apolloServer = new ApolloServer({
         redis.zadd(MESSAGES, new Date(date).getTime(), JSON.stringify({ user, message, date }))
     },
     user: {
-      changeNickname: (id, nick) => redis.hset(USERS, id, { nick }),
+      changeNickname: (id, nick) => redis.hset(USERS, id, JSON.stringify({ nick, id, status: ONLINE })),
       create: user => redis.hmset(USERS, user.id, JSON.stringify(user)),
-      getUser: id => redis.hget(USERS, id),
+      getUser: id => redis.hget(USERS, id).then(JSON.parse),
       getUsers: () => redis.hgetall(USERS)
         .then(Object.values)
         .then(map(JSON.parse)),

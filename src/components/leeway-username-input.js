@@ -1,9 +1,10 @@
+import '@material/mwc-button';
+
 import { ApolloMutation, html } from 'lit-apollo';
 
 import { client } from '../client.js';
+import { get, set } from '../lib/storage';
 import { style } from './shared-styles';
-
-import '@material/mwc-button';
 
 class LeewayUsernameInput extends ApolloMutation {
   render() {
@@ -78,7 +79,7 @@ class LeewayUsernameInput extends ApolloMutation {
 
   connectedCallback() {
     super.connectedCallback();
-    const user = JSON.parse(localStorage.getItem('user'));
+    const user = get('user');
     if (user) this.close();
   }
 
@@ -102,7 +103,7 @@ class LeewayUsernameInput extends ApolloMutation {
 
   onCompletedMutation({ data: { join, changeNickname } }) {
     this.user = join || changeNickname;
-    localStorage.setItem('user', JSON.stringify(join));
+    set('user', join);
     this.close();
   }
 

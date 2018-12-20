@@ -1,16 +1,18 @@
-import ApolloClient from 'apollo-client';
-import { InMemoryCache } from 'apollo-cache-inmemory';
-import { ApolloLink, split } from 'apollo-link';
 import { HttpLink } from 'apollo-link-http';
+import { InMemoryCache } from 'apollo-cache-inmemory';
 import { WebSocketLink } from 'apollo-link-ws';
-import { getMainDefinition } from 'apollo-utilities';
 import { withClientState } from 'apollo-link-state';
+import ApolloClient from 'apollo-client';
 
+import { ApolloLink, split } from 'apollo-link';
+import { getMainDefinition } from 'apollo-utilities';
 import compose from 'crocks/helpers/compose';
-import isSame from 'crocks/predicates/isSame';
-import propOr from 'crocks/helpers/propOr';
 import fanout from 'crocks/helpers/fanout';
+import isSame from 'crocks/predicates/isSame';
 import merge from 'crocks/Pair/merge';
+import propOr from 'crocks/helpers/propOr';
+
+import { get } from './lib/storage';
 
 const { host } = location;
 
@@ -49,9 +51,7 @@ const stateLink = withClientState({
   cache,
   resolvers: {},
   defaults: {
-    user() {
-      return { __typename: 'User', ...JSON.parse(localStorage.getItem('user')) };
-    }
+    user: { __typename: 'User', ...get('user') },
   }
 });
 

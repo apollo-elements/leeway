@@ -1,10 +1,11 @@
+import '@material/mwc-button';
+
 import { ApolloMutation, html } from 'lit-apollo';
+import gql from 'graphql-tag';
 
 import { client } from '../client.js';
+import { get, set } from '../lib/storage';
 import { style } from './shared-styles';
-
-import gql from 'graphql-tag';
-import '@material/mwc-button';
 
 class LeewayInput extends ApolloMutation {
   render() {
@@ -66,7 +67,7 @@ class LeewayInput extends ApolloMutation {
 
   connectedCallback() {
     super.connectedCallback();
-    const user = JSON.parse(localStorage.getItem('user'));
+    const user = get('user');
     if (!user || !user.id) return;
     this.user = user;
   }
@@ -77,17 +78,23 @@ class LeewayInput extends ApolloMutation {
 
   async changeUsername() {
     const nick = this.input.value.replace('/nick ', '');
-    const variables = { nick };
+    const { id } = get('user');
+    const variables = { nick, id };
     const mutation = gql`
       mutation ChangeNickname($id: ID!, $nick: String!) {
-        join(id: $id, nick: $nick) {
+        changeNickname(id: $id, nick: $nick) {
           id
           nick
           status
         }
       }`;
-    const user = await this.mutate({ mutation, variables });
-    localStorage.setItem('user', JSON.stringify(user));
+    const { graphQLErrors = [], networkError, data } = await this.mutate({ mutation, variables });
+    if (graphQLErrors.length) throw new Error(graphQLErrors);
+    if (networkError) throw new Error(networkError);
+    if (!data) throw new Error('Unexpected error');
+    const { status } = data.changeNickname;
+    set('user', { id, nick, status });
+    this.user = { id, nick, status };
     this.input.value = '';
     this.input.focus();
   }
