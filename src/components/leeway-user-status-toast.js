@@ -1,6 +1,7 @@
 import { style } from './shared-styles';
 import { client } from '../client.js';
-import { ApolloSubscription, html } from 'lit-apollo';
+import { ApolloSubscription, html } from '@apollo-elements/lit-apollo';
+import { css } from 'lit-element';
 
 const getStatusMessage = ({ user: { status = '' } = {} } = {}) =>
   !status ? status
@@ -11,25 +12,27 @@ const getStatusMessage = ({ user: { status = '' } = {} } = {}) =>
 const getUserNick = ({ user: { nick = '' } = {} } = {}) => nick;
 
 class LeewayUserStatusToast extends ApolloSubscription {
+  static get styles() {
+    return [style, css`
+      div {
+        visibility: hidden;
+        z-index: -1000;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+      }
+
+      [active] {
+        visibility: visible;
+        z-index: auto;
+        pointer-events: auto;
+        opacity: 1;
+      }
+    `];
+  }
+
   render() {
     return html`
-      ${style}
-      <style>
-        div {
-          visibility: hidden;
-          z-index: -1000;
-          pointer-events: none;
-          opacity: 0;
-          transition: opacity 0.5s ease;
-        }
-
-        [active] {
-          visibility: visible;
-          z-index: auto;
-          pointer-events: auto;
-          opacity: 1;
-        }
-      </style>
       <div id="toast" active>
         ${getUserNick(this.data)}
         ${getStatusMessage(this.data)}

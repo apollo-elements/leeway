@@ -1,43 +1,45 @@
 import '@material/mwc-button';
 
-import { ApolloMutation, html } from 'lit-apollo';
+import { ApolloMutation, html } from '@apollo-elements/lit-apollo';
+import { css } from 'lit-element';
 
 import { client } from '../client.js';
 import { get, set } from '../lib/storage';
 import { style } from './shared-styles';
 
 class LeewayUsernameInput extends ApolloMutation {
+  static get styles() {
+    return [style, css`
+      :host {
+        display: flex;
+        align-items: center;
+        padding: 28px;
+        background: white;
+        z-index: 10;
+      }
+
+      :host([closed]) {
+        display: none;
+      }
+
+      div {
+        font-family: ubuntu arial sans;
+        display: flex;
+      }
+
+      input {
+        flex: 1 1 auto;
+      }
+
+      mwc-button {
+        width: 100%;
+        flex: 0 1 54px;
+      }
+    `];
+  }
+
   render() {
     return html`
-      ${style}
-      <style>
-        :host {
-          display: flex;
-          align-items: center;
-          padding: 28px;
-          background: white;
-          z-index: 10;
-        }
-
-        :host([closed]) {
-          display: none;
-        }
-
-        div {
-          font-family: ubuntu arial sans;
-          display: flex;
-        }
-
-        input {
-          flex: 1 1 auto;
-        }
-
-        mwc-button {
-          width: 100%;
-          flex: 0 1 54px;
-        }
-      </style>
-
       ${this.error && this.error}
 
       <input id="input"

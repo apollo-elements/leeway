@@ -64,7 +64,11 @@ leeway-messages {
 }
 
 leeway-username-input {
-  grid-area: username;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
 }
 
 leeway-input {
@@ -73,6 +77,7 @@ leeway-input {
 
 leeway-userlist {
   grid-area: userlist;
+  background-color: rebeccapurple;
 }
 
 leeway-userlist,

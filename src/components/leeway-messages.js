@@ -1,4 +1,5 @@
-import { ApolloQuery, html } from 'lit-apollo';
+import { ApolloQuery, html } from '@apollo-elements/lit-apollo';
+import { css } from 'lit-element';
 
 import { client } from '../client';
 import { style } from './shared-styles';
@@ -14,7 +15,8 @@ const msgTime = format('HH:mm');
 
 const errorTemplate = ({ message = 'Unknown Error' } = {}) => html`
   <h1>😢 Such Sad, Very Error! 😰</h1>
-  <div>${message}</div>`;
+  <div>${message}</div>
+`;
 
 const isSameUserId = user => compose(isSame(user), propOr(null, 'id'));
 
@@ -37,32 +39,35 @@ const updateQuery = (prev, { subscriptionData: { data } }) => !data ? prev : ({
   ]
 });
 
+const viewTemplate = ({ data, error, loading }) =>
+  loading ? html`Loading...`
+  : error ? errorTemplate(error)
+  : html`<dl>${data && data.users && data.messages.map(messageTemplate(data))}</dl>`;
+
 /**
  * <leeway-messages>
  * @customElement
  * @extends ApolloQuery
  */
 class LeewayMessages extends ApolloQuery {
-  render() {
-    return html`
-    ${style}
-    <style>
+  static get styles() {
+    return [style, css`
       time {
         font-family: monospace;
       }
-    </style>
 
-    ${(
-    this.loading ? html`Loading...`
-    : this.error ? errorTemplate(this.error)
-    : html`<dl>${this.data && this.data.messages.map(messageTemplate(this.client.cache))}</dl>`
-  )}
-    `;
-
+      dl {
+        margin: 0;
+      }
+    `];
   }
 
   static get is() {
     return 'leeway-messages';
+  }
+
+  render() {
+    return html`${viewTemplate(this)}`;
   }
 
   constructor() {

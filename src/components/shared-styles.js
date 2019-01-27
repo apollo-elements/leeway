@@ -1,23 +1,17 @@
-import { html } from 'lit-apollo';
+import { css } from 'lit-element';
 
-export const style = html`
-  <style>
-    :host {
-      display: block;
-      margin: 10px;
-    }
+export const style = css`
+  :host {
+    display: block;
+  }
 
-    [hidden] {
-      display: none !important;
-    }
+  [hidden] {
+    display: none !important;
+  }
 
-    .user-border {
-      display: flex;
-      border-radius: 4px;
-      margin: 10px;
-      padding: 14px;
-      background: hsla(calc(var(--hue-coeff) * var(--primary-hue)) 50% 50% / 0.3);
-    }
-
-  </style>
+  .user {
+    display: flex;
+    padding: 14px;
+    background: hsla(calc(var(--hue-coeff) * var(--primary-hue)) var(--saturation, 50%) 50% / 0.3);
+  }
 `;
