@@ -1,4 +1,5 @@
 enum Status {
+  PARTED
   ONLINE
   OFFLINE
   AWAY
@@ -24,12 +25,15 @@ type Query {
 type Subscription {
   messageSent: Message
   userStatusUpdated: User
+  userJoined: User
+  userParted: User
 }
 
 type Mutation {
   sendMessage(user: ID!, message: String!): Message
   changeNickname(id: ID!, nick: String!): User
+  updateUserStatus(id: ID!, status: Status!): Status
   join(nick: String!): User
   # Such sweet sorrow. Returns null.
-  part: String
+  part(id: ID!): String
 }
