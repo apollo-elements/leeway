@@ -1,43 +1,51 @@
-import { ApolloQuery, html } from '@apollo-elements/lit-apollo';
-import { css } from 'lit-element';
-
-import { client } from '../client';
-import { style } from './shared-styles';
-
-import { format } from 'date-fns/fp';
-import { styleMap } from 'lit-html/directives/style-map';
+import { ApolloQuery, css, html } from '@apollo-elements/lit-apollo';
+import { classMap } from 'lit-html/directives/class-map';
+import { format, parseISO } from 'date-fns/fp';
 import gql from 'graphql-tag';
-import compose from 'crocks/helpers/compose';
-import propOr from 'crocks/helpers/propOr';
-import isSame from 'crocks/predicates/isSame';
 
-const msgTime = format('HH:mm');
+import compose from 'crocks/helpers/compose';
+
+import { getUserStyleMap } from '../lib/user-style-map';
+import { isSameById } from '../lib/is-same-by';
+import { style } from './shared-styles';
+import _messageSentSubscription from '../message-sent-subscription.graphql';
+
+const messageSentSubscription = gql(_messageSentSubscription);
+
+import _userJoinedSubscription from '../user-joined-subscription.graphql';
+const userJoinedSubscription = gql(_userJoinedSubscription);
+
+import _userPartedSubscription from '../user-parted-subscription.graphql';
+const userPartedSubscription = gql(_userPartedSubscription);
+
+/** msgTime :: String -> String */
+const msgTime = compose(format('HH:mm'), parseISO);
 
 const errorTemplate = ({ message = 'Unknown Error' } = {}) => html`
   <h1>😢 Such Sad, Very Error! 😰</h1>
   <div>${message}</div>
 `;
 
-const isSameUserId = user => compose(isSame(user), propOr(null, 'id'));
+const getUserWithId = ({ id: localId, users }, id) => ({
+  ...users.find(isSameById({ id })),
+  me: localId === id
+});
 
-const messageTemplate = cache => ({ message, user, date }) => {
-  const { query } = document.querySelector('leeway-userlist');
-  const { nick } = cache.readQuery({ query }).users.find(isSameUserId(user));
+const onMessageSent = (prev, { subscriptionData: { data: { messageSent } } }) => ({
+  ...prev,
+  messages: [...prev.messages, messageSent],
+});
+
+const messageTemplate = data => ({ message, user: userId, date }) => {
+  const { nick, status, me } = getUserWithId(data, userId);
   return html`
-    <div class="user-border" style=${styleMap({ '--hue-coeff': nick.length })}>
+      <div class="${classMap({ user: true, me })}"
+           style="${getUserStyleMap({ nick, status })}">
       <dt><time>${msgTime(date)}</time> ${nick}:</dt>
       <dd>${message}</dd>
     </div>
   `;
 };
-
-const updateQuery = (prev, { subscriptionData: { data } }) => !data ? prev : ({
-  ...prev,
-  messages: [
-    ...prev.messages,
-    data.messageSent
-  ]
-});
 
 const viewTemplate = ({ data, error, loading }) =>
   loading ? html`Loading...`
@@ -62,36 +70,37 @@ class LeewayMessages extends ApolloQuery {
     `];
   }
 
-  static get is() {
-    return 'leeway-messages';
-  }
-
   render() {
     return html`${viewTemplate(this)}`;
   }
 
   constructor() {
     super();
-    this.client = client;
-  }
-
-  firstUpdated() {
-    this.subscribeToMore({
-      updateQuery,
-      document: gql`
-        subscription {
-          messageSent {
-            date
-            message
-            user
-          }
-        }`
-    });
+    this.onError = this.onError.bind(this);
   }
 
   shouldUpdate() {
     return this.data || this.error || this.loading != null;
   }
+
+  firstUpdated() {
+    const onError = this.onError;
+    this.subscribeToMore({ updateQuery: onMessageSent, document: messageSentSubscription, onError });
+    this.subscribeToMore({ document: userJoinedSubscription, onError });
+    this.subscribeToMore({ document: userPartedSubscription, onError });
+    this.scrollTop = this.scrollHeight;
+  }
+
+  updated(changedProps) {
+    if (changedProps.has('data')) this.scrollTo({
+      behavior: 'smooth',
+      top: this.scrollHeight,
+    });
+  }
+
+  onError(error) {
+    this.error = error;
+  }
 }
 
-customElements.define(LeewayMessages.is, LeewayMessages);
+customElements.define('leeway-messages', LeewayMessages);

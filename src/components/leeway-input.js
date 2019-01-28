@@ -4,9 +4,12 @@ import { ApolloMutation, html } from '@apollo-elements/lit-apollo';
 import { css } from 'lit-element';
 import gql from 'graphql-tag';
 
-import { client } from '../client.js';
-import { get, set } from '../lib/storage';
-import { style } from './shared-styles';
+import { style } from './shared-styles.js';
+import { updateLocalUser } from '../lib/update-local-user.js';
+import _changeNicknameMutation from '../change-nickname-mutation.graphql';
+const changeNicknameMutation = gql(_changeNicknameMutation);
+import _userQuery from '../user-query.graphql';
+const userQuery = gql(_userQuery);
 
 class LeewayInput extends ApolloMutation {
   static get styles() {
@@ -14,10 +17,12 @@ class LeewayInput extends ApolloMutation {
       :host {
         max-width: 100%;
         display: flex;
+        align-items: center;
       }
 
       input {
         flex: 1 1 auto;
+        height: 100%;
       }
 
       mwc-button {
@@ -28,21 +33,19 @@ class LeewayInput extends ApolloMutation {
   }
 
   render() {
+    const { nick } = this.user || {};
     return html`
       ${this.error && this.error}
 
       <input id="input"
           aria-label="Message"
-          placeholder="${this.user.nick}: "
+          placeholder="${nick ? `${nick}: ` : ''}"
+          ?disabled="${!nick}"
           @keyup="${this.onKeyup}"/>
       <mwc-button id="submit-message"
           icon="send"
-          @click="${this.mutate}">Send</mwc-button>
+          @click="${this.onClick}">Send</mwc-button>
     `;
-  }
-
-  static get is() {
-    return 'leeway-input';
   }
 
   static get properties() {
@@ -63,15 +66,16 @@ class LeewayInput extends ApolloMutation {
   constructor() {
     super();
     this.userinput = '';
-    this.client = client;
     this.user = {};
   }
 
   connectedCallback() {
     super.connectedCallback();
-    const user = get('user');
-    if (!user || !user.id) return;
-    this.user = user;
+    this.queryObservable = this.client.watchQuery({ query: userQuery });
+    this.queryObservable.subscribe({
+      next: ({ data: { id, nick, status } }) => this.user = { id, nick, status },
+      error: error => this.error = error,
+    });
   }
 
   firstUpdated() {
@@ -80,45 +84,39 @@ class LeewayInput extends ApolloMutation {
 
   async changeUsername() {
     const nick = this.input.value.replace('/nick ', '');
-    const { id } = get('user');
+    const { user: { id } } = this;
     const variables = { nick, id };
-    const mutation = gql`
-      mutation ChangeNickname($id: ID!, $nick: String!) {
-        changeNickname(id: $id, nick: $nick) {
-          id
-          nick
-          status
-        }
-      }`;
-    const { graphQLErrors = [], networkError, data } = await this.mutate({ mutation, variables });
+    const { graphQLErrors = [], networkError, data } =
+      // will fire onCompletedMutation
+      await this.mutate({ mutation: changeNicknameMutation, variables });
     if (graphQLErrors.length) throw new Error(graphQLErrors);
     if (networkError) throw new Error(networkError);
     if (!data) throw new Error('Unexpected error');
-    const { status } = data.changeNickname;
-    set('user', { id, nick, status });
-    this.user = { id, nick, status };
+    await updateLocalUser(this.client, { id, nick });
     this.input.value = '';
     this.input.focus();
+  }
+
+  submit(message) {
+    const { user: { id: user } } = this;
+    this.variables = { message, user };
+    return this.mutate();
+  }
+
+  onClick() {
+    this.submit(this.input.value);
   }
 
   onKeyup({ key, target: { value: message } }) {
     if (key !== 'Enter') return;
     if (this.input.value.startsWith('/nick ')) return this.changeUsername();
-    const { id: user } = this.user;
-    this.variables = { message, user };
-    this.mutate();
+    return this.submit(message);
   }
 
-  onUserKeyup({ key, target: { value } }) {
-    (value && key === 'Enter')
-      ? this.mutate()
-      : this.userinput = value;
-  }
-
-  onCompletedMutation({ data }) {
+  onCompletedMutation() {
     this.input.value = '';
   }
 
 }
 
-customElements.define(LeewayInput.is, LeewayInput);
+customElements.define('leeway-input', LeewayInput);

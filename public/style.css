@@ -1,5 +1,5 @@
 :root {
-  --primary-hue: 200;
+  --primary-hue: 270;
   --hue-coeff: 1;
 }
 
@@ -8,18 +8,23 @@ html {
   height: 100vh;
 }
 
+html,
 body {
-  display: grid;
-  grid-template-areas: 'infobox toast userlist messages input';
-  grid-template-rows: min-content fit-content min-content;
-  grid-template-columns: minmax(min-content, 200px) auto;
   font-family: ubuntu, arial, sans-serif;
-  flex-flow: column nowrap;
-  justify-content: space-between;
   width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
+}
+
+body {
+  display: grid;
+  grid-template-areas:
+    'infobox infobox'
+    'userlist messages'
+    'userlist input';
+  grid-template-rows: min-content auto 50px;
+  grid-template-columns: minmax(min-content, 200px) auto;
 }
 
 body > * {
@@ -44,14 +49,22 @@ body[unresolved]::before {
 
 info-box {
   grid-area: infobox;
-  grid-column: 1 / 3;
-  grid-row: 1 / 2;
+}
+
+info-box h2 {
+  display: inline;
+}
+
+info-box a img {
+  max-height: 24px;
+}
+
+a::before {
+  content: "↪";
+  font-size: 10px;
 }
 
 leeway-user-status-toast {
-  grid-area: toast;
-  grid-column: 1 / 3;
-  grid-row: 2 / 3;
   position: absolute;
   top: 28px;
   right: 28px;
@@ -60,29 +73,30 @@ leeway-user-status-toast {
 
 leeway-messages {
   grid-area: messages;
-  grid-column: 2 / 3;
-  grid-row: 2 / 3;
-  flex: 1 0 auto;
-  overflow-y: scroll;
+  /* flex: 1 0 auto; */
 }
 
 leeway-username-input {
-  grid-area: username;
-  grid-column: 1 / 3;
-  grid-row: 1 / 4;
+  grid-area: messages;
 }
 
 leeway-input {
   grid-area: input;
-  grid-row: 3 / 4;
-  grid-column: 1 / 3;
+  max-height: 50px;
 }
 
 leeway-userlist {
   grid-area: userlist;
-  grid-column: 1 / 2;
-  grid-row: 2 / 3;
+  background-color: rebeccapurple;
+}
+
+leeway-userlist,
+leeway-messages {
   overflow-y: scroll;
+}
+
+leeway-status-notifier {
+  display: none;
 }
 
 @keyframes zoom {

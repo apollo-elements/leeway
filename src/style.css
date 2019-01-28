@@ -1,5 +1,5 @@
 :root {
-  --primary-hue: 200;
+  --primary-hue: 270;
   --hue-coeff: 1;
 }
 
@@ -22,8 +22,8 @@ body {
   grid-template-areas:
     'infobox infobox'
     'userlist messages'
-    'input input';
-  grid-template-rows: min-content auto min-content;
+    'userlist input';
+  grid-template-rows: min-content auto 50px;
   grid-template-columns: minmax(min-content, 200px) auto;
 }
 
@@ -51,6 +51,19 @@ info-box {
   grid-area: infobox;
 }
 
+info-box h2 {
+  display: inline;
+}
+
+info-box a img {
+  max-height: 24px;
+}
+
+a::before {
+  content: "↪";
+  font-size: 10px;
+}
+
 leeway-user-status-toast {
   position: absolute;
   top: 28px;
@@ -64,15 +77,12 @@ leeway-messages {
 }
 
 leeway-username-input {
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
+  grid-area: messages;
 }
 
 leeway-input {
   grid-area: input;
+  max-height: 50px;
 }
 
 leeway-userlist {

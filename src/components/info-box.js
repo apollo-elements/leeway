@@ -35,6 +35,10 @@ class InfoBox extends LitElement {
       :host([closed]) section {
         opacity: 0;
       }
+
+      ::slotted(h2) {
+        font-size: 18px;
+      }
     `;
   }
 
@@ -46,10 +50,6 @@ class InfoBox extends LitElement {
         <slot></slot>
       </section>
     `;
-  }
-
-  static get is() {
-    return 'info-box';
   }
 
   static get properties() {
@@ -64,4 +64,4 @@ class InfoBox extends LitElement {
   }
 }
 
-customElements.define(InfoBox.is, InfoBox);
+customElements.define('info-box', InfoBox);

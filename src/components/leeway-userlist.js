@@ -1,32 +1,58 @@
-import { ApolloQuery, html } from 'lit-apollo';
-import { styleMap } from 'lit-html/directives/style-map';
-import { ApolloQuery, html } from '@apollo-elements/lit-apollo';
-import { css } from 'lit-element';
+import { ApolloQuery, css, html } from '@apollo-elements/lit-apollo';
+import { classMap } from 'lit-html/directives/class-map';
 import gql from 'graphql-tag';
 
+import and from 'crocks/logic/and';
+import assign from 'crocks/helpers/assign';
 import compose from 'crocks/helpers/compose';
-import map from 'crocks/pointfree/map';
+import isSame from 'crocks/predicates/isSame';
+import not from 'crocks/logic/not';
 import propOr from 'crocks/helpers/propOr';
+import when from 'crocks/logic/when';
 
+import { getUserStyleMap } from '../lib/user-style-map';
+import { isSameById } from '../lib/is-same-by';
+import _userStatusUpdatedSubscription from '../user-status-updated-subscription.graphql';
 
-const getStyleMap = compose(styleMap, ({ nick, status }) => ({
-  '--hue-coeff': nick.length,
-  '--saturation': status === 'ONLINE' ? '0%' : '50%'
-}));
+const userStatusUpdatedSubscription = gql(_userStatusUpdatedSubscription);
 
-const userTemplate = ({ nick, status } = {}) => (html`
-  <div class="user-border" style=${getStyleMap({ nick, status })}>${nick}</div>
-`);
+import _userPartedSubscription from '../user-parted-subscription.graphql';
+const userPartedSubscription = gql(_userPartedSubscription);
+
+import _userJoinedSubscription from '../user-joined-subscription.graphql';
+const userJoinedSubscription = gql(_userJoinedSubscription);
+
 import { style } from './shared-styles';
 
-const showUsers = compose(map(userTemplate), propOr([], 'users'));
+const userTemplate = localUser => ({ id, nick, status } = {}) => (html`
+  <div class="${classMap({ user: true, me: localUser.id === id })}"
+       style="${getUserStyleMap({ nick, status })}">
+    <span aria-label="${status}" class="${classMap({ status: true, ...status && { [status.toLowerCase()]: true } })}"></span>
+    ${nick}
+  </div>
+`);
 
-const updateQuery = (prev, { subscriptionData: { data: { userStatusUpdated: user } } }) => ({
+const isNotParted = compose(not(isSame('PARTED')), propOr(null, 'status'));
+
+const onStatusUpdated = (prev, { subscriptionData: { data: { userStatusUpdated } } }) => ({
   ...prev,
   users: [
-    ...(prev.users || []).filter(({ id }) => id !== user.id),
-    user,
-  ]
+    userStatusUpdated,
+    ...prev.users.filter(not(isSameById(userStatusUpdated))),
+  ].filter(and(Boolean, isNotParted))
+});
+
+const onUserJoined = (prev, { subscriptionData: { data: { userJoined } } }) => ({
+  ...prev,
+  users: [
+    userJoined,
+    ...prev.users,
+  ].filter(Boolean)
+});
+
+const onUserParted = (prev, { subscriptionData: { data: { userParted } } }) => ({
+  ...prev,
+  users: prev.users.map(when(isSameById(userParted), assign(userParted)))
 });
 
 /**
@@ -65,31 +91,26 @@ class LeewayUserlist extends ApolloQuery {
   }
 
   render() {
-    return html`
+    const { users = [], id, nick, status } = this.data;
+    return (html`
       <slot></slot>
       ${this.error && this.error}
-      ${showUsers(this.data)}
-    `;
-  }
-
-  static get is() {
-    return 'leeway-userlist';
+      ${users.map(userTemplate({ id, nick, status }))}
+    `);
   }
 
   firstUpdated() {
-    this.subscribeToMore({
-      updateQuery,
-      document: gql`
-        subscription {
-          userStatusUpdated {
-            id
-            nick
-            status
-          }
-        }`
-    });
+    const onError = this.onSubscriptionError.bind(this);
+    this.subscribeToMore({ updateQuery: onStatusUpdated, document: userStatusUpdatedSubscription, onError });
+    this.subscribeToMore({ updateQuery: onUserJoined, document: userJoinedSubscription, onError });
+    this.subscribeToMore({ updateQuery: onUserParted, document: userPartedSubscription, onError });
+  }
+
+  onSubscriptionError(error) {
+    console.error(error);
+    this.error = error;
   }
 
 }
 
-customElements.define(LeewayUserlist.is, LeewayUserlist);
+customElements.define('leeway-userlist', LeewayUserlist);

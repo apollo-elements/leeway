@@ -1,5 +1,4 @@
 import { style } from './shared-styles';
-import { client } from '../client.js';
 import { ApolloSubscription, html } from '@apollo-elements/lit-apollo';
 import { css } from 'lit-element';
 
@@ -40,10 +39,6 @@ class LeewayUserStatusToast extends ApolloSubscription {
     `;
   }
 
-  static get is() {
-    return 'leeway-user-status-toast';
-  }
-
   static get properties() {
     return {
       timeout: { type: Number }
@@ -52,7 +47,6 @@ class LeewayUserStatusToast extends ApolloSubscription {
 
   constructor() {
     super();
-    this.client = client;
     this.timeout = 5000;
   }
 
@@ -69,4 +63,4 @@ class LeewayUserStatusToast extends ApolloSubscription {
   }
 }
 
-customElements.define(LeewayUserStatusToast.is, LeewayUserStatusToast);
+customElements.define('leeway-user-status-toast', LeewayUserStatusToast);

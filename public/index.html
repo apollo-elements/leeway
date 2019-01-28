@@ -10,13 +10,14 @@
       window.process = { env: { PRODUCTION: true } }
     </script>
     <script src="/assets/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
-    <script type="module" src="/bundle.js"></script>
+    <script type="module" src="/modules/app.js"></script>
+    <script nomodule src="https://unpkg.com/systemjs/dist/system-production.js"></script>
+    <script nomodule src="/system/app.js"></script>
   </head>
   <body unresolved>
     <info-box>
-      Leeway is a demo of <code>lit-apollo</code> using GraphQL subscriptions to create a simple chat app.
-      The source code is available on <a href="https://gitlab.com/bennyp/demo-lit-apollo-subscriptions">GitLab</a>.
-      Alternately, source maps are enabled, so just open dev tools to peruse the source.
+      <h2>Leeway is a simple chat app using <a href="https://npmjs.com/package/@apollo-elements/lit-apollo"><code>lit-apollo</code></a> and GraphQL subscriptions.</h2>
+      <a href="https://gitlab.com/bennyp/demo-lit-apollo-subscriptions"><img src="https://upload.wikimedia.org/wikipedia/commons/1/18/GitLab_Logo.svg" alt="GitLab Logo" title="Repo"></p></a>
     </info-box>
 
     <leeway-username-input>
@@ -31,21 +32,12 @@
       </script>
     </leeway-username-input>
 
-    <leeway-user-status-toast>
-      <script type="application/graphql">
-        subscription UserStatusUpdated {
-          userStatusUpdated {
-            nick
-            status
-          }
-        }
-      </script>
-    </leeway-user-status-toast>
-
     <leeway-userlist>
       <script type="application/graphql">
         query Users {
-          user @client { id nick status }
+          id @client
+          nick @client
+          status @client
           users {
             id
             nick
@@ -58,11 +50,18 @@
     <leeway-messages>
       <script type="application/graphql">
         query Messages {
-          user @client { id nick status }
+          id @client
+          nick @client
+          status @client
           messages {
             date
             message
             user
+          }
+          users {
+            id
+            nick
+            status
           }
         }
       </script>
@@ -82,12 +81,8 @@
 
     <leeway-status-notifier>
       <script type="application/graphql">
-        mutation UserStatusUpdated($id: ID, $status: Status) {
-          userStatusUpdated(id: $id, status: $status) {
-            id
-            nick
-            status
-          }
+        mutation UpdateUserStatus($id: ID!, $status: Status!) {
+          updateUserStatus(id: $id, status: $status)
         }
       </script>
     </leeway-status-notifier>

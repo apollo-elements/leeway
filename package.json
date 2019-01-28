@@ -8,7 +8,7 @@
   },
   "scripts": {
     "postinstall": "patch-package",
-    "build:copy": "cp src/index.html public && cp src/style.css public && cp -r node_modules/@webcomponents public/assets",
+    "build:copy": "cp src/index.html public && cp src/sw.js public && cp src/style.css public && cp -r node_modules/@webcomponents public/assets",
     "build:rollup": "rollup -c",
     "build": "run-s build:*",
     "start": "node index.js",
@@ -20,10 +20,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@apollo-elements/lit-apollo": "0.0.2",
+    "@apollo-elements/lit-apollo": "0.0.3",
     "@material/mwc-button": "^0.3.5",
     "@webcomponents/webcomponentsjs": "^2.2.4",
     "apollo-cache-inmemory": "^1.4.2",
+    "apollo-cache-persist": "^0.1.1",
     "apollo-client": "^2.4.12",
     "apollo-link-http": "^1.5.9",
     "apollo-link-state": "^0.4.2",
@@ -48,6 +49,7 @@
     "rollup": "^1.1.2",
     "rollup-plugin-commonjs": "^9.2.0",
     "rollup-plugin-node-resolve": "^4.0.0",
-    "rollup-plugin-string": "^2.0.2"
+    "rollup-plugin-string": "^2.0.2",
+    "rollup-plugin-terser": "^4.0.3"
   }
 }

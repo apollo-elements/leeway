@@ -1,11 +1,13 @@
 import '@material/mwc-button';
 
+import gql from 'graphql-tag';
 import { ApolloMutation, html } from '@apollo-elements/lit-apollo';
 import { css } from 'lit-element';
 
-import { client } from '../client.js';
-import { get, set } from '../lib/storage';
-import { style } from './shared-styles';
+import { style } from './shared-styles.js';
+import { updateLocalUser } from '../lib/update-local-user.js';
+import _userQuery from '../user-query.graphql';
+const userQuery = gql(_userQuery);
 
 class LeewayUsernameInput extends ApolloMutation {
   static get styles() {
@@ -39,7 +41,7 @@ class LeewayUsernameInput extends ApolloMutation {
   }
 
   render() {
-    return html`
+    return (html`
       ${this.error && this.error}
 
       <input id="input"
@@ -48,18 +50,15 @@ class LeewayUsernameInput extends ApolloMutation {
           @keyup="${this.onUserKeyup}"/>
       <mwc-button id="submit"
           icon="check"
-          ?disabled="${!this.userinput}"
+          ?disabled="${!this.variables || !this.variables.nick}"
           @click="${this.onSubmit}">OK</mwc-button>
-    `;
-  }
-
-  static get is() {
-    return 'leeway-username-input';
+    `);
   }
 
   static get properties() {
     return {
       nick: { type: String },
+      variables: { type: Object },
       user: { type: Object },
       closed: { type: Boolean, reflect: true },
     };
@@ -73,16 +72,14 @@ class LeewayUsernameInput extends ApolloMutation {
     return this.shadowRoot && this.shadowRoot.getElementById(id) || null;
   }
 
-  constructor() {
-    super();
-    this.userinput = '';
-    this.client = client;
-  }
-
   connectedCallback() {
     super.connectedCallback();
-    const user = get('user');
-    if (user) this.close();
+    this.queryObservable = this.client.watchQuery({ query: userQuery });
+    this.queryObservable.subscribe({
+      next: ({ data: { id } }) =>
+        id ? this.close() : null,
+      error: error => this.error = error,
+    });
   }
 
   firstUpdated() {
@@ -98,17 +95,15 @@ class LeewayUsernameInput extends ApolloMutation {
   }
 
   onUserKeyup({ key, target: { value: nick } }) {
-    (nick && key === 'Enter')
-      ? this.mutate()
-      : this.variables = { nick };
+    this.variables = { nick };
+    if (key === 'Enter') this.mutate();
   }
 
-  onCompletedMutation({ data: { join, changeNickname } }) {
-    this.user = join || changeNickname;
-    set('user', join);
+  async onCompletedMutation({ data: { join: user } }) {
+    if (user) await updateLocalUser(this.client, user);
     this.close();
   }
 
 }
 
-customElements.define(LeewayUsernameInput.is, LeewayUsernameInput);
+customElements.define('leeway-username-input', LeewayUsernameInput);

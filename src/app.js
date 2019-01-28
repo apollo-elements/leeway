@@ -1,40 +1,43 @@
-import { get } from './lib/storage';
+import gql from 'graphql-tag';
+import _userQuery from './user-query.graphql';
+const userQuery = gql(_userQuery);
 
-import './components/leeway-input.js';
-import './components/leeway-messages.js';
-import './components/leeway-userlist.js';
-import './components/leeway-user-status-toast.js';
-import './components/leeway-username-input.js';
-import './components/info-box.js';
+import { getClient } from './client';
 
 const input = document.body.querySelector('leeway-input');
 const usernameInput = document.body.querySelector('leeway-username-input');
-const notifier = document.body.querySelector('leeway-status-notifier');
-const onNetworkChange = () => notifier.mutate({
-  variables: {
-    online: navigator.onLine,
-    id: get('user').id,
-  }
-});
+const allComponents = [
+  'leeway-input',
+  'leeway-messages',
+  'leeway-status-notifier',
+  // 'leeway-user-status-toast',
+  'leeway-userlist',
+  'leeway-username-input',
+  'info-box',
+];
 
-const onBeforeunload = () => {
-  const { id } = get('user');
-  const variables = { id, status: 'OFFLINE' };
-  notifier.mutate({ variables });
-};
 
+const whenDefined = customElements.whenDefined.bind(customElements);
 window.WebComponents.waitFor(async function resolveBody() {
+  const client = await getClient();
+  window.__APOLLO_CLIENT__ = client;
+  // await Promise.all(allComponents.map(component => import(`./components/${component}.js`).catch(console.error)))
   await Promise.all([
-    customElements.whenDefined('leeway-input'),
-    customElements.whenDefined('leeway-messages'),
-    customElements.whenDefined('leeway-userlist'),
-    customElements.whenDefined('info-box'),
-  ]);
+    import('./components/leeway-input.js'),
+    import('./components/leeway-messages.js'),
+    import('./components/leeway-status-notifier.js'),
+    // import('./components/leeway-user-status-toast.js'),
+    import('./components/leeway-userlist.js'),
+    import('./components/leeway-username-input.js'),
+    import('./components/info-box.js'),
+  ])
+  await Promise.all(allComponents.map(whenDefined));
   document.body.removeAttribute('unresolved');
-  const user = get('user');
-  if (user) input.input.focus();
+  const { nick } = client.cache.readQuery({ query: userQuery });
+  if (nick) input.input.focus();
   else usernameInput.input.focus();
-  window.addEventListener('beforeunload', onBeforeunload);
-  window.addEventListener('offline', onNetworkChange);
-  window.addEventListener('online', onNetworkChange);
 });
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js');
+}
