@@ -1,0 +1,7 @@
+subscription {
+  userStatusUpdated {
+    id
+    nick
+    status
+  }
+}

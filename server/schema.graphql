@@ -1,0 +1,40 @@
+enum Status {
+  PARTED
+  ONLINE
+  OFFLINE
+  AWAY
+}
+
+type Message {
+  message: String!
+  userId: ID!
+  nick: String!
+  date: String!
+}
+
+type User {
+  id: ID
+  nick: String!
+  status: Status
+}
+
+type Query {
+  messages: [Message]
+  users: [User]
+}
+
+type Subscription {
+  messageSent: Message
+  userStatusUpdated: User
+  userJoined: User
+  userParted: User
+}
+
+type Mutation {
+  sendMessage(userId: ID!, message: String!): Message
+  changeNickname(id: ID!, nick: String!): User
+  updateUserStatus(id: ID!, status: Status!): Status
+  join(nick: String!): User
+  # Such sweet sorrow. Returns null.
+  part(id: ID!): String
+}

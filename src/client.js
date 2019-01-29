@@ -1,20 +1,22 @@
-import ApolloClient from 'apollo-client';
-import { InMemoryCache } from 'apollo-cache-inmemory';
-import { split } from 'apollo-link';
 import { HttpLink } from 'apollo-link-http';
+import { InMemoryCache } from 'apollo-cache-inmemory';
 import { WebSocketLink } from 'apollo-link-ws';
-import { getMainDefinition } from 'apollo-utilities';
+import { persistCache } from 'apollo-cache-persist';
+import { withClientState } from 'apollo-link-state';
+import ApolloClient from 'apollo-client';
 
+import { ApolloLink, split } from 'apollo-link';
+import { getMainDefinition } from 'apollo-utilities';
 import compose from 'crocks/helpers/compose';
-import isSame from 'crocks/predicates/isSame';
-import propOr from 'crocks/helpers/propOr';
 import fanout from 'crocks/helpers/fanout';
+import isSame from 'crocks/predicates/isSame';
 import merge from 'crocks/Pair/merge';
+import propOr from 'crocks/helpers/propOr';
 
 const { host } = location;
 
 // Set up the WebSocket Link for Subscriptions
-function getWsLink() {
+function createWsLink() {
   const protocol = host.includes('localhost') ? 'ws' : 'wss';
   const options = { reconnect: true };
   const uri = `${protocol}://${host}/graphql`;
@@ -22,7 +24,7 @@ function getWsLink() {
 }
 
 // Set up the HTTP Link for Queries and Mutations
-function getHttpLink() {
+function createHttpLink() {
   const protocol = host.includes('localhost') ? 'http' : 'https';
   const uri = `${protocol}://${host}/graphql`;
   return new HttpLink({ uri });
@@ -42,12 +44,43 @@ const isWsOperation = compose(
   getQuery
 );
 
-const link = split(isWsOperation, getWsLink(), getHttpLink());
-
 const cache = new InMemoryCache();
 
-// Create the Apollo Client
-export const client = new ApolloClient({ cache, link });
+const stateLink = withClientState({
+  cache,
+  defaults: {
+    nick: null,
+    id: null,
+    status: navigator.onLine ? 'ONLINE' : 'OFFLINE',
+  },
+  resolvers: {
+    Mutation: {
+      nick(_, { nick }, { cache }) {
+        cache.writeData({ data: { nick } });
+        return nick;
+      },
+      id(_, { id }, { cache }) {
+        cache.writeData({ data: { id } });
+        return id;
+      },
+      status(_, { status }, { cache }) {
+        cache.writeData({ data: { status } });
+        return status;
+      },
+    }
+  },
+});
 
-// Hook into apollo dev tools
-window.__APOLLO_CLIENT__ = client;
+const terminalLink = split(isWsOperation, createWsLink(), createHttpLink());
+
+const link = ApolloLink.from([
+  stateLink,
+  terminalLink,
+]);
+
+let client;
+export async function getClient() {
+  if (!client) await persistCache({ cache, storage: localStorage });
+  client = client || new ApolloClient({ cache, link });
+  return client;
+}

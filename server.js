@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'path';
 import { createServer } from 'http';
 
-import { apolloServer } from './apollo-server';
+import { apolloServer } from './server/apollo-server';
 
 const port = process.env.PORT || 8000;
 const url = process.env.URL || `http://localhost:${port}`;

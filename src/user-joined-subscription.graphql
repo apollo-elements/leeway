@@ -1,0 +1,3 @@
+subscription UserJoinedSubscription {
+  userJoined { id nick status }
+}

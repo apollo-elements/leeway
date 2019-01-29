@@ -1,14 +1,16 @@
-import { html } from 'lit-apollo';
+import { css } from 'lit-element';
 
-export const style = html`
-  <style>
-    :host {
-      display: block;
-      margin: 10px;
-    }
+export const style = css`
+  :host {
+    display: block;
+  }
 
-    [hidden] {
-      display: none !important;
-    }
-  </style>
+  [hidden] {
+    display: none !important;
+  }
+
+  .user {
+    display: flex;
+    padding: 14px;
+  }
 `;
