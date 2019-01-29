@@ -36,7 +36,7 @@ export default {
       }
     }),
 
-    process.env.PRODUCTION && terser({
+    process.env.NODE_ENV === 'production' && terser({
       mangle: false,
     }),
 
