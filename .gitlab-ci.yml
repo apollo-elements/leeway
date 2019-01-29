@@ -3,6 +3,7 @@ deploy:
   type: deploy
   only: [master]
   script:
+    - mkdir -p public/assets
     - gem install dpl
     - npm ci
     - npm dedupe
