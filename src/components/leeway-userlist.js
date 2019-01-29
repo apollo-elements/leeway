@@ -55,6 +55,7 @@ const onUserParted = (prev, { subscriptionData: { data: { userParted } } }) => (
   users: prev.users.map(when(isSameById(userParted), assign(userParted)))
 });
 
+
 /**
  * <leeway-userlist>
  * @customElement
@@ -63,6 +64,18 @@ const onUserParted = (prev, { subscriptionData: { data: { userParted } } }) => (
 class LeewayUserlist extends ApolloQuery {
   static get styles() {
     return [style, css`
+      :host {
+        display: flex;
+      }
+
+      section {
+        height: 100%;
+      }
+
+      #users {
+        padding: 8px;
+      }
+
       .user {
         padding: 4px;
         align-items: center;
@@ -76,9 +89,16 @@ class LeewayUserlist extends ApolloQuery {
       .status {
         border-radius: 100%;
         display: inline-block;
-        width: 14px;
+        font-size: 12px;
+        font-weight: lighter;
         height: 14px;
         margin-right: 4px;
+        text-transform: lowercase;
+        width: 14px;
+      }
+
+      .status::first-letter {
+        text-transform: uppercase;
       }
 
       .online {
@@ -88,15 +108,38 @@ class LeewayUserlist extends ApolloQuery {
       .offline {
         background: lightgrey;
       }
+
+      header {
+        color: white;
+        display: flex;
+        flex-flow: row wrap;
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 12px;
+        padding: 4px;
+      }
+
+      .nick {
+        flex: 1 0 100%;
+      }
     `];
   }
 
   render() {
     const { users = [], id, nick, status } = this.data;
     return (html`
-      <slot></slot>
       ${this.error && this.error}
-      ${users.map(userTemplate({ id, nick, status }))}
+      <section id="links"><slot name="links"></slot></section>
+      <section id="users">
+        <header style="${getUserStyleMap({ nick, status })}">
+          <span class="nick">${nick}</span>
+          <span aria-role="presentation" class="${classMap({ status: true, ...status && { [status.toLowerCase()]: true } })}"></span>
+          <span class="status">${status}</span>
+        </header>
+        ${users
+        .filter(not(isSameById({ id })))
+        .map(userTemplate({ id, nick, status }))}
+      </section>
     `);
   }
 

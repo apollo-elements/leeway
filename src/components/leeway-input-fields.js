@@ -37,11 +37,22 @@ class LeewayInputFields extends ApolloQuery {
     `;
   }
 
+  async focusInput() {
+    const mutator = this.querySelector(`leeway-${this.data.id ? 'chat' : 'nick'}-input`);
+    const { input } = mutator;
+    await mutator.updateComplete;
+    setTimeout(input.focus.bind(input));
+  }
+
+  firstUpdated() {
+    this.focusInput();
+  }
+
   updated() {
     Array.from(this.children)
       .filter(isCustomElement)
       .forEach(assignUser(this.data));
-    this.querySelector(`leeway-${this.data.id ? 'chat' : 'nick'}-input`).input.focus();
+    this.focusInput();
   }
 
   shouldUpdate() {

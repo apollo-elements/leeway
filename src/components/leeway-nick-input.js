@@ -51,9 +51,8 @@ class LeewayNickInput extends LeewayInputMixin(ApolloMutation) {
   }
 
   onUpdate(cache, { data: { join: { id, nick } } }) {
-    const user = { id, nick, status: navigator.onLine ? 'ONLINE' : 'OFFLINE' };
-    cache.writeData(user);
-    this.user = user;
+    const data = { id, nick, status: navigator.onLine ? 'ONLINE' : 'OFFLINE' };
+    cache.writeData({ data });
   }
 }
 

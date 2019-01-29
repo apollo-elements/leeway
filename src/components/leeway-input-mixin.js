@@ -24,6 +24,6 @@ export const LeewayInputMixin = superclass => class extends superclass {
 
   onCompleted() {
     this.input.value = '';
-    this.input.focus();
+    // this.input.focus();
   }
 };

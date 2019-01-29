@@ -52,9 +52,12 @@ const messageTemplate = data => ({ message, userId, nick: original, date }) => {
 };
 
 const viewTemplate = ({ data, error, loading }) =>
-  loading ? html`Loading...`
-  : error ? errorTemplate(error)
-  : html`<ol>${data && data.users && data.messages.map(messageTemplate(data))}</ol>`;
+  loading ? html`Loading...` : html`
+  ${error && errorTemplate(error)}
+  <ol>
+    ${data && data.users && data.messages.map(messageTemplate(data))}
+  </ol>
+`;
 
 /**
  * <leeway-messages>
