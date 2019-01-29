@@ -7,7 +7,8 @@ enum Status {
 
 type Message {
   message: String!
-  user: ID!
+  userId: ID!
+  nick: String!
   date: String!
 }
 
@@ -30,7 +31,7 @@ type Subscription {
 }
 
 type Mutation {
-  sendMessage(user: ID!, message: String!): Message
+  sendMessage(userId: ID!, message: String!): Message
   changeNickname(id: ID!, nick: String!): User
   updateUserStatus(id: ID!, status: Status!): Status
   join(nick: String!): User

@@ -36,7 +36,7 @@ const onMessageSent = (prev, { subscriptionData: { data: { messageSent } } }) =>
   messages: [...prev.messages, messageSent],
 });
 
-const messageTemplate = data => ({ message, user: userId, date }) => {
+const messageTemplate = data => ({ message, userId, date }) => {
   const { nick, status, me } = getUserWithId(data, userId);
   return html`
       <div class="${classMap({ user: true, me })}"

@@ -98,8 +98,8 @@ class LeewayInput extends ApolloMutation {
   }
 
   submit(message) {
-    const { user: { id: user } } = this;
-    this.variables = { message, user };
+    const { user: { id: userId } } = this;
+    this.variables = { message, userId };
     return this.mutate();
   }
 
@@ -109,7 +109,7 @@ class LeewayInput extends ApolloMutation {
 
   onKeyup({ key, target: { value: message } }) {
     if (key !== 'Enter') return;
-    if (this.input.value.startsWith('/nick ')) return this.changeUsername();
+    if (message.startsWith('/nick ')) return this.changeUsername();
     return this.submit(message);
   }
 

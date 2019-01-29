@@ -1,17 +1,28 @@
-import Pred from 'crocks/Pred';
-import hasProp from 'crocks/predicates/hasProp';
-import mconcatMap from 'crocks/helpers/mconcatMap';
+import { ValidationError } from 'apollo-server';
+
+import compose from 'crocks/helpers/compose';
+import assign from 'crocks/helpers/assign';
 import filter from 'crocks/pointfree/filter';
-const isValidUser =
-  mconcatMap(Pred, hasProp, [
-    'status',
-    'nick',
-    'id'
-  ]);
+import map from 'crocks/pointfree/map';
+import objOf from 'crocks/helpers/objOf';
+
+import { getNick, isValidMessage, isValidUser } from './lib';
 
 export const users = (_, __, { user: { getUsers } }) =>
   getUsers()
     .then(filter(isValidUser));
 
-export const messages = (_, __, { message: { getMessages } }) =>
-  getMessages();
+function validateMessage(message) {
+  if (!isValidMessage.runWith(message)) throw new ValidationError('Invalid User');
+  return message;
+}
+
+const assignNick = getUser => ({ userId, ...message }) =>
+  getUser(userId)
+    .then(getNick)
+    .then(objOf('nick'))
+    .then(assign({ ...message, userId }));
+
+export const messages = (_, __, { message: { getMessages }, user: { getUser } }) =>
+  getMessages()
+    .then(map(compose(validateMessage, assignNick(getUser))));
