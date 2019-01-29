@@ -66,6 +66,7 @@ class LeewayUserlist extends ApolloQuery {
       .user {
         padding: 4px;
         align-items: center;
+        color: white;
       }
 
       .me {

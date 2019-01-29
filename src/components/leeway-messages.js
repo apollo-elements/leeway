@@ -19,7 +19,7 @@ import _userPartedSubscription from '../user-parted-subscription.graphql';
 const userPartedSubscription = gql(_userPartedSubscription);
 
 /** msgTime :: String -> String */
-const msgTime = compose(format('HH:mm'), parseISO);
+const msgTime = compose(format('hh:mm aaa'), parseISO);
 
 const errorTemplate = ({ message = 'Unknown Error' } = {}) => html`
   <h1>😢 Such Sad, Very Error! 😰</h1>
@@ -36,21 +36,25 @@ const onMessageSent = (prev, { subscriptionData: { data: { messageSent } } }) =>
   messages: [...prev.messages, messageSent],
 });
 
-const messageTemplate = data => ({ message, userId, date }) => {
-  const { nick, status, me } = getUserWithId(data, userId);
+const messageTemplate = data => ({ message, userId, nick: original, date }) => {
+  const { nick: current, status, me } = getUserWithId(data, userId);
+  const nick = current || original;
   return html`
-      <div class="${classMap({ user: true, me })}"
-           style="${getUserStyleMap({ nick, status })}">
-      <dt><time>${msgTime(date)}</time> ${nick}:</dt>
-      <dd>${message}</dd>
-    </div>
+    <li data-initial="${nick.substring(0, 1).toUpperCase()}"
+        class="${classMap({ user: true, me })}"
+        style="${getUserStyleMap({ nick, status })}">
+      <article>
+        <span class="nick-time">${nick} <time>${msgTime(date)}</time></span>
+        <span>${message}</span>
+      </article>
+    </li>
   `;
 };
 
 const viewTemplate = ({ data, error, loading }) =>
   loading ? html`Loading...`
   : error ? errorTemplate(error)
-  : html`<dl>${data && data.users && data.messages.map(messageTemplate(data))}</dl>`;
+  : html`<ol>${data && data.users && data.messages.map(messageTemplate(data))}</ol>`;
 
 /**
  * <leeway-messages>
@@ -60,12 +64,45 @@ const viewTemplate = ({ data, error, loading }) =>
 class LeewayMessages extends ApolloQuery {
   static get styles() {
     return [style, css`
-      time {
-        font-family: monospace;
+      .user {
+        flex-flow: row wrap;
       }
 
-      dl {
+      .user::before {
+        align-items: center;
+        background: hsla(calc(var(--hue-coeff) * var(--primary-hue)) var(--saturation, 50%) 50% / 0.3);
+        border-radius: 5px;
+        content: attr(data-initial);
+        display: flex;
+        font-weight: bold;
+        height: 40px;
+        justify-content: center;
+        text-align: center;
+        width: 40px;
+      }
+
+      ol {
+        list-style-type: none;
         margin: 0;
+        padding-left: 12px;
+      }
+
+      article {
+        display: flex;
+        flex-flow: row wrap;
+        flex: 1 0 auto;
+        margin-left: 6px;
+      }
+
+      .nick-time {
+        font-weight: bold;
+        width: 100%
+      }
+
+      time {
+        font-size: 80%;
+        font-weight: lighter;
+        opacity: 0.9;
       }
     `];
   }

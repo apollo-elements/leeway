@@ -20,48 +20,55 @@ body {
 body {
   display: grid;
   grid-template-areas:
-    'infobox infobox'
+    'header header'
     'userlist messages'
     'userlist input';
-  grid-template-rows: min-content auto 50px;
+  grid-template-rows: 50px auto 74px;
   grid-template-columns: minmax(min-content, 200px) auto;
 }
 
-body > * {
-  transition: opacity 0.3s ease;
-  opacity: 1;
-}
-
-body[unresolved] > * {
-  opacity: 0;
-}
-
-body[unresolved]::before {
+body[unresolved] leeway-messages::before {
   content: '🤷‍♂️';
   font-size: 144px;
   line-height: 1;
   position: absolute;
-  top: calc(50vh - 72px);
-  left: calc(50vw - 72px);
+  top: calc(50% - 72px);
+  left: calc(50% - 72px);
   animation: zoom 3s ease-in-out infinite;
   opacity: 1;
 }
 
-info-box {
-  grid-area: infobox;
+header {
+  display: flex;
+  grid-area: header;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  position: relative;
+  background-color: hsla(var(--primary-hue) 50% 50% / 0.3);
+  box-shadow: 2px 2px 2px hsla(0 0% 0% / 0.3);
 }
 
-info-box h2 {
+header h2 {
+  font-size: 18px;
   display: inline;
 }
 
-info-box a img {
-  max-height: 24px;
+header > a {
+  display: contents;
 }
 
-a::before {
+header svg {
+  max-height: 24px;
+  color: inherit;
+  fill: currentColor;
+}
+
+header a::before {
   content: "↪";
   font-size: 10px;
+  display: inline-block;
+  text-decoration: none;
 }
 
 leeway-user-status-toast {
@@ -73,16 +80,16 @@ leeway-user-status-toast {
 
 leeway-messages {
   grid-area: messages;
-  /* flex: 1 0 auto; */
+  position: relative;
 }
 
-leeway-username-input {
-  grid-area: messages;
-}
-
-leeway-input {
+leeway-input-fields {
   grid-area: input;
-  max-height: 50px;
+  box-sizing: border-box;
+  border: 2px solid black;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 0 12px 24px;
 }
 
 leeway-userlist {

@@ -12,6 +12,5 @@ export const style = css`
   .user {
     display: flex;
     padding: 14px;
-    background: hsla(calc(var(--hue-coeff) * var(--primary-hue)) var(--saturation, 50%) 50% / 0.3);
   }
 `;

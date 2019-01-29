@@ -1,5 +1,0 @@
-mutation LocalUser($id: ID, $nick: String, $status: String) {
-  nick(nick: $nick) @client
-  id(id: $id) @client
-  status(status: $status) @client
-}
