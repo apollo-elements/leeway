@@ -34,6 +34,7 @@
     "date-fns": "^2.0.0-alpha.27",
     "esm": "^3.1.1",
     "express": "^4.16.4",
+    "express-sslify": "^1.2.0",
     "graphql": "^14.1.1",
     "graphql-tag": "^2.10.1",
     "ioredis": "^4.5.1",

@@ -1,6 +1,7 @@
 import compression from 'compression';
 import express from 'express';
 import path from 'path';
+import { HTTPS } from 'express-sslify';
 import { createServer } from 'http';
 
 import { apolloServer } from './server/apollo-server';
@@ -11,6 +12,7 @@ const app = express();
 const http = createServer(app);
 
 app.use(compression({ threshold: 0 }));
+if (process.env.NODE_ENV === 'production') app.use(HTTPS());
 app.use(express.static('public'));
 
 app.get(/^(?!.*(\.)|(graphi?ql).*)/, (req, res) =>
