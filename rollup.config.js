@@ -1,6 +1,7 @@
 // rollup 0.62.0
 import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
+import workbox from 'rollup-plugin-workbox';
 import string from 'rollup-plugin-string';
 import { terser } from 'rollup-plugin-terser';
 
@@ -40,5 +41,6 @@ export default {
       mangle: false,
     }),
 
+    workbox({ workboxConfig: require('./workbox-config') }),
   ]
 };

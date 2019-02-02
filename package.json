@@ -8,7 +8,7 @@
   },
   "scripts": {
     "postinstall": "patch-package",
-    "build:copy": "cp src/index.html public && cp src/sw.js public && cp src/style.css public && cp -r node_modules/@webcomponents public/assets",
+    "build:copy": "cp src/index.html public && cp src/manifest.webmanifest public && cp src/style.css public && cp -r node_modules/@webcomponents public/assets",
     "build:rollup": "rollup -c",
     "build": "run-s build:*",
     "start": "node index.js",
@@ -30,6 +30,7 @@
     "apollo-link-state": "^0.4.2",
     "apollo-link-ws": "^1.0.10",
     "apollo-server": "^2.3.1",
+    "compression": "^1.7.3",
     "date-fns": "^2.0.0-alpha.27",
     "esm": "^3.1.1",
     "express": "^4.16.4",
@@ -50,6 +51,7 @@
     "rollup-plugin-commonjs": "^9.2.0",
     "rollup-plugin-node-resolve": "^4.0.0",
     "rollup-plugin-string": "^2.0.2",
-    "rollup-plugin-terser": "^4.0.3"
+    "rollup-plugin-terser": "^4.0.3",
+    "rollup-plugin-workbox": "^2.0.0"
   }
 }
