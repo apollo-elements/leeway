@@ -12,7 +12,7 @@ const app = express();
 const http = createServer(app);
 
 app.use(compression({ threshold: 0 }));
-if (process.env.NODE_ENV === 'production') app.use(HTTPS());
+if (process.env.NODE_ENV === 'production') app.use(HTTPS({ trustProtoHeader: true }));
 app.use(express.static('public'));
 
 app.get(/^(?!.*(\.)|(graphi?ql).*)/, (req, res) =>
