@@ -1,3 +1,4 @@
+import compression from 'compression';
 import express from 'express';
 import path from 'path';
 import { createServer } from 'http';
@@ -9,7 +10,9 @@ const url = process.env.URL || `http://localhost:${port}`;
 const app = express();
 const http = createServer(app);
 
+app.use(compression({ threshold: 0 }));
 app.use(express.static('public'));
+
 app.get(/^(?!.*(\.)|(graphi?ql).*)/, (req, res) =>
   res.sendFile(path.resolve('public', 'index.html'))
 );
