@@ -84,9 +84,13 @@ header svg {
 }
 
 [slot="links"] li a {
-  display: block;
+  display: flex;
   height: 44px;
   width: 44px;
+}
+
+[slot="links"] img {
+  width: 100%;
 }
 
 header a::before {
