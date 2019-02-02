@@ -10,7 +10,7 @@
     "postinstall": "patch-package",
     "build:copy": "cp src/index.html public && cp src/manifest.webmanifest public && cp src/style.css public && cp -r node_modules/@webcomponents public/assets",
     "build:rollup": "rollup -c",
-    "build:rollup:preload": "node -r esm preload.js",
+    "build:rollup-preload": "node -r esm preload.js",
     "build": "run-s build:*",
     "start": "node index.js",
     "watch:server": "nodemon -x 'heroku local' --signal SIGTERM --config server.nodemon.json",
