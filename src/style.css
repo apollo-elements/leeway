@@ -89,7 +89,8 @@ header svg {
   width: 44px;
 }
 
-[slot="links"] img {
+[slot="links"] img,
+[slot="links"] svg {
   width: 100%;
 }
 
