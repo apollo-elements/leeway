@@ -133,7 +133,7 @@ class LeewayUserlist extends ApolloQuery {
       <section id="users">
         <header style="${getUserStyleMap({ nick, status })}">
           <span class="nick">${nick}</span>
-          <span aria-role="presentation" class="${classMap({ status: true, ...status && { [status.toLowerCase()]: true } })}"></span>
+          <span role="presentation" class="${classMap({ status: true, ...status && { [status.toLowerCase()]: true } })}"></span>
           <span class="status">${status}</span>
         </header>
         ${users
