@@ -31,7 +31,7 @@ async function preloadChunks() {
     .then(filter(includes('chunk')))
     .then(map(linksFromLines(dom)))
     .then(map(link => dom.window.document.head.appendChild(link)));
-  await writeFile(INDEX, dom.window.document.documentElement.outerHTML, 'utf-8')
+  await writeFile(INDEX, `<!DOCTYPE html>${dom.window.document.documentElement.outerHTML}`, 'utf-8')
 }
 
 preloadChunks();
