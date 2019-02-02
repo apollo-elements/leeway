@@ -1,0 +1,14 @@
+{
+  "name": "Leeway",
+  "short_name": "Leeway",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#663399",
+  "theme_color": "#663399",
+  "description": "A wee chat app using web components and GraphQL subscriptions. #UseThePlatform",
+  "icons": [{
+    "src": "https://raw.githubusercontent.com/apollo-elements/apollo-elements/master/logo.png",
+    "sizes": "512x512",
+    "type": "image/png"
+  }]
+}
