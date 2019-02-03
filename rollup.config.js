@@ -2,7 +2,6 @@
 import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
 import workbox from 'rollup-plugin-workbox';
-import string from 'rollup-plugin-string';
 import graphql from 'rollup-plugin-graphql';
 import { terser } from 'rollup-plugin-terser';
 
