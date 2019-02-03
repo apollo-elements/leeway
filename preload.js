@@ -22,7 +22,14 @@ const createLink = dom => file => {
   return link;
 };
 
-const linksFromLines = dom => compose(createLink(dom), getChunkName, matchImportChunk);
+const trace = tag => x => console.log(tag, x) || x;
+
+const linksFromLines = dom => compose(
+  createLink(dom),
+  trace('will preload'),
+  getChunkName,
+  matchImportChunk
+);
 
 async function preloadChunks() {
   const dom = await JSDOM.fromFile(INDEX);
