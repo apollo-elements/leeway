@@ -4,7 +4,7 @@ import path from 'path';
 import { HTTPS } from 'express-sslify';
 import { createServer } from 'http';
 
-import { apolloServer } from './server/apollo-server';
+import { apolloServer } from './apollo-server';
 
 const port = process.env.PORT || 8000;
 const url = process.env.URL || `http://localhost:${port}`;
