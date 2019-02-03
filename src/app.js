@@ -1,3 +1,5 @@
+// so embarassed: graphql/jsutils/instanceOf.mjs:16
+window.process = { env: { PRODUCTION: true } }
 window.WebComponents.waitFor(async function resolveBody() {
   const client = await import('./client').then(({ getClient }) => getClient());
   window.__APOLLO_CLIENT__ = client;
