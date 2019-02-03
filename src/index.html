@@ -21,9 +21,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com/"/>
     <link rel="preconnect" href="https://fonts.googleapis.com/"/>
     <link rel="preload" as="font" href="https://fonts.gstatic.com/s/materialicons/v42/flUhRq6tzZclQEJ-Vdg-IuiaDsNcIhQ8tQ.woff2" crossorigin/>
-
+    <link rel="preload" as="style" href="/style.css"/>
     <link rel="manifest" href="/manifest.webmanifest"/>
     <link rel="stylesheet" href="/style.css"/>
+
     <script>
       // so embarassed: graphql/jsutils/instanceOf.mjs:16
       window.process = { env: { PRODUCTION: true } }
@@ -31,7 +32,7 @@
     <script src="/assets/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
     <script type="module" src="/modules/app.js"></script>
     <script nomodule src="https://unpkg.com/systemjs/dist/system-production.js"></script>
-    <script nomodule src="/system/app.js"></script>
+    <script nomodule defer src="/system/app.js"></script>
   </head>
   <body unresolved>
     <header id="info-box">
