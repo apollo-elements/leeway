@@ -1,12 +1,12 @@
 import { ApolloMutation } from '@apollo-elements/lit-apollo';
 
-import userQuery from '../user-query.graphql';
+import userQuery from './user-query.graphql';
 
 const { host } = location;
 const protocol = host.includes('localhost') ? 'http' : 'https';
 const uri = `${protocol}://${host}/graphql`;
 
-const partQuery = 'mutation Part($id: ID!) { part(id: $id) }';
+const partMutation = 'mutation Part($id: ID!) { part(id: $id) }';
 const updateQuery = `
   mutation UpdateUserStatus($id: ID!, $status: Status!) {
     updateUserStatus(id: $id, status: $status)
@@ -16,6 +16,7 @@ const updateQuery = `
 function sendBeacon({ query, variables }) {
   const body = JSON.stringify({ query, variables });
   const blob = new Blob([body], { type: 'application/json' });
+
   // chrome... https://bugs.chromium.org/p/chromium/issues/detail?id=490015
   try {
     navigator.sendBeacon(uri, blob);
@@ -53,7 +54,7 @@ class LeewayStatusNotifier extends ApolloMutation {
   onBeforeunload() {
     if (!this.user) return;
     const { id } = this.user;
-    sendBeacon({ query: partQuery, variables: { id } });
+    sendBeacon({ query: partMutation, variables: { id } });
   }
 
   onNetworkChange() {

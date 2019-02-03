@@ -3,6 +3,7 @@ import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
 import workbox from 'rollup-plugin-workbox';
 import graphql from 'rollup-plugin-graphql';
+import litcss from 'rollup-plugin-lit-css';
 import { terser } from 'rollup-plugin-terser';
 
 export default {
@@ -20,6 +21,7 @@ export default {
   plugins: [
 
     graphql(),
+    litcss({ uglify: !process.env.PRODUCTION }),
 
     // REQUIRED to roll apollo-client up
     resolve({
@@ -33,6 +35,7 @@ export default {
         // Necessary to roll apollo-link-state up.
         // until graphql-anywhere 5.0
         'graphql-anywhere/lib/async': ['graphql'],
+        // Needed to roll up apollo-cache-persist
         'apollo-cache-persist': ['persistCache']
       }
     }),

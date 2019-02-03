@@ -1,0 +1,6 @@
+input,
+input::placeholder {
+  background: rebeccapurple;
+  color: white;
+  opacity: 1;
+}

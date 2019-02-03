@@ -1,0 +1,12 @@
+:host {
+  display: block;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.user {
+  display: flex;
+  padding: 14px;
+}

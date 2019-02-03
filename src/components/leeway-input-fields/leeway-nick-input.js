@@ -1,21 +1,15 @@
 import '@material/mwc-button';
 
-import { ApolloMutation, css, html } from '@apollo-elements/lit-apollo';
+import { ApolloMutation, html } from '@apollo-elements/lit-apollo';
 
 import { LeewayInputMixin } from './leeway-input-mixin';
-import { inputStyles } from './input-fields-styles';
-import { style } from './shared-styles.js';
+import inputStyles from './input-fields-styles.css';
+import style from './leeway-nick-input.css';
+import shared from '../shared-styles.css';
 
 class LeewayNickInput extends LeewayInputMixin(ApolloMutation) {
   static get styles() {
-    return [style, inputStyles, css`
-      input,
-      input::placeholder {
-        background: rebeccapurple;
-        color: white;
-        opacity: 1;
-      }
-    `];
+    return [shared, inputStyles, style];
   }
 
   render() {

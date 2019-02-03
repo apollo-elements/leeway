@@ -1,0 +1,5 @@
+div,
+#nick ::slotted(*),
+#chat ::slotted(*) {
+  height: 100%;
+}

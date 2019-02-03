@@ -1,18 +1,18 @@
 import '@material/mwc-button';
 
 import { ApolloMutation, html } from '@apollo-elements/lit-apollo';
-import gql from 'graphql-tag';
 import { ifDefined } from 'lit-html/directives/if-defined';
 
 import { LeewayInputMixin } from './leeway-input-mixin';
-import { inputStyles } from './input-fields-styles';
-import { style } from './shared-styles.js';
+import style from './input-fields-styles.css';
+import shared from '../shared-styles.css';
 
-import changeNicknameMutation from '../change-nickname-mutation.graphql';
+import changeNicknameMutation from './change-nickname-mutation.graphql';
+import partMutation from './part-mutation.graphql';
 
 class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
   static get styles() {
-    return [style, inputStyles];
+    return [shared, style];
   }
 
   render() {
@@ -56,7 +56,7 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
 
   async part() {
     const { id } = this.user;
-    const mutation = gql`mutation Part($id: ID!) { part(id: $id) }`;
+    const mutation = partMutation;
     const variables = { id };
     const user = { id: null, nick: null, status: navigator.onLine ? 'ONLINE' : 'OFFLINE' };
     const update = cache => cache.writeData(user);
@@ -66,8 +66,8 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
   handleSlashCommand(message) {
     const [command, ...args] = message.split(' ');
     switch (command) {
-      case 'nick': return this.changeUsername(args[0]);
-      case 'part': return this.part();
+    case 'nick': return this.changeUsername(...args);
+    case 'part': return this.part();
     }
   }
 

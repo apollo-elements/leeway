@@ -1,9 +1,10 @@
 import './leeway-chat-input.js';
 import './leeway-nick-input.js';
 
-import { ApolloQuery, css, html } from '@apollo-elements/lit-apollo';
+import { ApolloQuery, html } from '@apollo-elements/lit-apollo';
 
-import { style } from './shared-styles';
+import shared from '../shared-styles.css';
+import style from './leeway-input-fields.css';
 
 const isCustomElement = el => el.localName.includes('-');
 
@@ -21,13 +22,7 @@ const errorTemplate = ({ message = 'Unknown Error' } = {}) => html`
  */
 class LeewayInputFields extends ApolloQuery {
   static get styles() {
-    return [style, css`
-      div,
-      #nick ::slotted(*),
-      #chat ::slotted(*) {
-        height: 100%;
-      }
-    `];
+    return [shared, style];
   }
 
   render() {

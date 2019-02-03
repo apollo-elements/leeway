@@ -1,0 +1,40 @@
+.user {
+  flex-flow: row wrap;
+}
+
+.user::before {
+  align-items: center;
+  background: hsla(calc(var(--hue-coeff) * var(--primary-hue)) var(--saturation, 50%) 50% / 0.3);
+  border-radius: 5px;
+  content: attr(data-initial);
+  display: flex;
+  font-weight: bold;
+  height: 40px;
+  justify-content: center;
+  text-align: center;
+  width: 40px;
+}
+
+ol {
+  list-style-type: none;
+  margin: 0;
+  padding-left: 12px;
+}
+
+article {
+  display: flex;
+  flex-flow: row wrap;
+  flex: 1 0 auto;
+  margin-left: 6px;
+}
+
+.nick-time {
+  font-weight: bold;
+  width: 100%;
+}
+
+time {
+  font-size: 80%;
+  font-weight: lighter;
+  opacity: 0.9;
+}

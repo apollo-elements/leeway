@@ -1,4 +1,4 @@
-import { ApolloQuery, css, html } from '@apollo-elements/lit-apollo';
+import { ApolloQuery, html } from '@apollo-elements/lit-apollo';
 import { classMap } from 'lit-html/directives/class-map';
 
 import and from 'crocks/logic/and';
@@ -9,13 +9,14 @@ import not from 'crocks/logic/not';
 import propOr from 'crocks/helpers/propOr';
 import when from 'crocks/logic/when';
 
-import { getUserStyleMap } from '../lib/user-style-map';
-import { isSameById } from '../lib/is-same-by';
-import userStatusUpdatedSubscription from '../user-status-updated-subscription.graphql';
-import userPartedSubscription from '../user-parted-subscription.graphql';
-import userJoinedSubscription from '../user-joined-subscription.graphql';
+import { getUserStyleMap } from '../../lib/user-style-map';
+import { isSameById } from '../../lib/is-same-by';
+import userStatusUpdatedSubscription from './user-status-updated-subscription.graphql';
+import userPartedSubscription from '../../user-parted-subscription.graphql';
+import userJoinedSubscription from '../../user-joined-subscription.graphql';
 
-import { style } from './shared-styles';
+import shared from '../shared-styles.css';
+import style from './leeway-userlist.css';
 
 const userTemplate = localUser => ({ id, nick, status } = {}) => (html`
   <div class="${classMap({ user: true, me: localUser.id === id })}"
@@ -56,66 +57,7 @@ const onUserParted = (prev, { subscriptionData: { data: { userParted } } }) => (
  */
 class LeewayUserlist extends ApolloQuery {
   static get styles() {
-    return [style, css`
-      :host {
-        display: flex;
-      }
-
-      section {
-        height: 100%;
-      }
-
-      #users {
-        padding: 8px;
-      }
-
-      .user {
-        padding: 4px;
-        align-items: center;
-        color: white;
-      }
-
-      .me {
-        font-weight: bold;
-      }
-
-      .status {
-        border-radius: 100%;
-        display: inline-block;
-        font-size: 12px;
-        font-weight: lighter;
-        height: 14px;
-        margin-right: 4px;
-        text-transform: lowercase;
-        width: 14px;
-      }
-
-      .status::first-letter {
-        text-transform: uppercase;
-      }
-
-      .online {
-        background: limegreen;
-      }
-
-      .offline {
-        background: lightgrey;
-      }
-
-      header {
-        color: white;
-        display: flex;
-        flex-flow: row wrap;
-        font-size: 24px;
-        font-weight: bold;
-        margin-bottom: 12px;
-        padding: 4px;
-      }
-
-      .nick {
-        flex: 1 0 100%;
-      }
-    `];
+    return [shared, style];
   }
 
   render() {
