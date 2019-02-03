@@ -35,7 +35,9 @@ async function preloadChunks() {
   const dom = await JSDOM.fromFile(INDEX);
   await readFile('./public/modules/app.js')
     .then(lines)
+    .then(trace('lines'))
     .then(filter(includes('chunk')))
+    .then(trace('chunk-lines'))
     .then(map(linksFromLines(dom)))
     .then(map(link => dom.window.document.head.appendChild(link)));
   await writeFile(INDEX, `<!DOCTYPE html>${dom.window.document.documentElement.outerHTML}`, 'utf-8')
