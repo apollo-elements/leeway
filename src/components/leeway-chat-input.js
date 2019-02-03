@@ -8,8 +8,7 @@ import { LeewayInputMixin } from './leeway-input-mixin';
 import { inputStyles } from './input-fields-styles';
 import { style } from './shared-styles.js';
 
-import _changeNicknameMutation from '../change-nickname-mutation.graphql';
-const changeNicknameMutation = gql(_changeNicknameMutation);
+import changeNicknameMutation from '../change-nickname-mutation.graphql';
 
 class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
   static get styles() {
@@ -67,8 +66,8 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
   handleSlashCommand(message) {
     const [command, ...args] = message.split(' ');
     switch (command) {
-    case 'nick': return this.changeUsername(args[0]);
-    case 'part': return this.part();
+      case 'nick': return this.changeUsername(args[0]);
+      case 'part': return this.part();
     }
   }
 

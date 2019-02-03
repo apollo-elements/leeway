@@ -1,22 +1,16 @@
 import { ApolloQuery, css, html } from '@apollo-elements/lit-apollo';
 import { classMap } from 'lit-html/directives/class-map';
 import { format, parseISO } from 'date-fns/fp';
-import gql from 'graphql-tag';
 
 import compose from 'crocks/helpers/compose';
 
 import { getUserStyleMap } from '../lib/user-style-map';
 import { isSameById } from '../lib/is-same-by';
 import { style } from './shared-styles';
-import _messageSentSubscription from '../message-sent-subscription.graphql';
 
-const messageSentSubscription = gql(_messageSentSubscription);
-
-import _userJoinedSubscription from '../user-joined-subscription.graphql';
-const userJoinedSubscription = gql(_userJoinedSubscription);
-
-import _userPartedSubscription from '../user-parted-subscription.graphql';
-const userPartedSubscription = gql(_userPartedSubscription);
+import messageSentSubscription from '../message-sent-subscription.graphql';
+import userJoinedSubscription from '../user-joined-subscription.graphql';
+import userPartedSubscription from '../user-parted-subscription.graphql';
 
 /** msgTime :: String -> String */
 const msgTime = compose(format('hh:mm aaa'), parseISO);

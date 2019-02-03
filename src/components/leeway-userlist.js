@@ -1,6 +1,5 @@
 import { ApolloQuery, css, html } from '@apollo-elements/lit-apollo';
 import { classMap } from 'lit-html/directives/class-map';
-import gql from 'graphql-tag';
 
 import and from 'crocks/logic/and';
 import assign from 'crocks/helpers/assign';
@@ -12,15 +11,9 @@ import when from 'crocks/logic/when';
 
 import { getUserStyleMap } from '../lib/user-style-map';
 import { isSameById } from '../lib/is-same-by';
-import _userStatusUpdatedSubscription from '../user-status-updated-subscription.graphql';
-
-const userStatusUpdatedSubscription = gql(_userStatusUpdatedSubscription);
-
-import _userPartedSubscription from '../user-parted-subscription.graphql';
-const userPartedSubscription = gql(_userPartedSubscription);
-
-import _userJoinedSubscription from '../user-joined-subscription.graphql';
-const userJoinedSubscription = gql(_userJoinedSubscription);
+import userStatusUpdatedSubscription from '../user-status-updated-subscription.graphql';
+import userPartedSubscription from '../user-parted-subscription.graphql';
+import userJoinedSubscription from '../user-joined-subscription.graphql';
 
 import { style } from './shared-styles';
 
