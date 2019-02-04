@@ -4,6 +4,7 @@ import commonjs from 'rollup-plugin-commonjs';
 import workbox from 'rollup-plugin-workbox';
 import graphql from 'rollup-plugin-graphql';
 import litcss from 'rollup-plugin-lit-css';
+import minifyHTML from 'rollup-plugin-minify-html-literals';
 import { terser } from 'rollup-plugin-terser';
 
 export default {
@@ -21,7 +22,8 @@ export default {
   plugins: [
 
     graphql(),
-    litcss({ uglify: !process.env.PRODUCTION }),
+
+    litcss({ uglify: process.env.PRODUCTION }),
 
     // REQUIRED to roll apollo-client up
     resolve({
@@ -40,9 +42,25 @@ export default {
       }
     }),
 
-    process.env.PRODUCTION && terser({
-      mangle: false,
-    }),
+
+    ...(process.env.PRODUCTION ? [
+      minifyHTML({
+        failOnError: true,
+        options: {
+          shouldMinify(template) {
+            if (template.tag) {
+              return template.tag.toLowerCase().includes('html');
+            } else {
+              return template.parts.some((part) => (
+                part.text.includes('<style') ||
+                part.text.includes('<dom-module')));
+            }
+          }
+        }
+      }),
+
+      terser({ mangle: false }),
+    ] : []),
 
     workbox({ workboxConfig: require('./workbox-config') }),
   ]
