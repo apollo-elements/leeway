@@ -44,7 +44,7 @@ const isWsOperation = compose(
   getQuery
 );
 
-const cache = new InMemoryCache();
+const cache = new InMemoryCache().restore(window.__APOLLO_STATE__);
 
 const stateLink = withClientState({
   cache,
@@ -80,7 +80,8 @@ const link = ApolloLink.from([
 
 let client;
 export async function getClient() {
-  if (!client) await persistCache({ cache, storage: localStorage });
-  client = client || new ApolloClient({ cache, link });
+  if (client) return client
+  await persistCache({ cache, storage: localStorage });
+  client = new ApolloClient({ cache, link, ssrForceFetchDelay: 100 });
   return client;
 }

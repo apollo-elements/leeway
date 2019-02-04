@@ -1,10 +1,29 @@
 import compression from 'compression';
 import express from 'express';
 import path from 'path';
+import fetch from 'node-fetch';
+import { JSDOM } from 'jsdom';
 import { HTTPS } from 'express-sslify';
 import { createServer } from 'http';
+import { SchemaLink } from 'apollo-link-schema';
+import { InMemoryCache } from 'apollo-cache-inmemory';
+import { ApolloClient } from 'apollo-client';
 import { ApolloServer, PubSub, gql } from 'apollo-server-express';
-import { readFileSync } from 'fs';
+import { default as FS, readFileSync } from 'fs';
+const { promises: { readFile } } = FS;
+
+const pubsub = new PubSub();
+
+const typeDefs = gql(readFileSync(`${__dirname}/schema.graphql`, 'utf8'));
+
+import * as Subscription from './subscriptions';
+import * as Query from './queries';
+import * as Mutation from './mutations';
+import * as user from './models/user.js';
+import * as message from './models/message.js';
+const context = { pubsub, message, user };
+const resolvers = { Mutation, Query, Subscription };
+const server = new ApolloServer({ context, resolvers, typeDefs });
 
 const port = process.env.PORT || 8000;
 const url = process.env.URL || `http://localhost:${port}`;
@@ -23,41 +42,39 @@ const staticHeaders = [
   'immutable',
   'max-age=31536000',
   'public',
-].join()
+].join();
 
 if (process.env.NODE_ENV === 'production') {
   app.use(HTTPS({ trustProtoHeader: true }));
   app.use(compression({ threshold: 0 }));
 }
 
+async function ssr(file, client) {
+  const dom = await JSDOM.fromFile(file);
+  const script = dom.window.document.createElement('script');
+  const queryText = dom.window.document.querySelector('leeway-messages').firstElementChild.innerHTML;
+  await client.query({ query: gql(queryText.replace(/.*@client.*/g, '')) });
+  script.innerHTML = `window.__APOLLO_STATE__ = ${JSON.stringify(client.extract())}`;
+  dom.window.document.head.append(script);
+  return dom.serialize();
+}
+
+app.get(/^(?!.*(\.)|(graphi?ql).*)/, async function sendSPA(req, res) {
+  const cache = new InMemoryCache();
+  const link = new SchemaLink({ schema: server.schema, context });
+  const client = new ApolloClient({ cache, link, ssrMode: true });
+  const cacheHeaders = req.path.endsWith('sw.js') ? swHeaders : staticHeaders;
+  const index = path.resolve('public', 'index.html');
+  const body = await ssr(index, client);
+  res.set("Cache-Control", cacheHeaders);
+  res.send(body);
+});
+
 app.use(express.static('public', {
   setHeaders(res, path) {
     res.setHeader("Cache-Control", path.endsWith('sw.js') ? swHeaders : staticHeaders);
   }
 }));
-
-app.get(/^(?!.*(\.)|(graphi?ql).*)/, function sendSPA(req, res) {
-  res.sendFile(path.resolve('public', 'index.html'))
-});
-
-const pubsub = new PubSub();
-
-const typeDefs = gql(readFileSync(`${__dirname}/schema.graphql`, 'utf8'));
-
-import * as Subscription from './subscriptions';
-import * as Query from './queries';
-import * as Mutation from './mutations';
-import * as user from './models/user.js';
-import * as message from './models/message.js';
-const server = new ApolloServer({
-  typeDefs,
-  resolvers: { Mutation, Query, Subscription },
-  context: {
-    pubsub,
-    message,
-    user,
-  }
-});
 
 server.applyMiddleware({ app, path: '/graphql' });
 
