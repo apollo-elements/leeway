@@ -15,7 +15,7 @@ import userJoinedSubscription from '../../user-joined-subscription.graphql';
 import userPartedSubscription from '../../user-parted-subscription.graphql';
 
 /** msgTime :: String -> String */
-const msgTime = compose(format('hh:mm aaa'), parseISO);
+const msgTime = compose(format('EEEE hh:mm aaa'), parseISO);
 
 const errorTemplate = ({ message = 'Unknown Error' } = {}) => html`
   <h1>😢 Such Sad, Very Error! 😰</h1>
