@@ -1,7 +1,6 @@
 import compression from 'compression';
 import express from 'express';
 import path from 'path';
-import fetch from 'node-fetch';
 import { JSDOM } from 'jsdom';
 import { HTTPS } from 'express-sslify';
 import { createServer } from 'http';
@@ -9,8 +8,8 @@ import { SchemaLink } from 'apollo-link-schema';
 import { InMemoryCache } from 'apollo-cache-inmemory';
 import { ApolloClient } from 'apollo-client';
 import { ApolloServer, PubSub, gql } from 'apollo-server-express';
-import { default as FS, readFileSync } from 'fs';
-const { promises: { readFile } } = FS;
+import { readFileSync } from 'fs';
+import favicon from 'emoji-favicon'
 
 const pubsub = new PubSub();
 
@@ -69,6 +68,8 @@ app.get(/^(?!.*(\.)|(graphi?ql).*)/, async function sendSPA(req, res) {
   res.set("Cache-Control", cacheHeaders);
   res.send(body);
 });
+
+app.use(favicon('smiley'))
 
 app.use(express.static('public', {
   setHeaders(res, path) {
