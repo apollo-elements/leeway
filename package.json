@@ -56,7 +56,7 @@
     "rollup-plugin-graphql": "^0.1.0",
     "rollup-plugin-lit-css": "github:bennypowers/rollup-plugin-lit-css",
     "rollup-plugin-minify-html-literals": "^1.1.2",
-    "rollup-plugin-modulepreload": "^1.0.0",
+    "rollup-plugin-modulepreload": "^1.1.0",
     "rollup-plugin-node-resolve": "^4.0.0",
     "rollup-plugin-terser": "^4.0.3",
     "rollup-plugin-workbox": "^2.0.0"
