@@ -8,6 +8,7 @@ import ApolloClient from 'apollo-client';
 import { ApolloLink, split } from 'apollo-link';
 import { getMainDefinition } from 'apollo-utilities';
 import compose from 'crocks/helpers/compose';
+import objOf from 'crocks/helpers/objOf';
 import fanout from 'crocks/helpers/fanout';
 import isSame from 'crocks/predicates/isSame';
 import merge from 'crocks/Pair/merge';
@@ -46,6 +47,11 @@ const isWsOperation = compose(
 
 const cache = new InMemoryCache().restore(window.__APOLLO_STATE__);
 
+const resolverFor = name => (_, args, { cache }) => {
+  cache.writeData({ data: objOf(name, args[name]) })
+  return args[name]
+}
+
 const stateLink = withClientState({
   cache,
   defaults: {
@@ -55,18 +61,9 @@ const stateLink = withClientState({
   },
   resolvers: {
     Mutation: {
-      nick(_, { nick }, { cache }) {
-        cache.writeData({ data: { nick } });
-        return nick;
-      },
-      id(_, { id }, { cache }) {
-        cache.writeData({ data: { id } });
-        return id;
-      },
-      status(_, { status }, { cache }) {
-        cache.writeData({ data: { status } });
-        return status;
-      },
+      nick: resolverFor('nick'),
+      id: resolverFor('id'),
+      status: resolverFor('status'),
     }
   },
 });

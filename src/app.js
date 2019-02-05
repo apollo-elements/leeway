@@ -1,8 +1,7 @@
-// so embarassed: graphql/jsutils/instanceOf.mjs:16
-window.process = { env: { PRODUCTION: true } }
+import { getClient } from './client';
+
 window.WebComponents.waitFor(async function resolveBody() {
-  const client = await import('./client').then(({ getClient }) => getClient());
-  window.__APOLLO_CLIENT__ = client;
+  window.__APOLLO_CLIENT__ = await getClient();
   await Promise.all([
     import('./components/leeway-input-fields/leeway-input-fields.js'),
     import('./components/leeway-messages/leeway-messages.js'),

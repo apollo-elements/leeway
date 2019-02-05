@@ -3,6 +3,7 @@ import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
 import workbox from 'rollup-plugin-workbox';
 import graphql from 'rollup-plugin-graphql';
+import modulepreload from 'rollup-plugin-modulepreload';
 import litcss from 'rollup-plugin-lit-css';
 import minifyHTML from 'rollup-plugin-minify-html-literals';
 import { terser } from 'rollup-plugin-terser';
@@ -63,5 +64,7 @@ export default {
     ] : []),
 
     workbox({ workboxConfig: require('./workbox-config') }),
+
+    modulepreload({ index: 'public/index.html', prefix: 'modules' }),
   ]
 };
