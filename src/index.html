@@ -33,7 +33,20 @@
     <script>
     // so embarassed: graphql/jsutils/instanceOf.mjs:16
     window.process = { env: { PRODUCTION: true } }
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1517546
+    window.onerror = function(message, script, line, col, error) {
+      const messages = document.querySelector('leeway-messages');
+      if (error.name === 'SyntaxError') {
+        messages.style.padding = '14px';
+        messages.innerHTML = `
+          <h2>This demo targets browsers which support dynamic <code>import()</code>.</h2>
+          <p>Try it with Firefox Version 66 and set the <code>javascript.options.dynamicImport</code> flag to <code>true</code>.</p>
+          <p>Firefox 67 <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=1517546">will enable this by default</a></p>
+        `
+      }
+    };
     </script>
+
     <script src="/assets/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
     <script type="module" src="/modules/app.js"></script>
     <script nomodule src="https://unpkg.com/systemjs/dist/system-production.js"></script>
@@ -164,6 +177,7 @@
       </script>
       <div class="loader-wrapper">
         <div class="loader-animation">
+          <svg viewBox="0 0 336 448" xmlns="http://www.w3.org/2000/svg"><path d="M5 0a5 5 0 0 0-5 5V0h5zm30 0h301v365a3 3 0 0 0-3-3H49a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h284a3 3 0 0 0 3-3v73H35a5 5 0 0 0 5-5v-30a5 5 0 0 0-5-5H5a5 5 0 0 0-5 5v-38a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5v-30a5 5 0 0 0-5-5H5a5 5 0 0 0-5 5v-38a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5v-30a5 5 0 0 0-5-5H5a5 5 0 0 0-5 5v-38a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5v-30a5 5 0 0 0-5-5H5a5 5 0 0 0-5 5v-38a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5v-30a5 5 0 0 0-5-5H5a5 5 0 0 0-5 5v-38a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5V73a5 5 0 0 0-5-5H5a5 5 0 0 0-5 5V35a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5V5a5 5 0 0 0-5-5zM5 448H0v-5a5 5 0 0 0 5 5zM49 3a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h83a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3H49zm92 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3h-98zM49 22a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h130a3 3 0 0 0 3-3V25a3 3 0 0 0-3-3H49zm0 49a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h67a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3H49zm76 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-98zM49 90a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h31a3 3 0 0 0 3-3V93a3 3 0 0 0-3-3H49zm0 49a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h91a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3H49zm100 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-98zM49 158a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h171a3 3 0 0 0 3-3v-10a3 3 0 0 0-3-3H49zm0 49a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h66a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3H49zm75 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-98zm-75 17a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h95a3 3 0 0 0 3-3v-10a3 3 0 0 0-3-3H49zm0 49a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h83a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3H49zm92 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-98zm-92 17a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h67a3 3 0 0 0 3-3v-10a3 3 0 0 0-3-3H49zm0 49a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h48a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3H49zm57 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-98zm-57 66a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h83a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3H49zm92 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-98zm-92 17a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h83a3 3 0 0 0 3-3v-10a3 3 0 0 0-3-3H49z"/></svg>
         </div>
       </div>
     </leeway-messages>
