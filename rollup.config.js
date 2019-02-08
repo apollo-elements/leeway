@@ -1,14 +1,21 @@
-// rollup 0.62.0
-import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
-import workbox from 'rollup-plugin-workbox';
 import graphql from 'rollup-plugin-graphql';
-import modulepreload from 'rollup-plugin-modulepreload';
 import litcss from 'rollup-plugin-lit-css';
 import minifyHTML from 'rollup-plugin-minify-html-literals';
+import modulepreload from 'rollup-plugin-modulepreload';
+import notify from 'rollup-plugin-notify';
+import resolve from 'rollup-plugin-node-resolve';
+import workbox from 'rollup-plugin-workbox';
 import { terser } from 'rollup-plugin-terser';
 
+function onwarn(warning, warn) {
+  if (warning.code === 'THIS_IS_UNDEFINED') return;
+  else warn(warning);
+}
+
 export default {
+  onwarn,
+  treeshake: !!process.env.PRODUCTION,
   input: 'src/app.js',
   output: [{
     dir: 'public/modules',
@@ -43,7 +50,6 @@ export default {
       }
     }),
 
-
     ...(process.env.PRODUCTION ? [
       minifyHTML({
         failOnError: true,
@@ -52,7 +58,7 @@ export default {
             if (template.tag) {
               return template.tag.toLowerCase().includes('html');
             } else {
-              return template.parts.some((part) => (
+              return template.parts.some(part => (
                 part.text.includes('<style') ||
                 part.text.includes('<dom-module')));
             }
@@ -66,5 +72,8 @@ export default {
     workbox({ workboxConfig: require('./workbox-config') }),
 
     modulepreload({ index: 'public/index.html', prefix: 'modules' }),
+
+    notify({ success: true }),
+
   ]
 };

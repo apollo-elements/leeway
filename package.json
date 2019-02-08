@@ -13,14 +13,15 @@
     "build": "run-s build:*",
     "start": "node index.js",
     "watch:server": "nodemon -x 'heroku local' --signal SIGTERM --config server.nodemon.json",
-    "watch:client": "nodemon -x 'npm run build' --config client.nodemon.json",
+    "watch:client": "nodemon -x 'npm run build:copy' --config client.nodemon.json",
+    "watch:rollup": "rollup -c -w",
     "watch": "run-p watch:*",
     "patch": "patch-package"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@apollo-elements/lit-apollo": "^0.0.5",
+    "@apollo-elements/lit-apollo": "^0.0.7",
     "@material/mwc-button": "^0.3.5",
     "@webcomponents/webcomponentsjs": "^2.2.6",
     "apollo-cache-inmemory": "^1.4.2",
@@ -47,6 +48,7 @@
   },
   "devDependencies": {
     "@types/ioredis": "^4.0.6",
+    "chokidar": "^2.1.0",
     "eslint": "^5.13.0",
     "nodemon": "^1.18.9",
     "npm-run-all": "^4.1.5",
@@ -58,6 +60,7 @@
     "rollup-plugin-minify-html-literals": "^1.1.2",
     "rollup-plugin-modulepreload": "^1.1.0",
     "rollup-plugin-node-resolve": "^4.0.0",
+    "rollup-plugin-notify": "^1.0.6",
     "rollup-plugin-terser": "^4.0.3",
     "rollup-plugin-workbox": "^2.0.0"
   }
