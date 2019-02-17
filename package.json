@@ -10,7 +10,7 @@
   "scripts": {
     "prebuild": "npm dedupe",
     "build": "run-s build:*",
-    "build:copy": "cp src/index.html public && cp src/manifest.webmanifest public && cp src/style.css public && cp -r node_modules/@webcomponents public/assets",
+    "build:copy": "sh copy-files.sh",
     "build:rollup": "rollup -c",
     "patch": "patch-package",
     "postinstall": "npm run patch",
