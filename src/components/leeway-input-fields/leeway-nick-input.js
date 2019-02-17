@@ -19,7 +19,7 @@ class LeewayNickInput extends LeewayInputMixin(ApolloMutation) {
       <input id="input"
           aria-label="Username"
           placeholder="Set Your Username"
-          @keyup="${this.onUserKeyup}"/>
+          @keyup="${this.onKeyup}"/>
       <mwc-button id="submit"
           icon="check"
           ?disabled="${!this.variables || !this.variables.nick}"
@@ -39,7 +39,7 @@ class LeewayNickInput extends LeewayInputMixin(ApolloMutation) {
     if (this.input.value) this.mutate();
   }
 
-  onUserKeyup({ key, target: { value: nick } }) {
+  onKeyup({ key, target: { value: nick } }) {
     this.variables = { nick };
     if (key === 'Enter') this.mutate();
   }

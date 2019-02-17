@@ -7,12 +7,12 @@
     "node": "10.3.0"
   },
   "scripts": {
+    "prebuild": "npm dedupe",
     "build": "run-s build:*",
     "build:copy": "cp src/index.html public && cp src/manifest.webmanifest public && cp src/style.css public && cp -r node_modules/@webcomponents public/assets",
     "build:rollup": "rollup -c",
-    "heroku-postbuild": "echo Skipping build on Heroku",
     "patch": "patch-package",
-    "postinstall": "patch-package",
+    "postinstall": "npm run patch",
     "start": "node index.js",
     "watch": "run-p watch:*",
     "watch:client": "nodemon -x 'npm run build:copy' --config client.nodemon.json",
