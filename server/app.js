@@ -43,6 +43,9 @@ const staticHeaders = [
   'public',
 ].join();
 
+const shouldNotCache = ({ path }) =>
+  path.endsWith('sw.js') || path.endsWith('index.html');
+
 if (process.env.NODE_ENV === 'production') {
   app.use(HTTPS({ trustProtoHeader: true }));
   app.use(compression({ threshold: 0 }));
@@ -62,7 +65,7 @@ app.get(/^(?!.*(\.)|(graphi?ql).*)/, async function sendSPA(req, res) {
   const cache = new InMemoryCache();
   const link = new SchemaLink({ schema: server.schema, context });
   const client = new ApolloClient({ cache, link, ssrMode: true });
-  const cacheHeaders = req.path.endsWith('sw.js') ? swHeaders : staticHeaders;
+  const cacheHeaders = shouldNotCache(req) ? swHeaders : staticHeaders;
   const index = path.resolve('public', 'index.html');
   const body = await ssr(index, client);
   res.set("Cache-Control", cacheHeaders);
