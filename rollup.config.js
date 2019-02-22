@@ -14,6 +14,8 @@ function onwarn(warning, warn) {
   else warn(warning);
 }
 
+console.log(process.env.PRODUCTION)
+
 export default {
   onwarn,
   treeshake: !!process.env.PRODUCTION,
