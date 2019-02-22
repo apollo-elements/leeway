@@ -6,7 +6,7 @@ import filter from 'crocks/pointfree/filter';
 import map from 'crocks/pointfree/map';
 import objOf from 'crocks/helpers/objOf';
 
-import { getNick, isValidMessage, isValidUser, trace } from './lib';
+import { getNick, isValidMessage, isValidUser } from './lib';
 
 export const users = (_, __, { user: { getUsers } }) =>
   getUsers()
@@ -25,5 +25,7 @@ const assignNick = getUser => ({ userId, ...message }) =>
 
 export const messages = (_, __, { message: { getMessages }, user: { getUser } }) =>
   getMessages()
-    .then(trace('messages'))
-    .then(map(composeP(validateMessage, assignNick(getUser))));
+    .then(map(composeP(
+      validateMessage,
+      assignNick(getUser)
+    )));

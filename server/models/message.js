@@ -11,5 +11,6 @@ export const addMessage = ({ userId, message, date }) =>
     JSON.stringify({ userId, message, date })
   );
 
-export const getMessages = () => redis.zrangebyscore(MESSAGES, -Infinity, Infinity)
-  .then(map(JSON.parse));
+export const getMessages = () =>
+  redis.zrangebyscore(MESSAGES, -Infinity, Infinity)
+    .then(map(JSON.parse));
