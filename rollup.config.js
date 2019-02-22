@@ -14,11 +14,11 @@ function onwarn(warning, warn) {
   else warn(warning);
 }
 
-console.log(process.env.PRODUCTION)
+const  { PRODUCTION = process.env.NODE_ENV === 'production' } = process.env;
 
 export default {
   onwarn,
-  treeshake: !!process.env.PRODUCTION,
+  treeshake: !!PRODUCTION,
   input: 'src/app.js',
   output: [{
     dir: 'public/modules',
@@ -34,7 +34,7 @@ export default {
 
     graphql(),
 
-    litcss({ uglify: process.env.PRODUCTION }),
+    litcss({ uglify: PRODUCTION }),
 
     // REQUIRED to roll apollo-client up
     resolve({
@@ -53,7 +53,7 @@ export default {
       }
     }),
 
-    ...(process.env.PRODUCTION ? [
+    ...(PRODUCTION ? [
       minifyHTML({
         failOnError: true,
         options: {
