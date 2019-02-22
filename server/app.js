@@ -29,7 +29,7 @@ const url = process.env.URL || `http://localhost:${port}`;
 const app = express();
 const http = createServer(app);
 
-const swHeaders = [
+const shortHeaders = [
   'max-age=0',
   'must-revalidate',
   'no-cache',
@@ -37,13 +37,13 @@ const swHeaders = [
   'proxy-revalidate',
 ].join();
 
-const staticHeaders = [
+const longHeaders = [
   'immutable',
   'max-age=31536000',
   'public',
 ].join();
 
-const shouldNotCache = ({ path }) => path === '/' || path.endsWith('sw.js');
+const shouldCache = path => path === '/' || path.endsWith('sw.js');
 
 if (process.env.NODE_ENV === 'production') {
   app.use(HTTPS({ trustProtoHeader: true }));
@@ -64,8 +64,7 @@ app.get(/^(?!.*(\.)|(graphi?ql).*)/, async function sendSPA(req, res) {
   const cache = new InMemoryCache();
   const link = new SchemaLink({ schema: server.schema, context });
   const client = new ApolloClient({ cache, link, ssrMode: true });
-  const cacheHeaders = shouldNotCache(req) ? swHeaders : staticHeaders;
-  console.log(req.path, cacheHeaders);
+  const cacheHeaders = shouldCache(req.path) ? shortHeaders : longHeaders;
   const index = path.resolve('public', 'index.html');
   const body = await ssr(index, client);
   res.set("Cache-Control", cacheHeaders);
@@ -76,7 +75,7 @@ app.use(favicon('smiley'));
 
 app.use(express.static('public', {
   setHeaders(res, path) {
-    res.setHeader("Cache-Control", path.endsWith('sw.js') ? swHeaders : staticHeaders);
+    res.setHeader("Cache-Control", shouldCache(path) ? shortHeaders : longHeaders);
   }
 }));
 
