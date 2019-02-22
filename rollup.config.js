@@ -6,6 +6,7 @@ import modulepreload from 'rollup-plugin-modulepreload';
 import notify from 'rollup-plugin-notify';
 import resolve from 'rollup-plugin-node-resolve';
 import workbox from 'rollup-plugin-workbox';
+import visualizer from 'rollup-plugin-visualizer';
 import { terser } from 'rollup-plugin-terser';
 
 function onwarn(warning, warn) {
@@ -74,6 +75,8 @@ export default {
     modulepreload({ index: 'public/index.html', prefix: 'modules' }),
 
     notify({ success: true }),
+
+    visualizer({ sourcemap: true }),
 
   ]
 };

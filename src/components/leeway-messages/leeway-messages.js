@@ -1,6 +1,7 @@
 import { ApolloQuery, html } from '@apollo-elements/lit-apollo';
 import { classMap } from 'lit-html/directives/class-map';
-import { format, parseISO } from 'date-fns/fp';
+import format from 'date-fns/esm/fp/format';
+import parseISO from 'date-fns/esm/fp/parseISO';
 
 import compose from 'crocks/helpers/compose';
 

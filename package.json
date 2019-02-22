@@ -64,6 +64,7 @@
     "rollup-plugin-node-resolve": "^4.0.0",
     "rollup-plugin-notify": "^1.0.6",
     "rollup-plugin-terser": "^4.0.4",
+    "rollup-plugin-visualizer": "^1.0.0",
     "rollup-plugin-workbox": "^2.0.0"
   }
 }
