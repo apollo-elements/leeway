@@ -9,7 +9,7 @@ import { InMemoryCache } from 'apollo-cache-inmemory';
 import { ApolloClient } from 'apollo-client';
 import { ApolloServer, PubSub, gql } from 'apollo-server-express';
 import { readFileSync } from 'fs';
-import favicon from 'emoji-favicon'
+import favicon from 'emoji-favicon';
 
 const pubsub = new PubSub();
 
@@ -43,8 +43,7 @@ const staticHeaders = [
   'public',
 ].join();
 
-const shouldNotCache = ({ path }) =>
-  path.endsWith('sw.js') || path.endsWith('index.html');
+const shouldNotCache = ({ path }) => path === '/' || path.endsWith('sw.js');
 
 if (process.env.NODE_ENV === 'production') {
   app.use(HTTPS({ trustProtoHeader: true }));
@@ -66,13 +65,14 @@ app.get(/^(?!.*(\.)|(graphi?ql).*)/, async function sendSPA(req, res) {
   const link = new SchemaLink({ schema: server.schema, context });
   const client = new ApolloClient({ cache, link, ssrMode: true });
   const cacheHeaders = shouldNotCache(req) ? swHeaders : staticHeaders;
+  console.log(req.path, cacheHeaders);
   const index = path.resolve('public', 'index.html');
   const body = await ssr(index, client);
   res.set("Cache-Control", cacheHeaders);
   res.send(body);
 });
 
-app.use(favicon('smiley'))
+app.use(favicon('smiley'));
 
 app.use(express.static('public', {
   setHeaders(res, path) {
