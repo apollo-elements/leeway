@@ -1,7 +1,5 @@
-image: timbru31/ruby-node
+image: tmaier/dpl
 deploy:
   type: deploy
   only: [master]
-  script:
-    - gem install dpl
-    - dpl --provider=heroku --app=lit-apollo-subscriptions --api-key=$HEROKU_API_KEY --skip_cleanup
+  script: dpl --provider=heroku --app=lit-apollo-subscriptions --api-key=$HEROKU_API_KEY --skip_cleanup
