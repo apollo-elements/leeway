@@ -24,37 +24,28 @@
     <link rel="preconnect" href="https://fonts.gstatic.com/"/>
     <link rel="preconnect" href="https://fonts.googleapis.com/"/>
 
-    <link rel="preload" as="font" href="https://fonts.gstatic.com/s/materialicons/v42/flUhRq6tzZclQEJ-Vdg-IuiaDsNcIhQ8tQ.woff2" crossorigin/>
     <link rel="preload" as="style" href="/style.css"/>
     <link rel="preload" as="script" href="/assets/@webcomponents/webcomponentsjs/webcomponents-loader.js"/>
-    <link rel="modulepreload" href="/modules/app.js"/>
-
-    <script>
-    // so embarassed: graphql/jsutils/instanceOf.mjs:16
-    window.process = { env: { PRODUCTION: true } }
-    // https://bugzilla.mozilla.org/show_bug.cgi?id=1517546
-    window.onerror = function(message, script, line, col, error) {
-      const messages = document.querySelector('leeway-messages');
-      if (error.name === 'SyntaxError') {
-        messages.style.padding = '14px';
-        messages.innerHTML = `
-          <h2>This demo targets browsers which support dynamic <code>import()</code>.</h2>
-          <p>Try it with Firefox Version 66 and set the <code>javascript.options.dynamicImport</code> flag to <code>true</code>.</p>
-          <p>Firefox 67 <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=1517546">will enable this by default</a></p>
-        `
-      }
-    };
-    </script>
 
     <script src="/assets/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
-    <script type="module" src="/modules/app.js"></script>
-    <script nomodule src="https://unpkg.com/systemjs/dist/system-production.js"></script>
-    <script nomodule defer src="/system/app.js"></script>
+
   </head>
+
   <body unresolved>
+    <service-worker id="service-worker" path="/sw.js" auto-reload></service-worker>
     <header id="info-box">
       <h2>#leeway</h2>
       <p>⭐️ | 👨‍🚀 | A wee chat app using <a href="https://npmjs.com/package/@apollo-elements/lit-apollo"><code>@apollo-elements/lit-apollo</code></a> and GraphQL subscriptions.</p>
+      <details id="update-dialog" hidden>
+        <summary onfocus="this.firstElementChild.focus()">
+          <mwc-button onclick="this.parentElement.click()">🎁 Update</mwc-button>
+        </summary>
+        <details-dialog>
+          <h2>New Version Available!</h2>
+          <p>Reload the Page to get the new hotness?</p>
+          <mwc-button onclick="location.reload()">OK</mwc-button>
+        </details-dialog>
+      </details>
     </header>
 
     <leeway-userlist>
@@ -223,5 +214,21 @@
       </script>
     </leeway-status-notifier>
 
+    <template hidden id="systemjs-loader">
+      <script src="/assets/systemjs/s.min.js"></script>
+      <script src="/system/app.js" onload="System.import('./system/app.js')"></script>
+    </template>
+
+    <script>
+      import('/module/app.js');
+      window.supportsDynamicImport = true;
+    </script>
+
+    <script>
+      if (!window.supportsDynamicImport) {
+        const loadersTpl = document.getElementById('systemjs-loader');
+        document.head.appendChild(loadersTpl.content.cloneNode(true));
+      }
+    </script>
   </body>
 </html>

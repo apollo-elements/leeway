@@ -14,14 +14,21 @@ function onwarn(warning, warn) {
   else warn(warning);
 }
 
-const  { PRODUCTION = process.env.NODE_ENV === 'production' } = process.env;
+const isProduction = arg => arg.includes('production');
+const  {
+  PRODUCTION =
+  process.env.NODE_ENV === 'production' ||
+  process.argv.some(isProduction)
+} = process.env;
+
+console.log('Production?', PRODUCTION);
 
 export default {
   onwarn,
   treeshake: !!PRODUCTION,
   input: 'src/app.js',
   output: [{
-    dir: 'public/modules',
+    dir: 'public/module',
     format: 'es',
     sourcemap: true,
   }, {

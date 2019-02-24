@@ -1,5 +1,6 @@
 :root {
   --primary-hue: 270;
+  --header-padding: 14px;
   --hue-coeff: 1;
   --messages-padding-left: 12px;
 }
@@ -33,7 +34,7 @@ header {
   grid-area: header;
   align-items: center;
   justify-content: center;
-  padding: 14px;
+  padding: var(--header-padding);
   position: relative;
   box-shadow: 2px 0 2px hsla(0 0% 0% / 0.3);
 }
@@ -107,10 +108,10 @@ leeway-messages {
 leeway-input-fields {
   grid-area: input;
   box-sizing: border-box;
-  border: 2px solid black;
-  border-radius: 8px;
   overflow: hidden;
   margin: 0 12px 24px;
+  border: 2px solid black;
+  border-radius: 8px;
 }
 
 leeway-userlist {
@@ -157,4 +158,58 @@ leeway-status-notifier {
   content: ' ';
   display: block;
   height: 100%;
+}
+
+details-dialog {
+  background: white;
+  border-radius: 10px;
+  display: block;
+  left: 50%;
+  margin: 10vh auto;
+  max-height: 80vh;
+  max-width: 90vw;
+  padding: 20px;
+  position: fixed;
+  top: 0;
+  transform: translateX(-50%);
+  width: 448px;
+  z-index: 999;
+}
+
+details-dialog button {
+  outline: none;
+  padding: none;
+  border: none;
+  background: none;
+}
+
+details-dialog mwc-button { width: 100%; }
+
+#update-dialog {
+  list-style: none;
+  position: absolute;
+  top: var(--header-padding);
+  right: var(--header-padding);
+}
+
+#update-dialog > summary {
+  display: inline-block;
+}
+
+#update-dialog > summary::-webkit-details-marker { display: none; }
+
+#update-dialog[open] > summary {
+  cursor: default;
+}
+
+#update-dialog[open] > summary::before {
+  content: " ";
+  background: rgba(0, 0, 0, 0.3);
+  display: block;
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 1;
 }
