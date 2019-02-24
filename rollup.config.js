@@ -83,9 +83,9 @@ export default {
 
     modulepreload({ index: 'public/index.html', prefix: 'modules' }),
 
-    notify({ success: true }),
-
     visualizer({ sourcemap: true }),
+
+    notify({ success: true }),
 
   ]
 };
