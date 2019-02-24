@@ -81,7 +81,7 @@ export default {
 
     workbox({ workboxConfig: require('./workbox-config') }),
 
-    modulepreload({ index: 'public/index.html', prefix: 'modules' }),
+    modulepreload({ index: 'public/index.html', prefix: 'module' }),
 
     visualizer({ sourcemap: true }),
 
