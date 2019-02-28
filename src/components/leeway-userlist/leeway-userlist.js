@@ -86,7 +86,6 @@ class LeewayUserlist extends ApolloQuery {
   }
 
   onSubscriptionError(error) {
-    console.error(error);
     this.error = error;
   }
 

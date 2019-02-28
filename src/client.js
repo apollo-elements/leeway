@@ -2,7 +2,6 @@ import { HttpLink } from 'apollo-link-http';
 import { InMemoryCache } from 'apollo-cache-inmemory';
 import { WebSocketLink } from 'apollo-link-ws';
 import { persistCache } from 'apollo-cache-persist';
-import { withClientState } from 'apollo-link-state';
 import ApolloClient from 'apollo-client';
 
 import { ApolloLink, split } from 'apollo-link';
@@ -48,37 +47,31 @@ const isWsOperation = compose(
 const cache = new InMemoryCache().restore(window.__APOLLO_STATE__);
 
 const resolverFor = name => (_, args, { cache }) => {
-  cache.writeData({ data: objOf(name, args[name]) })
-  return args[name]
-}
+  cache.writeData({ data: objOf(name, args[name]) });
+  return args[name];
+};
 
-const stateLink = withClientState({
-  cache,
-  defaults: {
-    nick: null,
-    id: null,
-    status: navigator.onLine ? 'ONLINE' : 'OFFLINE',
-  },
-  resolvers: {
-    Mutation: {
-      nick: resolverFor('nick'),
-      id: resolverFor('id'),
-      status: resolverFor('status'),
-    }
-  },
-});
+const resolvers = {
+  Mutation: {
+    nick: resolverFor('nick'),
+    id: resolverFor('id'),
+    status: resolverFor('status'),
+  }
+};
 
-const terminalLink = split(isWsOperation, createWsLink(), createHttpLink());
+const defaults = {
+  nick: null,
+  id: null,
+  status: navigator.onLine ? 'ONLINE' : 'OFFLINE',
+};
 
-const link = ApolloLink.from([
-  stateLink,
-  terminalLink,
-]);
+const link = split(isWsOperation, createWsLink(), createHttpLink());
 
 let client;
 export async function getClient() {
-  if (client) return client
-  await persistCache({ cache, storage: localStorage });
+  if (client) return client;
+  await persistCache({ cache, resolvers, storage: localStorage });
   client = new ApolloClient({ cache, link, ssrForceFetchDelay: 100 });
+  cache.writeData({ data: defaults });
   return client;
 }

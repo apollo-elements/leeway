@@ -1,3 +1,4 @@
+import path from 'path';
 import commonjs from 'rollup-plugin-commonjs';
 import graphql from 'rollup-plugin-graphql';
 import litcss from 'rollup-plugin-lit-css';
@@ -43,22 +44,19 @@ export default {
 
     litcss({ uglify: PRODUCTION }),
 
-    // REQUIRED to roll apollo-client up
-    resolve({
-      browser: true,
-      jsnext: true,
-      module: true,
-    }),
-
-    commonjs({
-      namedExports: {
-        // Necessary to roll apollo-link-state up.
-        // until graphql-anywhere 5.0
-        'graphql-anywhere/lib/async': ['graphql'],
-        // Needed to roll up apollo-cache-persist
-        'apollo-cache-persist': ['persistCache']
+    {
+      // needed to specifically use the browser bundle for subscriptions-transport-ws
+      name: 'use-browser-for-subscriptions-transport-ws',
+      resolveId(id) {
+        if (id === 'subscriptions-transport-ws') {
+          return path.resolve('node_modules/subscriptions-transport-ws/dist/client.js');
+        }
       }
-    }),
+    },
+
+    resolve(),
+
+    commonjs( ),
 
     ...(PRODUCTION ? [
       minifyHTML({
@@ -83,7 +81,7 @@ export default {
 
     modulepreload({ index: 'public/index.html', prefix: 'module' }),
 
-    visualizer({ sourcemap: true }),
+    visualizer({ sourcemap: true, open: true }),
 
     notify({ success: true }),
 
