@@ -4,7 +4,7 @@ import { WebSocketLink } from 'apollo-link-ws';
 import { persistCache } from 'apollo-cache-persist';
 import ApolloClient from 'apollo-client';
 
-import { ApolloLink, split } from 'apollo-link';
+import { split } from 'apollo-link';
 import { getMainDefinition } from 'apollo-utilities';
 import compose from 'crocks/helpers/compose';
 import objOf from 'crocks/helpers/objOf';
@@ -70,8 +70,8 @@ const link = split(isWsOperation, createWsLink(), createHttpLink());
 let client;
 export async function getClient() {
   if (client) return client;
-  await persistCache({ cache, resolvers, storage: localStorage });
-  client = new ApolloClient({ cache, link, ssrForceFetchDelay: 100 });
+  await persistCache({ cache, storage: localStorage });
+  client = new ApolloClient({ cache, resolvers, link, ssrForceFetchDelay: 100 });
   cache.writeData({ data: defaults });
   return client;
 }
