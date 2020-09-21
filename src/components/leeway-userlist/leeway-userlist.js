@@ -61,9 +61,9 @@ class LeewayUserlist extends ApolloQuery {
   }
 
   render() {
-    const { users = [], id, nick, status } = this.data;
+    const { users = [], id, nick, status } = this.data || {};
     return (html`
-      ${this.error && this.error}
+      ${this.error && this.error.message}
       <section id="links"><slot name="links"></slot></section>
       <section id="users">
         <header style="${getUserStyleMap({ nick, status })}">
