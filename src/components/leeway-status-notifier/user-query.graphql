@@ -1,5 +1,0 @@
-query LocalUser {
-  id @client
-  nick @client
-  status @client
-}

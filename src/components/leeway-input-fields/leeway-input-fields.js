@@ -26,14 +26,15 @@ class LeewayInputFields extends ApolloQuery {
   }
 
   render() {
+    const { localUser } = this.data;
     return this.error ? errorTemplate(this.error) : html`
-      <div id="nick" ?hidden="${this.data.id}"><slot name="nick-input"></slot></div>
-      <div id="chat" ?hidden="${!this.data.id}"><slot name="chat-input"></slot></div>
+      <div id="nick" ?hidden="${localUser.id}"><slot name="nick-input"></slot></div>
+      <div id="chat" ?hidden="${!localUser.id}"><slot name="chat-input"></slot></div>
     `;
   }
 
   async focusInput() {
-    const mutator = this.querySelector(`leeway-${this.data.id ? 'chat' : 'nick'}-input`);
+    const mutator = this.querySelector(`leeway-${this.data.localUser.id ? 'chat' : 'nick'}-input`);
     const { input } = mutator;
     await mutator.updateComplete;
     setTimeout(input.focus.bind(input));
@@ -46,7 +47,7 @@ class LeewayInputFields extends ApolloQuery {
   updated() {
     Array.from(this.children)
       .filter(isCustomElement)
-      .forEach(assignUser(this.data));
+      .forEach(assignUser(this.data.localUser));
     this.focusInput();
   }
 

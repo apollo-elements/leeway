@@ -7,9 +7,17 @@ import inputStyles from './input-fields-styles.css';
 import style from './leeway-nick-input.css';
 import shared from '../shared-styles.css';
 
-import clientFieldsFragment from './ClientFields.fragment.graphql';
+import { localUserVar } from '../../variables';
 
 class LeewayNickInput extends LeewayInputMixin(ApolloMutation) {
+  static get properties() {
+    return {
+      nick: { type: String },
+      variables: { type: Object },
+      closed: { type: Boolean, reflect: true },
+    };
+  }
+
   static get styles() {
     return [shared, inputStyles, style];
   }
@@ -29,14 +37,6 @@ class LeewayNickInput extends LeewayInputMixin(ApolloMutation) {
     `);
   }
 
-  static get properties() {
-    return {
-      nick: { type: String },
-      variables: { type: Object },
-      closed: { type: Boolean, reflect: true },
-    };
-  }
-
   onSubmit() {
     if (this.input.value) this.mutate();
   }
@@ -46,12 +46,9 @@ class LeewayNickInput extends LeewayInputMixin(ApolloMutation) {
     if (key === 'Enter') this.mutate();
   }
 
-  onUpdate(cache, { data: { join: { id, nick } } }) {
-    const data = { id, nick, status: navigator.onLine ? 'ONLINE' : 'OFFLINE' };
-    cache.writeFragment({
-      fragment: clientFieldsFragment,
-      data,
-    });
+  updater(cache, { data: { join: { id, nick } } }) {
+    const status = navigator.onLine ? 'ONLINE' : 'OFFLINE';
+    localUserVar({ id, nick, status });
   }
 }
 

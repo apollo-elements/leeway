@@ -46,13 +46,23 @@ export async function sendMessage(_, args, context) {
   return messageSent;
 }
 
-export async function join(_, { nick }, { user: { create }, pubsub }) {
-  const id = uuidv4();
+export async function join(_, { nick }, { user: { create, getUsers }, pubsub }) {
+  const existing = await getUsers().then(users => users.find(x => x.nick === nick));
+  const id = existing ? existing.id : uuidv4();
   const userJoined = { id, nick, status: ONLINE };
   if (!isValidUser.runWith(userJoined)) throw new ValidationError('Invalid User');
   await create(userJoined);
   pubsub.publish(JOINED, { userJoined });
   trace('userJoined', Object.values(userJoined));
+  setTimeout(() => {
+    pubsub.publish(USER_STATUS_UPDATED, {
+      userStatusUpdated: {
+        id,
+        nick,
+        status: 'OFFLINE',
+      },
+    });
+  }, 1000 * 60 * 15);
   return userJoined;
 }
 

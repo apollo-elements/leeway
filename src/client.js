@@ -2,6 +2,8 @@ import { ApolloClient, InMemoryCache, HttpLink, split } from '@apollo/client/cor
 import { WebSocketLink } from '@apollo/client/link/ws';
 import { getMainDefinition } from '@apollo/client/utilities';
 import { persistCache } from 'apollo-cache-persist';
+import { localUserVar } from './variables';
+import { mergeArrayByField } from './lib/merge-array-by-field';
 
 const { host } = location;
 
@@ -9,10 +11,19 @@ const cache = new InMemoryCache({
   typePolicies: {
     Query: {
       fields: {
-        nick(next) { return next || null; },
-        id(next) { return next || null; },
-        status(next) { return next || navigator.onLine ? 'ONLINE' : 'OFFLINE'; },
+        localUser: {
+          merge: true,
+          read() {
+            return localUserVar();
+          },
+        },
+        users: {
+          merge: mergeArrayByField('id'),
+        },
       },
+    },
+    User: {
+      keyFields: ['id'],
     },
   },
 });

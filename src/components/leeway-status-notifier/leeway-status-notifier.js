@@ -1,6 +1,6 @@
 import { ApolloMutation } from '@apollo-elements/lit-apollo';
 
-import userQuery from './user-query.graphql';
+import userQuery from '../LocalUser.query.graphql';
 
 const { host } = location;
 const protocol = host.includes('localhost') ? 'http' : 'https';

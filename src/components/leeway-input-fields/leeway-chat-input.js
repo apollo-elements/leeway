@@ -10,7 +10,9 @@ import shared from '../shared-styles.css';
 import changeNicknameMutation from './change-nickname-mutation.graphql';
 import partMutation from './part-mutation.graphql';
 
-import clientFieldsFragment from './ClientFields.fragment.graphql';
+import { localUserVar } from '../../variables';
+
+import { gql } from '@apollo/client/core';
 
 class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
   static get styles() {
@@ -52,14 +54,7 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
     const status = navigator.onLine ? 'ONLINE' : 'OFFLINE';
 
     const update = (cache, { data: { changeNickname: { id, nick } } }) =>
-      cache.writeFragment({
-        fragment: clientFieldsFragment,
-        data: {
-          id,
-          nick,
-          status,
-        },
-      });
+      localUserVar({ id, nick, status });
 
     await this.mutate({
       mutation,
@@ -86,15 +81,16 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
 
     const status = navigator.onLine ? 'ONLINE' : 'OFFLINE';
 
-    const update = cache => cache.writeFragment({
-      fragment: clientFieldsFragment,
-      data: { id: null, nick: null, status },
-    });
-
     await this.mutate({
       mutation,
       variables,
-      update,
+      update: cache => {
+        cache.writeFragment({
+          id: `User:${id}`,
+          fragment: gql`fragment userStatus on user { status }`,
+          data: { status: 'OFFLINE' },
+        });
+      },
       optimisticResponse: {
         __typename: 'Mutation',
         part: {
@@ -104,6 +100,8 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
           status,
         },
       },
+    }).then(() => {
+      localUserVar({ id: null, nick: null, status });
     });
   }
 

@@ -9,10 +9,9 @@ import userJoinedSubscription from '../../user-joined-subscription.graphql';
 import shared from '../shared-styles.css';
 import style from './leeway-userlist.css';
 
-const userTemplate = localUser => ({ id, nick, status } = {}) => (html`
-  <div class="${classMap({ user: true, me: localUser.id === id })}"
-       style="${getUserStyleMap({ nick, status })}">
-    <span aria-label="${status}" class="${classMap({ status: true, ...status && { [status.toLowerCase()]: true } })}"></span>
+const userTemplate = ({ nick, status } = {}) => (html`
+  <div class="user" style="${getUserStyleMap({ nick, status })}">
+    <span aria-label="${status}" class="status ${classMap({ ...status && { [status.toLowerCase()]: true } })}"></span>
     ${nick}
   </div>
 `);
@@ -57,19 +56,18 @@ class LeewayUserlist extends ApolloQuery {
   }
 
   render() {
-    const { users = [], id, nick, status } = this.data || {};
+    const { users = [], localUser = {} } = this.data || {};
     return (html`
       ${this.error && this.error.message}
       <section id="links"><slot name="links"></slot></section>
       <section id="users">
-        <header style="${getUserStyleMap({ nick, status })}">
-          <span class="nick">${nick}</span>
-          <span role="presentation" class="${classMap({ status: true, ...status && { [status.toLowerCase()]: true } })}"></span>
-          <span class="status">${status}</span>
+        <header style="${getUserStyleMap(localUser)}" class="${classMap({ invisible: !localUser.id })}">
+          <span role="presentation" class="status ${localUser.status.toLowerCase()}"></span>
+          <span class="nick">${localUser.nick}</span>
         </header>
         ${users
-        .filter(user => user.id !== id)
-        .map(userTemplate({ id, nick, status }))}
+        .filter(user => user.id !== localUser.id)
+        .map(userTemplate)}
       </section>
     `);
   }

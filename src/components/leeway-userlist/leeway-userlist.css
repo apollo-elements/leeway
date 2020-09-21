@@ -8,6 +8,7 @@ section {
 
 #users {
   padding: 8px;
+  flex: 1;
 }
 
 .user {
@@ -16,8 +17,8 @@ section {
   color: white;
 }
 
-.me {
-  font-weight: bold;
+.invisible {
+  opacity: 0;
 }
 
 .status {
@@ -46,6 +47,7 @@ section {
 header {
   color: white;
   display: flex;
+  align-items: center;
   flex-flow: row wrap;
   font-size: 24px;
   font-weight: bold;
@@ -55,4 +57,8 @@ header {
 
 .nick {
   flex: 1 0 100%;
+}
+
+header .nick {
+  flex: 1 1 auto;
 }
