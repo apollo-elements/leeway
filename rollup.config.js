@@ -9,6 +9,7 @@ import modulepreload from 'rollup-plugin-modulepreload';
 import notify from 'rollup-plugin-notify';
 import { generateSW } from 'rollup-plugin-workbox';
 import visualizer from 'rollup-plugin-visualizer';
+import nodePolyfills from 'rollup-plugin-node-polyfills';
 import { terser } from 'rollup-plugin-terser';
 
 function onwarn(warning, warn) {
@@ -41,6 +42,8 @@ export default {
   }],
 
   plugins: [
+
+    nodePolyfills(),
 
     resolve(),
 
