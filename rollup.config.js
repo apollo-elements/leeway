@@ -47,12 +47,6 @@ export default {
 
     nodePolyfills(),
 
-    resolve(),
-
-    graphql(),
-
-    litcss({ uglify: PRODUCTION }),
-
     {
       // needed to specifically use the browser bundle for subscriptions-transport-ws
       name: 'use-browser-for-subscriptions-transport-ws',
@@ -61,6 +55,12 @@ export default {
           return path.resolve('node_modules/subscriptions-transport-ws/dist/client.js');
       },
     },
+
+    resolve(),
+
+    graphql(),
+
+    litcss({ uglify: PRODUCTION }),
 
     copy({
       targets: [
