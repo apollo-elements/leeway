@@ -2,7 +2,6 @@ import { ApolloQuery, html } from '@apollo-elements/lit-apollo';
 import { classMap } from 'lit-html/directives/class-map';
 
 import { getUserStyleMap } from '../../lib/user-style-map';
-import { isSameById } from '../../lib/is-same-by';
 
 import shared from '../shared-styles.css';
 import style from './leeway-messages.css';
@@ -32,7 +31,7 @@ const errorTemplate = ({ message = 'Unknown Error' } = {}) => html`
 `;
 
 const getUserWithId = ({ id: localId, users }, id) => ({
-  ...users.find(isSameById({ id })),
+  ...users.find(user => user.id === id),
   me: localId === id,
 });
 

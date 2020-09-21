@@ -1,16 +1,7 @@
 import { ApolloQuery, html } from '@apollo-elements/lit-apollo';
 import { classMap } from 'lit-html/directives/class-map';
 
-import and from 'crocks/logic/and';
-import assign from 'crocks/helpers/assign';
-import compose from 'crocks/helpers/compose';
-import isSame from 'crocks/predicates/isSame';
-import not from 'crocks/logic/not';
-import propOr from 'crocks/helpers/propOr';
-import when from 'crocks/logic/when';
-
 import { getUserStyleMap } from '../../lib/user-style-map';
-import { isSameById } from '../../lib/is-same-by';
 import userStatusUpdatedSubscription from './user-status-updated-subscription.graphql';
 import userPartedSubscription from '../../user-parted-subscription.graphql';
 import userJoinedSubscription from '../../user-joined-subscription.graphql';
@@ -26,14 +17,16 @@ const userTemplate = localUser => ({ id, nick, status } = {}) => (html`
   </div>
 `);
 
-const isNotParted = compose(not(isSame('PARTED')), propOr(null, 'status'));
+const isNotParted =
+  user =>
+    user && user.status !== 'PARTED';
 
 const onStatusUpdated = (prev, { subscriptionData: { data: { userStatusUpdated } } }) => ({
   ...prev,
   users: [
     userStatusUpdated,
-    ...prev.users.filter(not(isSameById(userStatusUpdated))),
-  ].filter(and(Boolean, isNotParted)),
+    ...prev.users.filter(user => user.id !== userStatusUpdated.id),
+  ].filter(isNotParted),
 });
 
 const onUserJoined = (prev, { subscriptionData: { data: { userJoined } } }) => ({
@@ -46,7 +39,10 @@ const onUserJoined = (prev, { subscriptionData: { data: { userJoined } } }) => (
 
 const onUserParted = (prev, { subscriptionData: { data: { userParted } } }) => ({
   ...prev,
-  users: prev.users.map(when(isSameById(userParted), assign(userParted))),
+  users: prev.users.map(user => ({
+    ...user,
+    ...(user.id === userParted.id ? userParted : {}),
+  })),
 });
 
 
@@ -72,7 +68,7 @@ class LeewayUserlist extends ApolloQuery {
           <span class="status">${status}</span>
         </header>
         ${users
-        .filter(not(isSameById({ id })))
+        .filter(user => user.id !== id)
         .map(userTemplate({ id, nick, status }))}
       </section>
     `);

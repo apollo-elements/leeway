@@ -3,12 +3,6 @@ import { WebSocketLink } from '@apollo/client/link/ws';
 import { getMainDefinition } from '@apollo/client/utilities';
 import { persistCache } from 'apollo-cache-persist';
 
-import compose from 'crocks/helpers/compose';
-import fanout from 'crocks/Pair/fanout';
-import isSame from 'crocks/predicates/isSame';
-import merge from 'crocks/pointfree/merge';
-import propOr from 'crocks/helpers/propOr';
-
 const { host } = location;
 
 const cache = new InMemoryCache({
@@ -40,22 +34,20 @@ function createHttpLink() {
   return new HttpLink({ uri });
 }
 
-// isWsOperation :: { query } -> Boolean
-const getKind = propOr(null, 'kind');
-const getOperation = propOr(null, 'operation');
-const getQuery = propOr(null, 'query');
-const isOperation = compose(isSame('OperationDefinition'), getKind);
-const isSubscription = compose(isSame('subscription'), getOperation);
-const both = (a, b) => a && b;
-const isWsOperation = compose(
-  merge(both),
-  fanout(isOperation, isSubscription),
-  getMainDefinition,
-  getQuery
-);
+const httpLink = createHttpLink();
+const wsLink = createWsLink();
 
-const link =
-  split(isWsOperation, createWsLink(), createHttpLink());
+const link = split(
+  ({ query }) => {
+    const definition = getMainDefinition(query);
+    return (
+      definition.kind === 'OperationDefinition' &&
+      definition.operation === 'subscription'
+    );
+  },
+  wsLink,
+  httpLink,
+);
 
 let client;
 
