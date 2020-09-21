@@ -102,7 +102,7 @@ export default {
 
       visualizer({ sourcemap: true }),
 
-      notify({ success: true }),
+      notify(),
 
     ]),
 

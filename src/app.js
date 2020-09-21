@@ -22,7 +22,9 @@ window.WebComponents.waitFor(async function resolveBody() {
 
   const { getClient } = await import('./client');
 
-  window.__APOLLO_CLIENT__ = await getClient();
+  const client = await getClient();
+
+  window.__APOLLO_CLIENT__ = client;
 
   await Promise.all([
     import('./components/leeway-input-fields/leeway-input-fields.js'),

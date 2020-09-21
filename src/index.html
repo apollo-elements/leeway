@@ -53,6 +53,7 @@
     <leeway-userlist>
       <script type="application/graphql">
         query Users {
+          sidebarOpen @client
           localUser @client {
             id
             nick

@@ -26,8 +26,8 @@ body {
     'userlist header'
     'userlist messages'
     'userlist input';
-  grid-template-rows: fit-content(0) auto 74px;
-  grid-template-columns: minmax(min-content, 250px) auto;
+  grid-template-rows: 69px auto 74px;
+  grid-template-columns: minmax(min-content, 10px) auto;
 }
 
 header {
@@ -64,7 +64,7 @@ header svg {
   list-style-type: none;
   padding: 4px;
   width: 60px;
-  height: 100%;
+  height: calc(100% - 8px);
   margin: 0;
 }
 
@@ -102,6 +102,7 @@ leeway-user-status-toast {
 
 leeway-messages {
   grid-area: messages;
+  overflow-y: scroll;
   position: relative;
 }
 
@@ -117,11 +118,7 @@ leeway-input-fields {
 leeway-userlist {
   grid-area: userlist;
   background-color: rebeccapurple;
-}
-
-leeway-userlist,
-leeway-messages {
-  overflow-y: scroll;
+  height: 100vh;
 }
 
 leeway-status-notifier {

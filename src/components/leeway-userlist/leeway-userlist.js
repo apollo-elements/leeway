@@ -55,20 +55,32 @@ class LeewayUserlist extends ApolloQuery {
     return [shared, style];
   }
 
+  static get properties() {
+    return {
+      open: { type: Boolean },
+    };
+  }
+
   render() {
-    const { users = [], localUser = {} } = this.data || {};
+    const { users = [], localUser = {}, sidebarOpen } = this.data || {};
+    const myStatus = localUser && localUser.status && localUser.status.toLowerCase();
     return (html`
       ${this.error && this.error.message}
-      <section id="links"><slot name="links"></slot></section>
-      <section id="users">
-        <header style="${getUserStyleMap(localUser)}" class="${classMap({ invisible: !localUser.id })}">
-          <span role="presentation" class="status ${localUser.status.toLowerCase()}"></span>
-          <span class="nick">${localUser.nick}</span>
-        </header>
-        ${users
-        .filter(user => user.id !== localUser.id)
-        .map(userTemplate)}
-      </section>
+      <details ?open="${sidebarOpen}">
+        <summary @click="${this.onClick}">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0z" fill="none"/><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        </summary>
+        <div>
+          <section id="links"><slot name="links"></slot></section>
+          <section id="users">
+            <header style="${getUserStyleMap(localUser)}" class="${classMap({ invisible: !localUser.id })}">
+              <span role="presentation" class="status ${myStatus}"></span>
+              <span class="nick">${localUser.nick}</span>
+            </header>
+            ${users.filter(user => user.id !== localUser.id).map(userTemplate)}
+          </section>
+        </div>
+      </details>
     `);
   }
 
@@ -82,6 +94,17 @@ class LeewayUserlist extends ApolloQuery {
 
   onSubscriptionError(error) {
     this.error = error;
+  }
+
+  onClick(event) {
+    event.preventDefault();
+    this.client.writeQuery({
+      query: this.query,
+      data: {
+        ...this.data,
+        sidebarOpen: !this.data.sidebarOpen,
+      },
+    });
   }
 }
 

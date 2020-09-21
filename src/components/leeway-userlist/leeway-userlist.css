@@ -1,14 +1,46 @@
 :host {
+  display: block;
+}
+
+details {
+  height: 100%;
+}
+
+details > div {
+  display: grid;
+  grid-template-columns: min-content max-content;
+  height: calc(100% - 69px);
+}
+
+details[open] > div {
+  min-width: 250px;
+}
+
+summary {
+  list-style-type: none;
+  place-self: center;
+  color: black;
   display: flex;
+  align-items: center;
+  background: white;
+  height: 69px;
+  min-width: 40px;
+}
+
+summary svg {
+  fill: currentColor;
+  display: block;
+  margin-left: 8px;
 }
 
 section {
-  height: 100%;
+  max-height: 100%;
 }
 
 #users {
   padding: 8px;
   flex: 1;
+  overflow-y: scroll;
 }
 
 .user {
