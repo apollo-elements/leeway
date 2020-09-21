@@ -60,8 +60,18 @@ async function ssr(file, client) {
   const queryText =
     dom.window.document.querySelector('leeway-messages').firstElementChild.innerHTML;
 
+  // Turns out we don't need to do this :shrug:
+  // but i'm keeping the comment here because it's kind of a cool regexp
+  // that {([&}]+)} matches "any inner brace"
+  // I suppose it will fail if you have nested braces.
+  // const CLIENT_FIELD_REGEXP =
+  //   /(\s+\w+ @client {([^}]+)})|(\s+\w+ @client)/gs;
+
   await client.query({ query: gql(queryText) });
 
+  // NB: it's faster for the browser to `JSON.parse` than it would be to parse a POJO,
+  // since JSON is a restricted syntax
+  // see https://v8.dev/blog/cost-of-javascript-2019#json
   script.innerHTML = `
     window.__APOLLO_STATE__ = JSON.parse('${JSON.stringify(client.extract())}')
   `;
