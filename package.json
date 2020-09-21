@@ -27,6 +27,7 @@
     "@power-elements/service-worker": "^5.0.0",
     "@webcomponents/webcomponentsjs": "^2.4.4",
     "apollo-cache-persist": "^0.1.1",
+    "crocks": "^0.12.4",
     "date-fns": "^2.16.1",
     "details-dialog-element": "^3.0.3",
     "graphql": "^15.3.0",

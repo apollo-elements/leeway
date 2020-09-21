@@ -42,6 +42,10 @@ export default {
 
   plugins: [
 
+    resolve(),
+
+    commonjs(),
+
     graphql(),
 
     litcss({ uglify: PRODUCTION }),
@@ -62,10 +66,6 @@ export default {
         { src: 'src/style.css', dest: 'build' },
       ],
     }),
-
-    resolve(),
-
-    commonjs( ),
 
     generateSW(require('./workbox-config')),
 

@@ -1,13 +1,13 @@
-import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client/core';
-import { split, WebSocketLink } from '@apollo/client/link';
-import { getMainDefinition } from '@apollo/client/core/util';
+import { ApolloClient, InMemoryCache, HttpLink, split } from '@apollo/client/core';
+import { WebSocketLink } from '@apollo/client/link/ws';
+import { getMainDefinition } from '@apollo/client/utilities';
 import { persistCache } from 'apollo-cache-persist';
 
 import compose from 'crocks/helpers/compose';
 import objOf from 'crocks/helpers/objOf';
-import fanout from 'crocks/helpers/fanout';
+import fanout from 'crocks/Pair/fanout';
 import isSame from 'crocks/predicates/isSame';
-import merge from 'crocks/Pair/merge';
+import merge from 'crocks/pointfree/merge';
 import propOr from 'crocks/helpers/propOr';
 
 const { host } = location;
