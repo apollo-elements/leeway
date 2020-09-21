@@ -20,6 +20,7 @@ const isProduction = arg => arg.includes('production');
 const {
   PRODUCTION =
   process.env.NODE_ENV === 'production' ||
+  process.env.NETLIFY_ENV === 'production' ||
   process.argv.some(isProduction),
 } = process.env;
 
@@ -66,7 +67,12 @@ export default {
 
     commonjs( ),
 
+    generateSW(require('./workbox-config')),
+
+    modulepreload({ index: 'build/index.html', prefix: 'module' }),
+
     ...(PRODUCTION ? [
+
       copy({
         flatten: false,
         targets: [
@@ -91,15 +97,14 @@ export default {
       }),
 
       terser({ mangle: false }),
-    ] : []),
 
-    generateSW(require('./workbox-config')),
+    ] : [
 
-    modulepreload({ index: 'build/index.html', prefix: 'module' }),
+      visualizer({ sourcemap: true }),
 
-    !PRODUCTION && visualizer({ sourcemap: true }),
+      notify({ success: true }),
 
-    !PRODUCTION && notify({ success: true }),
+    ]),
 
   ],
 };
