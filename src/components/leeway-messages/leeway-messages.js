@@ -1,9 +1,5 @@
 import { ApolloQuery, html } from '@apollo-elements/lit-apollo';
 import { classMap } from 'lit-html/directives/class-map';
-import format from 'date-fns/esm/fp/format';
-import parseISO from 'date-fns/esm/fp/parseISO';
-
-import compose from 'crocks/helpers/compose';
 
 import { getUserStyleMap } from '../../lib/user-style-map';
 import { isSameById } from '../../lib/is-same-by';
@@ -14,9 +10,21 @@ import style from './leeway-messages.css';
 import messageSentSubscription from './message-sent-subscription.graphql';
 import userJoinedSubscription from '../../user-joined-subscription.graphql';
 import userPartedSubscription from '../../user-parted-subscription.graphql';
+import { differenceInWeeks, formatDistanceToNow, format } from 'date-fns/esm';
 
-/** msgTime :: String -> String */
-const msgTime = compose(format('EEEE hh:mm aaa'), parseISO);
+/**
+ * msgTime :: String -> String
+ * @param {string} iso
+ * @return {string} formatted string
+ */
+function msgTime(iso) {
+  const then = new Date(iso);
+  const today = new Date();
+  if (differenceInWeeks(today, then) > 1)
+    return format(then, 'EEEE, do LLLL, yyyy');
+  else
+    return formatDistanceToNow(then, { addSuffix: true });
+}
 
 const errorTemplate = ({ message = 'Unknown Error' } = {}) => html`
   <h1>😢 Such Sad, Very Error! 😰</h1>

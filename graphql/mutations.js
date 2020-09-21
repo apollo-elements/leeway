@@ -17,6 +17,15 @@ export async function updateUserStatus(_, { id, status }, { pubsub, user: { getU
   await update(id, userStatusUpdated);
   pubsub.publish(USER_STATUS_UPDATED, { userStatusUpdated });
   trace('userStatusUpdated', Object.values(userStatusUpdated.user));
+  // if we don't hear back from you in 15 minutes, set offline
+  setTimeout(() => {
+    pubsub.publish(USER_STATUS_UPDATED, {
+      userStatusUpdated: {
+        ...userStatusUpdated,
+        status: 'OFFLINE',
+      },
+    });
+  }, 1000 * 60 * 15);
   return status;
 }
 
