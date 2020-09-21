@@ -60,7 +60,7 @@ async function ssr(file, client) {
   const queryText =
     dom.window.document.querySelector('leeway-messages').firstElementChild.innerHTML;
 
-  await client.query({ query: gql(queryText.replace(/.*@client.*/g, '')) });
+  await client.query({ query: gql(queryText) });
 
   script.innerHTML = `
     window.__APOLLO_STATE__ = JSON.parse('${JSON.stringify(client.extract())}')
