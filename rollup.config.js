@@ -9,7 +9,6 @@ import modulepreload from 'rollup-plugin-modulepreload';
 import notify from 'rollup-plugin-notify';
 import { generateSW } from 'rollup-plugin-workbox';
 import visualizer from 'rollup-plugin-visualizer';
-import nodePolyfills from 'rollup-plugin-node-polyfills';
 import { terser } from 'rollup-plugin-terser';
 
 function onwarn(warning, warn) {
@@ -78,7 +77,7 @@ export default {
         flatten: false,
         targets: [
           { src: 'node_modules/@webcomponents/**/*.js', dest: 'build/assets' },
-          { src: 'node_modules/systemjs/dist/**/*.js', dest: 'build/assets/systemjs' },
+          { src: 'node_modules/systemjs/dist/**/*.js', dest: 'build/assets' },
         ],
       }),
 
