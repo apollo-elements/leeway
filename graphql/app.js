@@ -92,7 +92,7 @@ app.use(express.static('build', {
 
 server.applyMiddleware({ app, path: '/graphql' });
 
-app.listen({
+const httpServer = app.listen({
   port: process.env.PORT || 4000,
   cors: {
     origin: '*',
@@ -100,4 +100,7 @@ app.listen({
   },
 }, () => {
   console.log(`🤘 Server listening at ${server.graphqlPath}`);
+  console.log(`🗞 Subscriptions ready at ${server.subscriptionsPath}`);
 });
+
+server.installSubscriptionHandlers(httpServer);
