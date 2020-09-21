@@ -10,6 +10,8 @@ import shared from '../shared-styles.css';
 import changeNicknameMutation from './change-nickname-mutation.graphql';
 import partMutation from './part-mutation.graphql';
 
+import clientFieldsFragment from './ClientFields.fragment.graphql';
+
 class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
   static get styles() {
     return [shared, style];
@@ -48,9 +50,32 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
     const variables = { nick, id };
     const mutation = changeNicknameMutation;
     const status = navigator.onLine ? 'ONLINE' : 'OFFLINE';
+
     const update = (cache, { data: { changeNickname: { id, nick } } }) =>
-      cache.writeData({ id, nick, status });
-    await this.mutate({ mutation, variables, update });
+      cache.writeFragment({
+        fragment: clientFieldsFragment,
+        data: {
+          id,
+          nick,
+          status,
+        },
+      });
+
+    await this.mutate({
+      mutation,
+      variables,
+      update,
+      optimisticResponse: {
+        __typename: 'Mutation',
+        changeNickname: {
+          __typename: 'User',
+          id,
+          nick,
+          status,
+        },
+      },
+    });
+
     this.user = { nick, id, status };
   }
 
@@ -58,9 +83,28 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
     const { id } = this.user;
     const mutation = partMutation;
     const variables = { id };
-    const user = { id: null, nick: null, status: navigator.onLine ? 'ONLINE' : 'OFFLINE' };
-    const update = cache => cache.writeData(user);
-    await this.mutate({ mutation, variables, update });
+
+    const status = navigator.onLine ? 'ONLINE' : 'OFFLINE';
+
+    const update = cache => cache.writeFragment({
+      fragment: clientFieldsFragment,
+      data: { id: null, nick: null, status },
+    });
+
+    await this.mutate({
+      mutation,
+      variables,
+      update,
+      optimisticResponse: {
+        __typename: 'Mutation',
+        part: {
+          __typename: 'User',
+          id: null,
+          nick: null,
+          status,
+        },
+      },
+    });
   }
 
   handleSlashCommand(message) {

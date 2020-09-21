@@ -45,8 +45,6 @@ export default {
 
     commonjs(),
 
-    nodePolyfills(),
-
     {
       // needed to specifically use the browser bundle for subscriptions-transport-ws
       name: 'use-browser-for-subscriptions-transport-ws',

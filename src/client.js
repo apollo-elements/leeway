@@ -4,13 +4,26 @@ import { getMainDefinition } from '@apollo/client/utilities';
 import { persistCache } from 'apollo-cache-persist';
 
 import compose from 'crocks/helpers/compose';
-import objOf from 'crocks/helpers/objOf';
 import fanout from 'crocks/Pair/fanout';
 import isSame from 'crocks/predicates/isSame';
 import merge from 'crocks/pointfree/merge';
 import propOr from 'crocks/helpers/propOr';
 
 const { host } = location;
+
+const cache = new InMemoryCache({
+  typePolicies: {
+    Query: {
+      fields: {
+        nick(next) { return next || null; },
+        id(next) { return next || null; },
+        status(next) { return next || navigator.onLine ? 'ONLINE' : 'OFFLINE'; },
+      },
+    },
+  },
+});
+
+cache.restore(window.__APOLLO_STATE__);
 
 // Set up the WebSocket Link for Subscriptions
 function createWsLink() {
@@ -41,35 +54,15 @@ const isWsOperation = compose(
   getQuery
 );
 
-const cache = new InMemoryCache().restore(window.__APOLLO_STATE__);
-
-const resolverFor = name => (_, args, { cache }) => {
-  cache.writeData({ data: objOf(name, args[name]) });
-  return args[name];
-};
-
-const resolvers = {
-  Mutation: {
-    nick: resolverFor('nick'),
-    id: resolverFor('id'),
-    status: resolverFor('status'),
-  },
-};
-
-const defaults = {
-  nick: null,
-  id: null,
-  status: navigator.onLine ? 'ONLINE' : 'OFFLINE',
-};
-
-const link = split(isWsOperation, createWsLink(), createHttpLink());
+const link =
+  split(isWsOperation, createWsLink(), createHttpLink());
 
 let client;
 
 export async function getClient() {
-  if (client) return client;
-  await persistCache({ cache, storage: localStorage });
-  client = new ApolloClient({ cache, resolvers, link, ssrForceFetchDelay: 100 });
-  cache.writeData({ data: defaults });
-  return client;
+  if (client) return await client;
+  client = new Promise(resolve =>
+    persistCache({ cache, storage: localStorage })
+      .then(() =>
+        resolve(new ApolloClient({ cache, link, ssrForceFetchDelay: 100 }))));
 }

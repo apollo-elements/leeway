@@ -7,6 +7,8 @@ import inputStyles from './input-fields-styles.css';
 import style from './leeway-nick-input.css';
 import shared from '../shared-styles.css';
 
+import clientFieldsFragment from './ClientFields.fragment.graphql';
+
 class LeewayNickInput extends LeewayInputMixin(ApolloMutation) {
   static get styles() {
     return [shared, inputStyles, style];
@@ -46,7 +48,10 @@ class LeewayNickInput extends LeewayInputMixin(ApolloMutation) {
 
   onUpdate(cache, { data: { join: { id, nick } } }) {
     const data = { id, nick, status: navigator.onLine ? 'ONLINE' : 'OFFLINE' };
-    cache.writeData({ data });
+    cache.writeFragment({
+      fragment: clientFieldsFragment,
+      data,
+    });
   }
 }
 

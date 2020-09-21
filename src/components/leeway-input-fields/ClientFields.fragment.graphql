@@ -1,0 +1,5 @@
+fragment clientFields on Query {
+  id
+  nick
+  status
+}

@@ -1,5 +1,4 @@
 mutation ChangeNickname($id: ID!, $nick: String!) {
-  nick(nick: $nick) @client
   changeNickname(id: $id, nick: $nick) {
     id
     nick
