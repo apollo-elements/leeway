@@ -1,4 +1,4 @@
-import { ValidationError } from 'apollo-server';
+import { ValidationError } from 'apollo-server-lambda';
 
 import uuidv4 from 'uuid/v4';
 
@@ -7,7 +7,7 @@ import {
   MESSAGE_SENT,
   ONLINE,
   PARTED,
-  USER_STATUS_UPDATED
+  USER_STATUS_UPDATED,
 } from './constants';
 import { isValidMessage, isValidUser, trace } from './lib';
 
@@ -25,7 +25,9 @@ export async function changeNickname(_, { id, nick }, { user: { getUser, changeN
   return await getUser(id);
 }
 
-export async function sendMessage(_, { userId, message }, { pubsub, message: { addMessage }, user: { getUser } }) {
+export async function sendMessage(_, args, context) {
+  const { userId, message } = args;
+  const { pubsub, message: { addMessage }, user: { getUser } } = context;
   const date = new Date().toISOString();
   const { nick } = await getUser(userId);
   const messageSent = { userId, message, date, nick };

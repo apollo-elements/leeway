@@ -17,8 +17,8 @@ export const LeewayInputMixin = superclass => class extends superclass {
   $(id) {
     return (
       this.shadowRoot &&
-      this.shadowRoot.getElementById(id)
-      || null
+      this.shadowRoot.getElementById(id) ||
+      null
     );
   }
 

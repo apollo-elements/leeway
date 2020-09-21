@@ -20,7 +20,7 @@ export const getUsers = () =>
 export const deleteUser = async id =>
   redis.hmset(USERS, id, JSON.stringify({
     ...(await getUser(id)),
-    status: PARTED
+    status: PARTED,
   }));
 
 export const update = (id, user) =>

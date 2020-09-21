@@ -66,8 +66,8 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
   handleSlashCommand(message) {
     const [command, ...args] = message.split(' ');
     switch (command) {
-    case 'nick': return this.changeUsername(...args);
-    case 'part': return this.part();
+      case 'nick': return this.changeUsername(...args);
+      case 'part': return this.part();
     }
   }
 
@@ -85,7 +85,6 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
   onKeyup({ key, target: { value: message } }) {
     if (key === 'Enter') return this.submit(message);
   }
-
 }
 
 customElements.define('leeway-chat-input', LeewayChatInput);

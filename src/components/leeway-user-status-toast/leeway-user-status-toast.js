@@ -26,7 +26,7 @@ class LeewayUserStatusToast extends ApolloSubscription {
 
   static get properties() {
     return {
-      timeout: { type: Number }
+      timeout: { type: Number },
     };
   }
 

@@ -1,12 +1,13 @@
 import path from 'path';
-import commonjs from 'rollup-plugin-commonjs';
+import commonjs from '@rollup/plugin-commonjs';
+import resolve from '@rollup/plugin-node-resolve';
+import copy from 'rollup-plugin-copy';
 import graphql from 'rollup-plugin-graphql';
 import litcss from 'rollup-plugin-lit-css';
 import minifyHTML from 'rollup-plugin-minify-html-literals';
 import modulepreload from 'rollup-plugin-modulepreload';
 import notify from 'rollup-plugin-notify';
-import resolve from 'rollup-plugin-node-resolve';
-import workbox from 'rollup-plugin-workbox';
+import { generateSW } from 'rollup-plugin-workbox';
 import visualizer from 'rollup-plugin-visualizer';
 import { terser } from 'rollup-plugin-terser';
 
@@ -16,10 +17,10 @@ function onwarn(warning, warn) {
 }
 
 const isProduction = arg => arg.includes('production');
-const  {
+const {
   PRODUCTION =
   process.env.NODE_ENV === 'production' ||
-  process.argv.some(isProduction)
+  process.argv.some(isProduction),
 } = process.env;
 
 console.log('Production?', PRODUCTION);
@@ -29,11 +30,11 @@ export default {
   treeshake: !!PRODUCTION,
   input: 'src/app.js',
   output: [{
-    dir: 'public/module',
+    dir: 'build/module',
     format: 'es',
     sourcemap: true,
   }, {
-    dir: 'public/system',
+    dir: 'build/system',
     format: 'system',
     sourcemap: true,
   }],
@@ -48,42 +49,57 @@ export default {
       // needed to specifically use the browser bundle for subscriptions-transport-ws
       name: 'use-browser-for-subscriptions-transport-ws',
       resolveId(id) {
-        if (id === 'subscriptions-transport-ws') {
+        if (id === 'subscriptions-transport-ws')
           return path.resolve('node_modules/subscriptions-transport-ws/dist/client.js');
-        }
-      }
+      },
     },
+
+    copy({
+      targets: [
+        { src: 'src/index.html', dest: 'build' },
+        { src: 'src/manifest.webmanifest', dest: 'build' },
+        { src: 'src/style.css', dest: 'build' },
+      ],
+    }),
 
     resolve(),
 
     commonjs( ),
 
     ...(PRODUCTION ? [
+      copy({
+        flatten: false,
+        targets: [
+          { src: 'node_modules/@webcomponents/**/*.js', dest: 'build/assets' },
+          { src: 'node_modules/systemjs/dist', dest: 'build/assets/systemjs' },
+        ],
+      }),
+
       minifyHTML({
         failOnError: true,
         options: {
           shouldMinify(template) {
-            if (template.tag) {
+            if (template.tag)
               return template.tag.toLowerCase().includes('html');
-            } else {
+            else {
               return template.parts.some(part => (
                 part.text.includes('<style') ||
                 part.text.includes('<dom-module')));
             }
-          }
-        }
+          },
+        },
       }),
 
       terser({ mangle: false }),
     ] : []),
 
-    workbox({ workboxConfig: require('./workbox-config') }),
+    generateSW(require('./workbox-config')),
 
-    modulepreload({ index: 'public/index.html', prefix: 'module' }),
+    modulepreload({ index: 'build/index.html', prefix: 'module' }),
 
     !PRODUCTION && visualizer({ sourcemap: true }),
 
     !PRODUCTION && notify({ success: true }),
 
-  ]
+  ],
 };

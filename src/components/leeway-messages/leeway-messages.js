@@ -25,7 +25,7 @@ const errorTemplate = ({ message = 'Unknown Error' } = {}) => html`
 
 const getUserWithId = ({ id: localId, users }, id) => ({
   ...users.find(isSameById({ id })),
-  me: localId === id
+  me: localId === id,
 });
 
 const onMessageSent = (prev, { subscriptionData: { data: { messageSent } } }) => ({
@@ -78,18 +78,21 @@ class LeewayMessages extends ApolloQuery {
   }
 
   firstUpdated() {
-    const onError = this.onError;
-    this.subscribeToMore({ updateQuery: onMessageSent, document: messageSentSubscription, onError });
+    const { onError } = this;
+    const updateQuery = onMessageSent;
+    this.subscribeToMore({ document: messageSentSubscription, onError, updateQuery });
     this.subscribeToMore({ document: userJoinedSubscription, onError });
     this.subscribeToMore({ document: userPartedSubscription, onError });
     this.scrollTop = this.scrollHeight;
   }
 
   updated(changedProps) {
-    if (changedProps.has('data')) this.scrollTo({
-      behavior: 'smooth',
-      top: this.scrollHeight,
-    });
+    if (changedProps.has('data')) {
+      this.scrollTo({
+        behavior: 'smooth',
+        top: this.scrollHeight,
+      });
+    }
   }
 
   onError(error) {

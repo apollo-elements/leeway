@@ -33,7 +33,7 @@ const onStatusUpdated = (prev, { subscriptionData: { data: { userStatusUpdated }
   users: [
     userStatusUpdated,
     ...prev.users.filter(not(isSameById(userStatusUpdated))),
-  ].filter(and(Boolean, isNotParted))
+  ].filter(and(Boolean, isNotParted)),
 });
 
 const onUserJoined = (prev, { subscriptionData: { data: { userJoined } } }) => ({
@@ -41,12 +41,12 @@ const onUserJoined = (prev, { subscriptionData: { data: { userJoined } } }) => (
   users: [
     userJoined,
     ...prev.users,
-  ].filter(Boolean)
+  ].filter(Boolean),
 });
 
 const onUserParted = (prev, { subscriptionData: { data: { userParted } } }) => ({
   ...prev,
-  users: prev.users.map(when(isSameById(userParted), assign(userParted)))
+  users: prev.users.map(when(isSameById(userParted), assign(userParted))),
 });
 
 
@@ -80,6 +80,7 @@ class LeewayUserlist extends ApolloQuery {
 
   firstUpdated() {
     const onError = this.onSubscriptionError.bind(this);
+    // eslint-disable-next-line max-len
     this.subscribeToMore({ updateQuery: onStatusUpdated, document: userStatusUpdatedSubscription, onError });
     this.subscribeToMore({ updateQuery: onUserJoined, document: userJoinedSubscription, onError });
     this.subscribeToMore({ updateQuery: onUserParted, document: userPartedSubscription, onError });
@@ -88,7 +89,6 @@ class LeewayUserlist extends ApolloQuery {
   onSubscriptionError(error) {
     this.error = error;
   }
-
 }
 
 customElements.define('leeway-userlist', LeewayUserlist);

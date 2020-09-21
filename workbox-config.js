@@ -1,15 +1,15 @@
 module.exports = {
   skipWaiting: true,
   clientsClaim: true,
-  globDirectory: 'public/',
+  globDirectory: 'build/',
   globPatterns: [
-    '**/*.{html,js,css}'
+    '**/*.{html,js,css}',
   ],
   globIgnores: [
     // For now ignoring split chunks, since rollup-plugin-workbox is not as robust as the webpack version
     '**/chunk*.js',
   ],
-  swDest: 'public/sw.js',
+  swDest: 'build/sw.js',
 
   // Define runtime caching rules.
   runtimeCaching: [{
@@ -17,7 +17,7 @@ module.exports = {
     urlPattern: /(.*)index\.html$/,
 
     // Apply a cache-first strategy.
-    handler: 'networkFirst',
+    handler: 'NetworkFirst',
 
     options: {
       // Use a custom cache name.
@@ -33,7 +33,7 @@ module.exports = {
     urlPattern: /(.*)app\.js/,
 
     // Apply a cache-first strategy.
-    handler: 'networkFirst',
+    handler: 'NetworkFirst',
 
     options: {
       // Use a custom cache name.
@@ -49,7 +49,7 @@ module.exports = {
     urlPattern: /(.*)chunk(.*)\.js/,
 
     // Apply a cache-first strategy.
-    handler: 'cacheFirst',
+    handler: 'CacheFirst',
 
     options: {
       // Use a custom cache name.
@@ -65,7 +65,7 @@ module.exports = {
     urlPattern: /\.(?:png|jpg|jpeg|svg)$/,
 
     // Apply a cache-first strategy.
-    handler: 'cacheFirst',
+    handler: 'CacheFirst',
 
     options: {
       // Use a custom cache name.

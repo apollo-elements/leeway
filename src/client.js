@@ -1,11 +1,8 @@
-import { HttpLink } from 'apollo-link-http';
-import { InMemoryCache } from 'apollo-cache-inmemory';
-import { WebSocketLink } from 'apollo-link-ws';
+import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client/core';
+import { split, WebSocketLink } from '@apollo/client/link';
+import { getMainDefinition } from '@apollo/client/core/util';
 import { persistCache } from 'apollo-cache-persist';
-import ApolloClient from 'apollo-client';
 
-import { split } from 'apollo-link';
-import { getMainDefinition } from 'apollo-utilities';
 import compose from 'crocks/helpers/compose';
 import objOf from 'crocks/helpers/objOf';
 import fanout from 'crocks/helpers/fanout';
@@ -56,7 +53,7 @@ const resolvers = {
     nick: resolverFor('nick'),
     id: resolverFor('id'),
     status: resolverFor('status'),
-  }
+  },
 };
 
 const defaults = {
@@ -68,6 +65,7 @@ const defaults = {
 const link = split(isWsOperation, createWsLink(), createHttpLink());
 
 let client;
+
 export async function getClient() {
   if (client) return client;
   await persistCache({ cache, storage: localStorage });
