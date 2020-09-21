@@ -26,17 +26,53 @@ body {
     'userlist header'
     'userlist messages'
     'userlist input';
-  grid-template-rows: 69px auto 74px;
-  grid-template-columns: minmax(min-content, 10px) auto;
+  grid-template-rows: min-content 1fr 74px;
+  grid-template-columns: 0 1fr;
+  transition: grid-template-columns 0.25s ease;
 }
 
-header {
+body[menu-open] {
+  grid-template-columns: 300px 1fr;
+}
+
+body[unresolved] [slot="links"] {
+  display: none;
+}
+
+#info-box {
+  display: grid;
   grid-area: header;
   align-items: center;
   justify-content: center;
   padding: var(--header-padding);
   position: relative;
   box-shadow: 2px 0 2px hsla(0 0% 0% / 0.3);
+  grid-template-columns: 48px 1fr;
+  grid-template-areas:
+    'button heading'
+    'button paragraph';
+}
+
+#drawer-toggle {
+  grid-area: button;
+  background: transparent;
+  border: transparent 2px solid;
+  border-radius: 100%;
+  padding: 12px;
+  transition: border-color, background-color 0.2s ease-in-out;
+  height: 48px;
+  width: 48px;
+  display: flex;
+  place-content: center;
+}
+
+#drawer-toggle:focus,
+#drawer-toggle:focus-visible {
+  border-color: lightskyblue;
+}
+
+#drawer-toggle:hover {
+  background-color: lightgreen;
 }
 
 header h2 {

@@ -3,34 +3,67 @@ window.process = { env: { PRODUCTION: true } };
 window.exports = {};
 
 import '@power-elements/service-worker';
+import 'hy-drawer/src/webcomponent/module';
 
-async function onServiceWorkerChanged({ detail: { state }}) {
+const drawer = document.getElementById('drawer');
+const drawerToggle = document.getElementById('drawer-toggle');
+const serviceWorker = document.getElementById('service-worker');
+const isWideScreen =
+  window.matchMedia('(min-width: 500px)');
+
+async function onServiceWorkerChanged(event) {
   const dialog = document.getElementById('update-dialog');
   const dialogReload = document.getElementById('dialog-reload');
-
-  if (state === 'installed') {
-    await import('details-dialog-element');
-    dialog.hidden = false;
-    // open the dialog
-    dialog.firstElementChild.click();
-  }
+  if (event.detail.state !== 'installed') return
+  await import('details-dialog-element');
+  dialog.hidden = false;
+  dialog.firstElementChild.click();
 }
 
-window.WebComponents.waitFor(async function resolveBody() {
-  const serviceWorker = document.getElementById('service-worker');
-  serviceWorker.addEventListener('service-worker-changed', onServiceWorkerChanged);
+function onMediaChange(event) {
+  drawer.persistent = event.matches;
+  drawer.opened = event.matches;
+}
 
+function onDrawerToggle() {
+  if (!isWideScreen.matches)
+    return
+  else if (drawer.opened)
+    document.body.setAttribute('menu-open', '')
+  else
+    document.body.removeAttribute('menu-open', '')
+}
+
+function onClickDrawerToggle() {
+  drawer.toggle();
+  onDrawerToggle();
+}
+
+isWideScreen.addEventListener('change', onMediaChange);
+
+drawerToggle.addEventListener('click', onClickDrawerToggle);
+
+serviceWorker.addEventListener('service-worker-changed', onServiceWorkerChanged);
+
+onMediaChange(isWideScreen);
+
+onDrawerToggle();
+
+window.WebComponents.waitFor(async function resolveBody() {
   const { getClient } = await import('./client');
 
   const client = await getClient();
 
   window.__APOLLO_CLIENT__ = client;
 
+  await import('./components');
+
   await Promise.all([
-    import('./components/leeway-input-fields/leeway-input-fields.js'),
-    import('./components/leeway-messages/leeway-messages.js'),
-    import('./components/leeway-status-notifier/leeway-status-notifier.js'),
-    import('./components/leeway-userlist/leeway-userlist.js'),
+    customElements.whenDefined('leeway-input-fields'),
+    customElements.whenDefined('leeway-messages'),
+    customElements.whenDefined('leeway-status-notifier'),
+    customElements.whenDefined('leeway-userlist'),
+    customElements.whenDefined('hy-drawer'),
   ])
 
   document.body.removeAttribute('unresolved');

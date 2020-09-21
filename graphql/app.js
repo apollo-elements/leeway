@@ -2,7 +2,6 @@
 import compression from 'compression';
 import express from 'express';
 import path from 'path';
-import favicon from 'emoji-favicon';
 
 import { JSDOM } from 'jsdom';
 import { HTTPS } from 'express-sslify';
@@ -91,8 +90,6 @@ app.get(/^(?!.*(\.)|(graphi?ql).*)/, async function sendSPA(req, res) {
   res.set('Cache-Control', cacheHeaders);
   res.send(body);
 });
-
-app.use(favicon('smiley'));
 
 app.use(express.static('build', {
   setHeaders(res, path) {
