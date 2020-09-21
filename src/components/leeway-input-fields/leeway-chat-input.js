@@ -72,6 +72,7 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
     });
 
     this.user = { nick, id, status };
+    localStorage.setItem('leeway-user', JSON.stringify(this.user));
   }
 
   async part() {
@@ -102,6 +103,7 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
       },
     }).then(() => {
       localUserVar({ id: null, nick: null, status });
+      localStorage.removeItem('leeway-user');
     });
   }
 

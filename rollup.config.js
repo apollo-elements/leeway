@@ -78,7 +78,7 @@ export default {
         flatten: false,
         targets: [
           { src: 'node_modules/@webcomponents/**/*.js', dest: 'build/assets' },
-          { src: 'node_modules/systemjs/dist', dest: 'build/assets/systemjs' },
+          { src: 'node_modules/systemjs/dist/**/*.js', dest: 'build/assets/systemjs' },
         ],
       }),
 
