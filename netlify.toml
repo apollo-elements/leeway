@@ -1,4 +1,0 @@
-[build]
-  command = "npm run build" # the command you run to build this file
-  functions = "functions" # netlify-lambda builds to this folder AND Netlify reads functions from here
-  publish = "build" # build client to this folder, Netlify should serve all these files statically

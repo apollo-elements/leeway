@@ -6,8 +6,9 @@ import favicon from 'emoji-favicon';
 
 import { JSDOM } from 'jsdom';
 import { HTTPS } from 'express-sslify';
-import { ApolloClient, InMemoryCache, SchemaLink } from '@apollo/client/core';
-import { ApolloServer, PubSub, gql } from 'apollo-server-lambda';
+import { ApolloClient, InMemoryCache } from '@apollo/client/core';
+import { SchemaLink } from '@apollo/client/link/schema';
+import { ApolloServer, PubSub, gql } from 'apollo-server-express';
 import { readFileSync } from 'fs';
 
 import * as Subscription from './subscriptions';
@@ -62,7 +63,7 @@ async function ssr(file, client) {
   await client.query({ query: gql(queryText.replace(/.*@client.*/g, '')) });
 
   script.innerHTML = `
-    window.__APOLLO_STATE__ = JSON.parse(${JSON.stringify(client.extract())})
+    window.__APOLLO_STATE__ = JSON.parse('${JSON.stringify(client.extract())}')
   `;
 
   dom.window.document.head.append(script);
@@ -91,11 +92,12 @@ app.use(express.static('build', {
 
 server.applyMiddleware({ app, path: '/graphql' });
 
-export const handler = server.createHandler({
+app.listen({
+  port: process.env.PORT || 4000,
   cors: {
     origin: '*',
     credentials: true,
   },
+}, () => {
+  console.log(`🤘 Server listening at ${server.graphqlPath}`);
 });
-
-server.installSubscriptionHandlers(handler);

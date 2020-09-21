@@ -1,4 +1,4 @@
-import { ValidationError } from 'apollo-server-lambda';
+import { ValidationError } from 'apollo-server-express';
 
 import assign from 'crocks/helpers/assign';
 import composeP from 'crocks/helpers/composeP';
