@@ -43,11 +43,11 @@ export default {
 
   plugins: [
 
+    commonjs(),
+
     nodePolyfills(),
 
     resolve(),
-
-    commonjs(),
 
     graphql(),
 

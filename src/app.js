@@ -1,3 +1,7 @@
+// so embarassed: graphql/jsutils/instanceOf.mjs:16
+window.process = { env: { PRODUCTION: true } };
+window.exports = {};
+
 import '@power-elements/service-worker';
 
 async function onServiceWorkerChanged({ detail: { state }}) {
@@ -11,9 +15,6 @@ async function onServiceWorkerChanged({ detail: { state }}) {
     dialog.firstElementChild.click();
   }
 }
-
-// so embarassed: graphql/jsutils/instanceOf.mjs:16
-window.process = { env: { PRODUCTION: true } };
 
 window.WebComponents.waitFor(async function resolveBody() {
   const serviceWorker = document.getElementById('service-worker');
