@@ -5,6 +5,7 @@ window.exports = {};
 import '@power-elements/service-worker';
 import 'hy-drawer/src/webcomponent/module';
 
+const updateDialog = document.getElementById('update-dialog');
 const drawer = document.getElementById('drawer');
 const drawerToggle = document.getElementById('drawer-toggle');
 const serviceWorker = document.getElementById('service-worker');
@@ -12,12 +13,9 @@ const isWideScreen =
   window.matchMedia('(min-width: 500px)');
 
 async function onServiceWorkerChanged(event) {
-  const dialog = document.getElementById('update-dialog');
-  const dialogReload = document.getElementById('dialog-reload');
   if (event.detail.state !== 'installed') return
   await import('details-dialog-element');
-  dialog.hidden = false;
-  dialog.firstElementChild.click();
+  updateDialog.removeAttribute('hidden');
 }
 
 function onMediaChange(event) {
@@ -43,7 +41,7 @@ isWideScreen.addEventListener('change', onMediaChange);
 
 drawerToggle.addEventListener('click', onClickDrawerToggle);
 
-serviceWorker.addEventListener('service-worker-changed', onServiceWorkerChanged);
+serviceWorker.addEventListener('change', onServiceWorkerChanged);
 
 onMediaChange(isWideScreen);
 

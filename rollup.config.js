@@ -7,8 +7,9 @@ import litcss from 'rollup-plugin-lit-css';
 import minifyHTML from 'rollup-plugin-minify-html-literals';
 import modulepreload from 'rollup-plugin-modulepreload';
 import notify from 'rollup-plugin-notify';
-import { generateSW } from 'rollup-plugin-workbox';
 import visualizer from 'rollup-plugin-visualizer';
+import license from 'rollup-plugin-license';
+import { generateSW } from 'rollup-plugin-workbox';
 import { terser } from 'rollup-plugin-terser';
 
 function onwarn(warning, warn) {
@@ -28,6 +29,7 @@ console.log('Production?', PRODUCTION);
 
 export default {
   onwarn,
+  preserveEntrySignatures: false,
   treeshake: !!PRODUCTION,
   input: 'src/app.js',
   output: [{
@@ -61,9 +63,19 @@ export default {
 
     copy({
       targets: [
+        { src: 'dependencies.txt', dest: 'build' },
         { src: 'src/index.html', dest: 'build' },
         { src: 'src/manifest.webmanifest', dest: 'build' },
         { src: 'src/style.css', dest: 'build' },
+      ],
+    }),
+
+    copy({
+      flatten: false,
+      targets: [
+        { src: 'src/fonts', dest: 'build' },
+        { src: 'node_modules/@webcomponents/**/*.js', dest: 'build/assets' },
+        { src: 'node_modules/systemjs/dist/**/*.js', dest: 'build/assets' },
       ],
     }),
 
@@ -71,15 +83,16 @@ export default {
 
     modulepreload({ index: 'build/index.html', prefix: 'module' }),
 
-    ...(PRODUCTION ? [
+    license({
+      thirdParty: {
+        includePrivate: true,
+        output: {
+          file: './dependencies.txt',
+        },
+      },
+    }),
 
-      copy({
-        flatten: false,
-        targets: [
-          { src: 'node_modules/@webcomponents/**/*.js', dest: 'build/assets' },
-          { src: 'node_modules/systemjs/dist/**/*.js', dest: 'build/assets' },
-        ],
-      }),
+    ...(PRODUCTION ? [
 
       minifyHTML({
         failOnError: true,

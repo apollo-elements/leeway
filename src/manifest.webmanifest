@@ -7,8 +7,7 @@
   "theme_color": "#663399",
   "description": "A wee chat app using web components and GraphQL subscriptions. #UseThePlatform",
   "icons": [{
-    "src": "https://raw.githubusercontent.com/apollo-elements/apollo-elements/master/logo.png",
-    "sizes": "512x512",
-    "type": "image/png"
+    "src": "https://raw.githubusercontent.com/apollo-elements/apollo-elements/master/logo.svg",
+    "sizes": "512x512"
   }]
 }

@@ -4,6 +4,15 @@
     <title>Leeway: Chat over GraphQL</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤷‍♂️</text></svg>"></link>
 
+    <link rel="preconnect" href="https://fonts.gstatic.com/"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com/"/>
+
+    <link rel="preload" as="font" type="font/woff" href="fonts/icomoon.woff" crossorigin/>
+    <link rel="preload" as="style" href="/style.css"/>
+    <link rel="preload" as="script" href="/assets/@webcomponents/webcomponentsjs/webcomponents-loader.js"/>
+
+    <link rel="modulepreload" href="/module/app.js"/>
+
     <meta name="Description" content="A wee chat app using web components and GraphQL subscriptions. #UseThePlatform" />
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -23,19 +32,11 @@
     <link rel="manifest" href="/manifest.webmanifest"/>
     <link rel="stylesheet" href="/style.css"/>
 
-    <link rel="preconnect" href="https://fonts.gstatic.com/"/>
-    <link rel="preconnect" href="https://fonts.googleapis.com/"/>
-
-    <link rel="preload" as="style" href="/style.css"/>
-    <link rel="preload" as="script" href="/assets/@webcomponents/webcomponentsjs/webcomponents-loader.js"/>
-
-    <link rel="modulepreload" href="/module/app.js"/>
-
     <script src="/assets/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
   </head>
 
   <body unresolved>
-    <service-worker id="service-worker" path="/sw.js" auto-reload hidden></service-worker>
+    <service-worker id="service-worker" path="/sw.js" auto-reload></service-worker>
     <header id="info-box">
       <button id="drawer-toggle">
         <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24">
@@ -212,11 +213,6 @@
       </script>
     </leeway-status-notifier>
 
-    <template hidden id="systemjs-loader">
-      <script src="/assets/systemjs/dist/s.min.js"></script>
-      <script src="/system/app.js" onload="System.import('./system/app.js')"></script>
-    </template>
-
     <script>
       import('/module/app.js');
       window.supportsDynamicImport = true;
@@ -224,8 +220,13 @@
 
     <script>
       if (!window.supportsDynamicImport) {
-        const loadersTpl = document.getElementById('systemjs-loader');
-        document.head.appendChild(loadersTpl.content.cloneNode(true));
+        const s = document.createElement('script');
+        s.src = '/assets/systemjs/dist/s.min.js';
+        const a = document.createElement('script');
+        a.src = '/system/app.js';
+        a.onload = () => System.import('./system/app.js');
+        document.head.appendChild(s);
+        document.head.appendChild(a);
       }
     </script>
   </body>

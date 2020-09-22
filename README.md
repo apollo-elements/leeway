@@ -21,3 +21,6 @@ npm ci
 ```
 npm run watch
 ```
+
+## 3rd-Party Licenses
+See [dependencies.txt](./dependencies.txt) for information about 3rd-party software licenses.
