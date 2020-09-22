@@ -22,6 +22,16 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
     return [shared, style];
   }
 
+  static get properties() {
+    return {
+      userinput: { type: String },
+    };
+  }
+
+  get input() {
+    return this.shadowRoot && this.shadowRoot.getElementById('input');
+  }
+
   render() {
     const { nick } = this.user || {};
     const placeholder = nick ? 'Message the Channel' : undefined;
@@ -37,12 +47,6 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
           icon="send"
           @click="${this.onClick}">Send</mwc-button>
     `;
-  }
-
-  static get properties() {
-    return {
-      userinput: { type: String },
-    };
   }
 
   constructor() {

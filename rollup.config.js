@@ -10,6 +10,7 @@ import modulepreload from 'rollup-plugin-modulepreload';
 import notify from 'rollup-plugin-notify';
 import visualizer from 'rollup-plugin-visualizer';
 import license from 'rollup-plugin-license';
+import watchAssets from 'rollup-plugin-watch-assets';
 import { generateSW } from 'rollup-plugin-workbox';
 import { terser } from 'rollup-plugin-terser';
 
@@ -63,6 +64,13 @@ export default {
     graphql(),
 
     litcss({ uglify: PRODUCTION }),
+
+    watchAssets({
+      assets: [
+        'src/index.html',
+        'src/style.css',
+      ],
+    }),
 
     copy({
       targets: [

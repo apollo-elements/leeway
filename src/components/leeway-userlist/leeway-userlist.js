@@ -24,7 +24,7 @@ const isNotParted =
 const onLastSeenUpdated = (prev, { subscriptionData: { data: { userLastSeenUpdated } } }) => {
   const users = [...prev.users];
   const index = users.findIndex(x => x.id === userLastSeenUpdated.id);
-  users[index].lastSeen = userLastSeenUpdated.lastSeen;
+  users[index] = { ...users[index], ...userLastSeenUpdated };
   return { ...prev, users };
 };
 
