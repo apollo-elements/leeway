@@ -5,11 +5,20 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   JOINED,
   MESSAGE_SENT,
-  ONLINE,
   PARTED,
   USER_STATUS_UPDATED,
+  USER_LAST_SEEN_UPDATED,
 } from './constants';
 import { isValidMessage, isValidUser, trace } from './lib';
+
+export async function updateUserLastSeen(_, { userId }, { pubsub, user: { getUser, update } }) {
+  const existing = await getUser(userId);
+  const lastSeen = new Date().toISOString();
+  const user = { ...existing, lastSeen };
+  await update(userId, user);
+  pubsub.publish(USER_LAST_SEEN_UPDATED, { userLastSeenUpdated: user });
+  trace('userLastSeenUpdated', user);
+}
 
 export async function updateUserStatus(_, { id, status }, { pubsub, user: { getUser, update } }) {
   const userStatusUpdated = { ...await getUser(id), status };
@@ -17,15 +26,6 @@ export async function updateUserStatus(_, { id, status }, { pubsub, user: { getU
   await update(id, userStatusUpdated);
   pubsub.publish(USER_STATUS_UPDATED, { userStatusUpdated });
   trace('userStatusUpdated', Object.values(userStatusUpdated.user));
-  // if we don't hear back from you in 15 minutes, set offline
-  setTimeout(() => {
-    pubsub.publish(USER_STATUS_UPDATED, {
-      userStatusUpdated: {
-        ...userStatusUpdated,
-        status: 'OFFLINE',
-      },
-    });
-  }, 1000 * 60 * 15);
   return status;
 }
 
@@ -49,20 +49,12 @@ export async function sendMessage(_, args, context) {
 export async function join(_, { nick }, { user: { create, getUsers }, pubsub }) {
   const existing = await getUsers().then(users => users.find(x => x.nick === nick));
   const id = existing ? existing.id : uuidv4();
-  const userJoined = { id, nick, status: ONLINE };
+  const lastSeen = new Date().toISOString();
+  const userJoined = { id, nick, lastSeen, status: 'ONLINE' };
   if (!isValidUser.runWith(userJoined)) throw new ValidationError('Invalid User');
   await create(userJoined);
   pubsub.publish(JOINED, { userJoined });
   trace('userJoined', Object.values(userJoined));
-  setTimeout(() => {
-    pubsub.publish(USER_STATUS_UPDATED, {
-      userStatusUpdated: {
-        id,
-        nick,
-        status: 'OFFLINE',
-      },
-    });
-  }, 1000 * 60 * 15);
   return userJoined;
 }
 

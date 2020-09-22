@@ -15,6 +15,7 @@ type Message {
 type User {
   id: ID
   nick: String!
+  lastSeen: String
   status: Status
 }
 
@@ -26,6 +27,7 @@ type Query {
 type Subscription {
   messageSent: Message
   userStatusUpdated: User
+  userLastSeenUpdated: User
   userJoined: User
   userParted: User
 }
@@ -34,6 +36,7 @@ type Mutation {
   sendMessage(userId: ID!, message: String!): Message
   changeNickname(id: ID!, nick: String!): User
   updateUserStatus(id: ID!, status: Status!): Status
+  updateUserLastSeen(userId: ID!): User
   join(nick: String!): User
   # Such sweet sorrow. Returns null.
   part(id: ID!): String

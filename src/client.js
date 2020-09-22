@@ -5,6 +5,8 @@ import { persistCache } from 'apollo-cache-persist';
 import { localUserVar } from './variables';
 import { mergeArrayByField } from './lib/merge-array-by-field';
 
+import { ONE_HOUR } from './lib/constants';
+
 const { host } = location;
 
 const cache = new InMemoryCache({
@@ -14,7 +16,9 @@ const cache = new InMemoryCache({
         localUser: {
           merge: true,
           read() {
-            return localUserVar();
+            const cached = localUserVar();
+            const status = !navigator.onLine ? 'OFFLINE' : cached.status || 'ONLINE';
+            return { ...cached, status };
           },
         },
         users: {
@@ -24,6 +28,21 @@ const cache = new InMemoryCache({
     },
     User: {
       keyFields: ['id'],
+      fields: {
+        status(prev, { readField }) {
+          if (prev === 'PARTED') return prev;
+          const id = readField('id');
+          if (id === localUserVar().id)
+            return navigator.onLine ? 'ONLINE' : 'OFFLINE';
+          const lastSeen = readField('lastSeen');
+          const timeDelta = Math.abs(new Date() - new Date(lastSeen));
+          return (
+              timeDelta < (ONE_HOUR / 4) ? 'ONLINE'
+            : timeDelta < ONE_HOUR ? 'AWAY'
+            : 'OFFLINE'
+          );
+        },
+      },
     },
   },
 });

@@ -1,4 +1,10 @@
-import { JOINED, MESSAGE_SENT, PARTED, USER_STATUS_UPDATED } from './constants';
+import {
+  JOINED,
+  MESSAGE_SENT,
+  PARTED,
+  USER_LAST_SEEN_UPDATED,
+  USER_STATUS_UPDATED,
+} from './constants';
 
 export const messageSent = {
   subscribe(_, __, { pubsub }) {
@@ -9,6 +15,12 @@ export const messageSent = {
 export const userStatusUpdated = {
   subscribe(_, __, { pubsub }) {
     return pubsub.asyncIterator(USER_STATUS_UPDATED);
+  },
+};
+
+export const userLastSeenUpdated = {
+  subscribe(_, __, { pubsub }) {
+    return pubsub.asyncIterator(USER_LAST_SEEN_UPDATED);
   },
 };
 

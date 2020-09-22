@@ -47,8 +47,8 @@ class LeewayNickInput extends LeewayInputMixin(ApolloMutation) {
   }
 
   updater(cache, { data: { join: { id, nick } } }) {
-    const status = navigator.onLine ? 'ONLINE' : 'OFFLINE';
-    localUserVar({ id, nick, status });
+    localStorage.setItem('leeway-user', JSON.stringify({ id, nick }));
+    localUserVar({ id, nick });
   }
 }
 

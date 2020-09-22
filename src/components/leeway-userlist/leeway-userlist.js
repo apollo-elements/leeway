@@ -2,7 +2,8 @@ import { ApolloQuery, html } from '@apollo-elements/lit-apollo';
 import { classMap } from 'lit-html/directives/class-map';
 
 import { getUserStyleMap } from '../../lib/user-style-map';
-import userStatusUpdatedSubscription from './user-status-updated-subscription.graphql';
+import UserLastSeenUpdatedSubscription from '../../UserLastSeenUpdated.subscription.graphql';
+import UserStatusUpdatedSubscription from '../../UserStatusUpdated.subscription.graphql';
 import userPartedSubscription from '../../user-parted-subscription.graphql';
 import userJoinedSubscription from '../../user-joined-subscription.graphql';
 
@@ -19,6 +20,13 @@ const userTemplate = ({ nick, status } = {}) => (html`
 const isNotParted =
   user =>
     user && user.status !== 'PARTED';
+
+const onLastSeenUpdated = (prev, { subscriptionData: { data: { userLastSeenUpdated } } }) => {
+  const users = [...prev.users];
+  const index = users.findIndex(x => x.id === userLastSeenUpdated.id);
+  users[index].lastSeen = userLastSeenUpdated.lastSeen;
+  return { ...prev, users };
+};
 
 const onStatusUpdated = (prev, { subscriptionData: { data: { userStatusUpdated } } }) => ({
   ...prev,
@@ -80,7 +88,9 @@ class LeewayUserlist extends ApolloQuery {
   firstUpdated() {
     const onError = this.onSubscriptionError.bind(this);
     // eslint-disable-next-line max-len
-    this.subscribeToMore({ updateQuery: onStatusUpdated, document: userStatusUpdatedSubscription, onError });
+    this.subscribeToMore({ updateQuery: onStatusUpdated, document: UserStatusUpdatedSubscription, onError });
+    // eslint-disable-next-line max-len
+    this.subscribeToMore({ updateQuery: onLastSeenUpdated, document: UserLastSeenUpdatedSubscription, onError });
     this.subscribeToMore({ updateQuery: onUserJoined, document: userJoinedSubscription, onError });
     this.subscribeToMore({ updateQuery: onUserParted, document: userPartedSubscription, onError });
   }

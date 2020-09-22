@@ -1,3 +1,6 @@
 subscription UserPartedSubscription {
-  userParted { id status }
+  userParted {
+    id
+    status
+  }
 }

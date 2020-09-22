@@ -5,10 +5,18 @@ window.exports = {};
 import '@power-elements/service-worker';
 import 'hy-drawer/src/webcomponent/module';
 
-const updateDialog = document.getElementById('update-dialog');
-const drawer = document.getElementById('drawer');
-const drawerToggle = document.getElementById('drawer-toggle');
-const serviceWorker = document.getElementById('service-worker');
+const updateDialog =
+  document.getElementById('update-dialog');
+
+const drawer =
+  document.getElementById('drawer');
+
+const drawerToggle =
+  document.getElementById('drawer-toggle');
+
+const serviceWorker =
+  document.getElementById('service-worker');
+
 const isWideScreen =
   window.matchMedia('(min-width: 500px)');
 
@@ -37,22 +45,10 @@ function onClickDrawerToggle() {
   onDrawerToggle();
 }
 
-isWideScreen.addEventListener('change', onMediaChange);
-
-drawerToggle.addEventListener('click', onClickDrawerToggle);
-
-serviceWorker.addEventListener('change', onServiceWorkerChanged);
-
-onMediaChange(isWideScreen);
-
-onDrawerToggle();
-
-window.WebComponents.waitFor(async function resolveBody() {
+async function resolveBody() {
   const { getClient } = await import('./client');
 
-  const client = await getClient();
-
-  window.__APOLLO_CLIENT__ = client;
+  window.__APOLLO_CLIENT__ = await getClient();
 
   await import('./components');
 
@@ -65,4 +61,16 @@ window.WebComponents.waitFor(async function resolveBody() {
   ])
 
   document.body.removeAttribute('unresolved');
-});
+}
+
+isWideScreen.addEventListener('change', onMediaChange);
+
+drawerToggle.addEventListener('click', onClickDrawerToggle);
+
+serviceWorker.addEventListener('change', onServiceWorkerChanged);
+
+onMediaChange(isWideScreen);
+
+onDrawerToggle();
+
+window.WebComponents.waitFor(resolveBody);

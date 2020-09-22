@@ -1,10 +1,10 @@
 import { makeVar } from '@apollo/client/core';
 
-const user =
-  JSON.parse(localStorage.getItem('leeway-user')) || {
-    id: null,
-    nick: null,
-    status: navigator.onLine ? 'ONLINE' : 'OFFLINE',
-  };
+const user = {
+  id: null,
+  nick: null,
+  status: null,
+  ...JSON.parse(localStorage.getItem('leeway-user')),
+};
 
 export const localUserVar = makeVar(user);

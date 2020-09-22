@@ -9,3 +9,4 @@ export const ONLINE = 'ONLINE';
 
 export const USERS = 'USERS';
 export const USER_STATUS_UPDATED = 'USER_STATUS_UPDATED';
+export const USER_LAST_SEEN_UPDATED = 'USER_LAST_SEEN_UPDATED';

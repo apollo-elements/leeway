@@ -3,5 +3,6 @@ subscription {
     id
     nick
     status
+    lastSeen
   }
 }

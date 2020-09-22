@@ -11,9 +11,9 @@ import style from './leeway-messages.css';
 import messageSentSubscription from './message-sent-subscription.graphql';
 import userJoinedSubscription from '../../user-joined-subscription.graphql';
 import userPartedSubscription from '../../user-parted-subscription.graphql';
+import UserLastSeenUpdatedSubscription from '../../UserLastSeenUpdated.subscription.graphql';
 
-const ONE_DAY = 1000 * 60 * 60 * 24;
-const ONE_WEEK = ONE_DAY * 7;
+import { ONE_WEEK } from '../../lib/constants';
 
 const longDateFormatter = new Intl.DateTimeFormat('en-US', {
   day: 'numeric',
@@ -101,6 +101,7 @@ class LeewayMessages extends ApolloQuery {
     this.subscribeToMore({ document: messageSentSubscription, onError, updateQuery });
     this.subscribeToMore({ document: userJoinedSubscription, onError });
     this.subscribeToMore({ document: userPartedSubscription, onError });
+    this.subscribeToMore({ document: UserLastSeenUpdatedSubscription, onError });
     this.scrollTop = this.scrollHeight;
   }
 

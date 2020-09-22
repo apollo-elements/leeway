@@ -1,6 +1,6 @@
 input,
 input::placeholder {
-  background: rebeccapurple;
-  color: white;
+  background: var(--purple);
+  color: var(--on-purple);
   opacity: 1;
 }

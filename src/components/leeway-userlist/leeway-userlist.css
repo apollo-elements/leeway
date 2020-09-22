@@ -15,7 +15,7 @@ section {
 .user {
   padding: 4px;
   align-items: center;
-  color: white;
+  color: var(--on-purple);
 }
 
 .invisible {
@@ -24,6 +24,8 @@ section {
 
 .status {
   border-radius: 100%;
+  border: 1px solid;
+  border-color: transparent;
   display: inline-block;
   font-size: 12px;
   font-weight: lighter;
@@ -33,20 +35,26 @@ section {
   width: 14px;
 }
 
+.status.away {
+  background: var(--away);
+}
+
 .status::first-letter {
   text-transform: uppercase;
 }
 
-.online {
-  background: limegreen;
+.status.online {
+  background: var(--online);
 }
 
-.offline {
-  background: lightgrey;
+.status.parted,
+.status.offline {
+  background: var(--offline);
+  border-color: var(--on-purple);
 }
 
 header {
-  color: white;
+  color: var(--on-purple);
   display: flex;
   align-items: center;
   flex-flow: row wrap;

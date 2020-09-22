@@ -7,12 +7,15 @@ import { LeewayInputMixin } from './leeway-input-mixin';
 import style from './input-fields-styles.css';
 import shared from '../shared-styles.css';
 
-import changeNicknameMutation from './change-nickname-mutation.graphql';
-import partMutation from './part-mutation.graphql';
+import ChangeNicknameMutation from './ChangeNickname.mutation.graphql';
+import PartMutation from './Part.mutation.graphql';
+import UpdateLastSeenMutation from './UpdateUserLastSeen.mutation.graphql';
 
 import { localUserVar } from '../../variables';
 
 import { gql } from '@apollo/client/core';
+
+import { debounce } from 'mini-debounce';
 
 class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
   static get styles() {
@@ -45,12 +48,13 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
   constructor() {
     super();
     this.userinput = '';
+    this.ping = debounce(this.ping.bind(this), 1000);
   }
 
   async changeUsername(nick) {
     const { user: { id } } = this;
     const variables = { nick, id };
-    const mutation = changeNicknameMutation;
+    const mutation = ChangeNicknameMutation;
     const status = navigator.onLine ? 'ONLINE' : 'OFFLINE';
 
     const update = (cache, { data: { changeNickname: { id, nick } } }) =>
@@ -72,12 +76,13 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
     });
 
     this.user = { nick, id, status };
+
     localStorage.setItem('leeway-user', JSON.stringify(this.user));
   }
 
   async part() {
     const { id } = this.user;
-    const mutation = partMutation;
+    const mutation = PartMutation;
     const variables = { id };
 
     const status = navigator.onLine ? 'ONLINE' : 'OFFLINE';
@@ -115,6 +120,10 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
     }
   }
 
+  ping() {
+    this.mutate({ mutation: UpdateLastSeenMutation, variables: { userId: this.user.id } });
+  }
+
   submit(message) {
     if (message.startsWith('/')) return this.handleSlashCommand(message.substr(1));
     const { user: { id: userId } } = this;
@@ -127,6 +136,7 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
   }
 
   onKeyup({ key, target: { value: message } }) {
+    this.ping();
     if (key === 'Enter') return this.submit(message);
   }
 }
