@@ -4,33 +4,33 @@
     <title>Leeway: Chat over GraphQL</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤷‍♂️</text></svg>"></link>
 
-    <link rel="preconnect" href="https://fonts.gstatic.com/"/>
-    <link rel="preconnect" href="https://fonts.googleapis.com/"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com/">
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
 
-    <link rel="preload" as="font" type="font/woff" href="fonts/icomoon.woff" crossorigin/>
-    <link rel="preload" as="style" href="/style.css"/>
-    <link rel="preload" as="script" href="/assets/@webcomponents/webcomponentsjs/webcomponents-loader.js"/>
+    <link rel="modulepreload" href="/module/app.js">
+    <link rel="preload" as="font" type="font/woff" href="fonts/icomoon.woff" crossorigin>
+    <link rel="preload" as="script" href="/assets/@webcomponents/webcomponentsjs/webcomponents-loader.js">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&family=Ubuntu:wght@300;400;700&display=swap">
+    <link rel="preload" as="style" href="/style.css">
 
-    <link rel="modulepreload" href="/module/app.js"/>
+    <meta name="Description" content="A wee chat app using web components and GraphQL subscriptions. #UseThePlatform">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#663399">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@PowersBenny">
+    <meta name="twitter:creator" content="@PowersBenny">
 
-    <meta name="Description" content="A wee chat app using web components and GraphQL subscriptions. #UseThePlatform" />
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <meta name="theme-color" content="#663399"/>
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:site" content="@PowersBenny" />
-    <meta name="twitter:creator" content="@PowersBenny" />
+    <meta property="og:description" content="A wee chat app using web components and GraphQL subscriptions. #UseThePlatform">
+    <meta property="og:image" content="https://raw.githubusercontent.com/apollo-elements/apollo-elements/master/logo.png">
+    <meta property="og:title" content="Leeway: Where Work is Avoided">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://lit-apollo-subscriptions.herokuapp.com">
+    <meta property="og:image:alt" content="Rocket ship surrounded by angle brackets">
 
-    <meta property="og:description" content="A wee chat app using web components and GraphQL subscriptions. #UseThePlatform" />
-    <meta property="og:determiner" content="" />
-    <meta property="og:image" content="https://raw.githubusercontent.com/apollo-elements/apollo-elements/master/logo.png" />
-    <meta property="og:title" content="Leeway: Where Work is Avoided" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://lit-apollo-subscriptions.herokuapp.com" />
-    <meta property="og:image:alt" content="Rocket ship surrounded by angle brackets" />
-
-    <link rel="manifest" href="/manifest.webmanifest"/>
-    <link rel="stylesheet" href="/style.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&family=Ubuntu:wght@300;400;700&display=swap">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="stylesheet" href="/style.css">
 
     <script src="/assets/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
   </head>
@@ -104,19 +104,6 @@
           <li style="background: white;">
             <a href="https://apollographql.com">
               <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid"><title>Apollo GraphQL</title><path d="M160.227 178.519h27.63L143.75 64.049h-30.549l-44.107 114.47h27.632l7.208-19.39h41.675l-7.544-21.456h-27.44l17.85-49.254 31.752 90.1zm91.112-84.751a6.641 6.641 0 0 0-8.185-4.627 6.648 6.648 0 0 0-4.628 8.183A114.646 114.646 0 0 1 242.704 128c0 63.248-51.456 114.702-114.704 114.702-63.248 0-114.703-51.454-114.703-114.702C13.297 64.751 64.752 13.296 128 13.296c26.793 0 52.718 9.518 73.179 26.456a15.938 15.938 0 0 0-1.238 6.173c0 8.835 7.162 15.997 15.997 15.997s15.997-7.162 15.997-15.997-7.162-15.997-15.997-15.997c-1.701 0-3.338.271-4.876.763C188.022 11.056 158.513 0 128 0 57.421 0 0 57.42 0 128c0 70.579 57.421 127.999 128 127.999 70.579 0 128-57.42 128-127.999a127.95 127.95 0 0 0-4.661-34.232z" fill="#112B49"/></svg>
-            </a>
-          </li>
-          <li>
-            <a href="https://evilSoft.github.io/crocks">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <title>Crocks</title>
-                <text x="50%" fill="white" y="50%" text-anchor="middle" dominant-baseline="central">C</text>
-              </svg>
-            </a>
-          </li>
-          <li>
-            <a href="https://date-fns.org">
-              <svg viewBox="-45 -60 250 250" xmlns="http://www.w3.org/2000/svg"><title>date-fns</title><g fill="#FFF" fill-rule="evenodd"><path d="M.4 67.8c0-13.056 2.4-25.368 7.2-36.936C12.4 19.296 19.312 9.048 28.336.12H46.48C27.664 18.744 18.256 41.304 18.256 67.8c0 26.496 9.408 49.056 28.224 67.68H28.336C19.312 126.552 12.4 116.304 7.6 104.736 2.8 93.168.4 80.856.4 67.8zm162.2 0c0 13.056-2.4 25.368-7.2 36.936-4.8 11.568-11.712 21.816-20.736 30.744H116.52c18.816-18.624 28.224-41.184 28.224-67.68 0-26.496-9.408-49.056-28.224-67.68h18.144c9.024 8.928 15.936 19.176 20.736 30.744 4.8 11.568 7.2 23.88 7.2 36.936zM67 9h12v69H67z"/><path d="M127.784 28.994l-7.778-7.778-48.79 48.79 7.778 7.778z"/></g></svg>
             </a>
           </li>
           <li>

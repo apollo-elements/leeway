@@ -1,6 +1,8 @@
 import { ApolloQuery, html } from '@apollo-elements/lit-apollo';
 import { classMap } from 'lit-html/directives/class-map';
 
+import relativeDate from 'tiny-relative-date';
+
 import { getUserStyleMap } from '../../lib/user-style-map';
 
 import shared from '../shared-styles.css';
@@ -9,7 +11,16 @@ import style from './leeway-messages.css';
 import messageSentSubscription from './message-sent-subscription.graphql';
 import userJoinedSubscription from '../../user-joined-subscription.graphql';
 import userPartedSubscription from '../../user-parted-subscription.graphql';
-import { differenceInWeeks, formatDistanceToNow, format } from 'date-fns/esm';
+
+const ONE_DAY = 1000 * 60 * 60 * 24;
+const ONE_WEEK = ONE_DAY * 7;
+
+const longDateFormatter = new Intl.DateTimeFormat('en-US', {
+  day: 'numeric',
+  weekday: 'long',
+  month: 'long',
+  year: 'numeric',
+});
 
 /**
  * msgTime :: String -> String
@@ -17,12 +28,12 @@ import { differenceInWeeks, formatDistanceToNow, format } from 'date-fns/esm';
  * @return {string} formatted string
  */
 function msgTime(iso) {
-  const then = new Date(iso);
+  const mtime = new Date(iso);
   const today = new Date();
-  if (differenceInWeeks(today, then) > 1)
-    return format(then, 'EEEE, do LLLL, yyyy');
+  if (Math.abs(today - mtime) > ONE_WEEK)
+    return longDateFormatter.format(mtime);
   else
-    return formatDistanceToNow(then, { addSuffix: true });
+    return relativeDate(mtime);
 }
 
 const errorTemplate = ({ message = 'Unknown Error' } = {}) => html`

@@ -1092,6 +1092,54 @@ copy of the Program in return for a fee.
 
 ---
 
+Name: @formatjs/intl-pluralrules
+Version: 3.4.7
+License: MIT
+Private: false
+Description: Polyfill for Intl.PluralRules
+Repository: git+https://github.com/formatjs/formatjs.git
+Homepage: https://github.com/formatjs/formatjs
+Author: Long Ho <holevietlong@gmail.com>
+License Copyright:
+===
+
+MIT License
+
+Copyright (c) 2019 FormatJS
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+---
+
+Name: @formatjs/intl-relativetimeformat
+Version: 7.2.7
+License: MIT
+Private: false
+Description: Formats JavaScript dates to relative time strings.
+Repository: git+ssh://git@github.com/formatjs/formatjs.git
+Homepage: https://github.com/formatjs/formatjs
+Author: Long Ho <holevietlong@gmail.com>
+License Copyright:
+===
+
+MIT License
+
+Copyright (c) 2019 FormatJS
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+---
+
 Name: details-dialog-element
 Version: 3.0.3
 License: MIT
@@ -1564,6 +1612,30 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+---
+
+Name: @formatjs/ecma402-abstract
+Version: 1.2.2
+License: MIT
+Private: false
+Description: A collection of implementation for ECMAScript abstract operations
+Repository: git+ssh://git@github.com/formatjs/formatjs.git
+Homepage: https://github.com/formatjs/formatjs
+Author: Long Ho
+License Copyright:
+===
+
+MIT License
+
+Copyright (c) 2019 FormatJS
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 ---
@@ -2746,21 +2818,35 @@ Author: Benny Powers <web@bennypowers.com>
 
 ---
 
-Name: date-fns
-Version: 2.16.1
+Name: tiny-relative-date
+Version: 1.3.0
 License: MIT
 Private: false
-Description: Modern JavaScript date utility library
-Repository: undefined
-Contributors:
-  Sasha Koss <koss@nocorp.me>
-  Lesha Koss <regiusprod@gmail.com>
+Description: Tiny function that provides relative, human-readable dates.
+Repository: git+https://github.com/wildlyinaccurate/relative-date.git
+Homepage: https://github.com/wildlyinaccurate/relative-date#readme
+Author: Joseph Wynn <joseph@wildlyinaccurate.com> (https://wildlyinaccurate.com/)
 License Copyright:
 ===
 
-Copyright (C) 2020 Sasha Koss and Lesha Koss
+MIT License
 
-# License
+Copyright (c) 2017 Joseph Wynn
 
-date-fns is licensed under the [MIT license](http://kossnocorp.mit-license.org).
-Read more about MIT at [TLDRLegal](https://tldrlegal.com/license/mit-license).
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

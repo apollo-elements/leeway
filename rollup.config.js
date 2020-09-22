@@ -1,5 +1,6 @@
 import path from 'path';
 import commonjs from '@rollup/plugin-commonjs';
+import json from '@rollup/plugin-json';
 import resolve from '@rollup/plugin-node-resolve';
 import copy from 'rollup-plugin-copy';
 import graphql from 'rollup-plugin-graphql';
@@ -56,6 +57,8 @@ export default {
     },
 
     resolve(),
+
+    json(),
 
     graphql(),
 

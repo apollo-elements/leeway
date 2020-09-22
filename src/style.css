@@ -1,6 +1,6 @@
 @font-face {
   font-family: 'Material Icons';
-  src: url('fonts/icomoon.woff?a3bd1h') format('woff');
+  src: url('fonts/Material-Icons.woff?81tm46') format('woff');
   font-weight: normal;
   font-style: normal;
   font-display: block;
@@ -20,7 +20,7 @@ html {
 
 html,
 body {
-  font-family: ubuntu, arial, sans-serif;
+  font-family: ubuntu, sans-serif;
   font-display: fallback;
   width: 100%;
   height: 100%;
