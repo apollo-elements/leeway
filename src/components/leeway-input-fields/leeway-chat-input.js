@@ -17,6 +17,10 @@ import { gql } from '@apollo/client/core';
 
 import { debounce } from 'mini-debounce';
 
+/**
+ * @customElement
+ * @extends {ApolloMutation<{ date: string, message: string, userId: string }, { userId: string, message: string }}
+ */
 class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
   static get styles() {
     return [shared, style];

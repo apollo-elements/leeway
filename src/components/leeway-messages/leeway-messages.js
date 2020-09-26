@@ -15,6 +15,53 @@ import UserLastSeenUpdatedSubscription from '../../UserLastSeenUpdated.subscript
 
 import { ONE_WEEK } from '../../lib/constants';
 
+/**
+ * @typedef {object} User
+ * @property {string} id
+ * @property {string} nick
+ * @property {'OFFLINE'|'ONLINE'|'PARTED'} status
+ * @property {string} lastSeen
+ */
+
+/**
+ * @typedef {object} Message
+ * @property {string} date
+ * @property {string} message
+ * @property {string} userId
+ * @property {string} nick
+ */
+
+/**
+ * ```graphql
+ * query Messages {
+ *
+ *   localUser @client {
+ *     id
+ *     nick
+ *     status
+ *   }
+ *
+ *   messages {
+ *     date
+ *     message
+ *     userId
+ *     nick
+ *   }
+ *
+ *   users {
+ *     id
+ *     nick
+ *     status
+ *     lastSeen
+ *   }
+ * }
+ * ```
+ * @typedef {object} LeewayMessagesQuery
+ * @property {LocalUser} localUser
+ * @property {readonly Message[]} messages
+ * @property {readonly User[]} users
+ */
+
 const longDateFormatter = new Intl.DateTimeFormat('en-US', {
   day: 'numeric',
   weekday: 'long',
@@ -51,31 +98,10 @@ const onMessageSent = (prev, { subscriptionData: { data: { messageSent } } }) =>
   messages: [...prev.messages, messageSent],
 });
 
-const messageTemplate = data => ({ message, userId, nick: original, date }) => {
-  const { nick: current, status, me } = getUserWithId(data, userId);
-  const nick = current || original;
-  return html`
-    <li data-initial="${nick.substring(0, 1).toUpperCase()}"
-        class="${classMap({ user: true, me })}"
-        style="${getUserStyleMap({ nick, status })}">
-      <article>
-        <span class="nick-time">${nick} <time>${msgTime(date)}</time></span>
-        <span>${message}</span>
-      </article>
-    </li>
-  `;
-};
-
-const viewTemplate = ({ data, error, loading }) =>
-  loading ? html`Loading...` : html`
-  ${error && errorTemplate(error)}
-  <ol>${data && data.users && data.messages.map(messageTemplate(data))}</ol>
-`;
-
 /**
  * <leeway-messages>
  * @customElement
- * @extends ApolloQuery
+ * @extends {ApolloQuery<LeewayMessagesQuery, null>}
  */
 class LeewayMessages extends ApolloQuery {
   static get styles() {
@@ -83,7 +109,28 @@ class LeewayMessages extends ApolloQuery {
   }
 
   render() {
-    return html`${viewTemplate(this)}`;
+    const { data, error, loading } = this;
+    return (
+      loading ? html`Loading...` : html`
+      ${error && errorTemplate(error)}
+      <ol>
+      ${data && data.users && data.messages.map(({ message, userId, nick: original, date }) => {
+        const { nick: current, status, me } = getUserWithId(data, userId);
+        const nick = current || original;
+        return html`
+          <li data-initial="${nick.substring(0, 1).toUpperCase()}"
+              class="${classMap({ user: true, me })}"
+              style="${getUserStyleMap({ nick, status })}">
+            <article>
+              <span class="nick-time">${nick} <time>${msgTime(date)}</time></span>
+              <span>${message}</span>
+            </article>
+          </li>
+        `;
+      })}
+      </ol>
+      `
+    );
   }
 
   constructor() {

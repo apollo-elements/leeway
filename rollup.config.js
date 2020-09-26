@@ -3,7 +3,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import resolve from '@rollup/plugin-node-resolve';
 import copy from 'rollup-plugin-copy';
-import graphql from 'rollup-plugin-graphql';
+import graphql from '@apollo-elements/rollup-plugin-graphql';
 import litcss from 'rollup-plugin-lit-css';
 import minifyHTML from 'rollup-plugin-minify-html-literals';
 import modulepreload from 'rollup-plugin-modulepreload';

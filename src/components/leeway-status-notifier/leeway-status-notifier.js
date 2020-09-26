@@ -30,6 +30,10 @@ function sendBeacon({ query, variables }) {
   }
 }
 
+/**
+ * @customElement 'leeway-status-notifier'
+ * @extends {ApolloMutation<User, {id: string, status: string}>}
+ */
 class LeewayStatusNotifier extends ApolloMutation {
   render() {
     !this.data ? '' : '';

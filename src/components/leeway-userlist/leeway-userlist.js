@@ -10,13 +10,6 @@ import userJoinedSubscription from '../../user-joined-subscription.graphql';
 import shared from '../shared-styles.css';
 import style from './leeway-userlist.css';
 
-const userTemplate = ({ nick, status } = {}) => (html`
-  <div class="user" style="${getUserStyleMap({ nick, status })}">
-    <span aria-label="${status}" class="status ${classMap({ ...status && { [status.toLowerCase()]: true } })}"></span>
-    ${nick}
-  </div>
-`);
-
 const isNotParted =
   user =>
     user && user.status !== 'PARTED';
@@ -80,7 +73,12 @@ class LeewayUserlist extends ApolloQuery {
           <span role="presentation" class="status ${myStatus}"></span>
           <span class="nick">${localUser.nick}</span>
         </header>
-        ${users.filter(user => user.id !== localUser.id).map(userTemplate)}
+        ${users.filter(user => user.id !== localUser.id).map(({ nick, status } = {}) => (html`
+        <div class="user" style="${getUserStyleMap({ nick, status })}">
+          <span aria-label="${status}" class="status ${classMap({ ...status && { [status.toLowerCase()]: true } })}"></span>
+          ${nick}
+        </div>
+      `))}
       </section>
     `);
   }
