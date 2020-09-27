@@ -9,6 +9,27 @@ import shared from '../shared-styles.css';
 
 import { localUserVar } from '../../variables';
 
+/**
+ * ```graphql
+ * mutation Join($nick: String!) {
+ *   join(nick: $nick) {
+ *     id
+ *     nick
+ *     status
+ *     lastSeen
+ *   }
+ * }
+ * ```
+ * @typedef {import('../leeway-userlist/leeway-userlist.js').User} JoinMutationData
+ */
+
+/** @typedef {{nick: string}} JoinMutationVariables */
+
+/**
+ * <leeway-nick-input>
+ * @customElement
+ * @extends {ApolloMutation<JoinMutationData, JoinMutationVariables>}
+ */
 class LeewayNickInput extends LeewayInputMixin(ApolloMutation) {
   static get properties() {
     return {
@@ -38,15 +59,17 @@ class LeewayNickInput extends LeewayInputMixin(ApolloMutation) {
   }
 
   onSubmit() {
-    if (this.input.value) this.mutate();
+    if (this.input.value)
+      this.mutate();
   }
 
   onKeyup({ key, target: { value: nick } }) {
     this.variables = { nick };
-    if (key === 'Enter') this.mutate();
+    if (key === 'Enter')
+      this.mutate();
   }
 
-  updater(cache, { data: { join: { id, nick } } }) {
+  updater(_cache, { data: { join: { id, nick } } }) {
     localStorage.setItem('leeway-user', JSON.stringify({ id, nick }));
     localUserVar({ id, nick });
   }

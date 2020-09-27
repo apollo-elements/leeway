@@ -10,15 +10,24 @@ const isCustomElement = el => el.localName.includes('-');
 
 const assignUser = user => el => el.user = user;
 
-const errorTemplate = ({ message = 'Unknown Error' } = {}) => html`
-  <h1>😢 Such Sad, Very Error! 😰</h1>
-  <div>${message}</div>
-`;
+/**
+ * ```graphql
+ *  query LocalUser {
+ *   localUser @client {
+ *     id
+ *     nick
+ *     status
+ *   }
+ * }
+ * ```
+ * @typedef {object} LeewayInputFieldsData
+ * @property {User} LocalUser
+ */
 
 /**
  * <leeway-input-fields>
  * @customElement
- * @extends ApolloQuery
+ * @extends {ApolloQuery<LeewayInputFieldsData, LeewayInputFieldsVariables>}
  */
 class LeewayInputFields extends ApolloQuery {
   static get styles() {
@@ -27,7 +36,11 @@ class LeewayInputFields extends ApolloQuery {
 
   render() {
     const { localUser } = this.data;
-    return this.error ? errorTemplate(this.error) : html`
+    return html`
+      <aside id="error" ?hidden="${!this.error}">
+        <h1 >😢 Such Sad, Very Error! 😰</h1>
+        <pre>${this.error && this.error.message || 'Unknown Error'}</pre>
+      </aside>
       <div id="nick" ?hidden="${localUser && localUser.id}"><slot name="nick-input"></slot></div>
       <div id="chat" ?hidden="${!localUser || !localUser.id}"><slot name="chat-input"></slot></div>
     `;

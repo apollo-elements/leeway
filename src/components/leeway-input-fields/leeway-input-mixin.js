@@ -1,4 +1,6 @@
-export const LeewayInputMixin = superclass => class extends superclass {
+import { $Mixin } from '../../lib/$-mixin';
+
+export const LeewayInputMixin = superclass => class extends $Mixin(superclass) {
   static get properties() {
     return {
       user: { type: Object },
@@ -14,16 +16,7 @@ export const LeewayInputMixin = superclass => class extends superclass {
     this.user = {};
   }
 
-  $(id) {
-    return (
-      this.shadowRoot &&
-      this.shadowRoot.getElementById(id) ||
-      null
-    );
-  }
-
   onCompleted() {
     this.input.value = '';
-    // this.input.focus();
   }
 };

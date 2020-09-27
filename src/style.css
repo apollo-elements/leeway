@@ -170,10 +170,6 @@ header svg {
   width: 100%;
 }
 
-body[unresolved] [slot="links"] {
-  display: none;
-}
-
 header a::before {
   content: "↪";
   font-size: 10px;

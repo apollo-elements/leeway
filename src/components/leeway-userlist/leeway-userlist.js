@@ -1,5 +1,8 @@
 import { ApolloQuery, html } from '@apollo-elements/lit-apollo';
 import { classMap } from 'lit-html/directives/class-map';
+import { $Mixin } from '../../lib/$-mixin';
+
+import '@material/mwc-snackbar';
 
 import { getUserStyleMap } from '../../lib/user-style-map';
 import UserLastSeenUpdatedSubscription from '../../UserLastSeenUpdated.subscription.graphql';
@@ -9,6 +12,18 @@ import userJoinedSubscription from '../../user-joined-subscription.graphql';
 
 import shared from '../shared-styles.css';
 import style from './leeway-userlist.css';
+
+/**
+ * @typedef {object} User
+ * @property {string} id
+ * @property {string} nick
+ * @property {'OFFLINE'|'ONLINE'|'PARTED'} status
+ * @property {string} lastSeen
+ */
+
+/**
+ * @typedef {Omit<User, 'lastSeen'>} LocalUser
+ */
 
 const isNotParted =
   user =>
@@ -29,44 +44,47 @@ const onStatusUpdated = (prev, { subscriptionData: { data: { userStatusUpdated }
   ].filter(isNotParted),
 });
 
-const onUserJoined = (prev, { subscriptionData: { data: { userJoined } } }) => ({
-  ...prev,
-  users: [
-    userJoined,
-    ...prev.users,
-  ].filter(Boolean),
-});
-
-const onUserParted = (prev, { subscriptionData: { data: { userParted } } }) => ({
-  ...prev,
-  users: prev.users.map(user => ({
-    ...user,
-    ...(user.id === userParted.id ? userParted : {}),
-  })),
-});
-
+/**
+ * ```graphql
+ * query Users {
+ *   localUser @client {
+ *     id
+ *     nick
+ *     status
+ *   }
+ *   users {
+ *     id
+ *     nick
+ *     status
+ *     lastSeen
+ *   }
+ * }
+ * ```
+ * @typedef {Object} LeewayUserlistQueryData
+ * @property {LocalUser} localUser
+ * @property {readonly User[]} users
+ */
 
 /**
  * <leeway-userlist>
  * @customElement
- * @extends LitElement
+ * @extends {ApolloQuery<LeewayUserlistQueryData, null}
  */
-class LeewayUserlist extends ApolloQuery {
+class LeewayUserlist extends $Mixin(ApolloQuery) {
   static get styles() {
     return [shared, style];
   }
 
-  static get properties() {
-    return {
-      open: { type: Boolean },
-    };
-  }
-
   render() {
-    const { users = [], localUser = {} } = this.data || {};
-    const myStatus = localUser && localUser.status && localUser.status.toLowerCase();
+    const users = this.data && this.data.users || [];
+    const localUser = this.data && this.data.localUser || { nick: '', status: 'OFFLINE', id: '' };
+    const myStatus = localUser.status.toLowerCase();
     return (html`
-      ${this.error && this.error.message}
+      <aside id="error" ?hidden="${!this.error}">
+        <h1>😢 Such Sad, Very Error! 😰</h1>
+        <pre>${this.error && this.error.message || 'Unknown Error'}</pre>
+      </aside>
+
       <section id="links"><slot name="links"></slot></section>
       <section id="users">
         <header style="${getUserStyleMap(localUser)}" class="${classMap({ invisible: !localUser.id })}">
@@ -84,17 +102,39 @@ class LeewayUserlist extends ApolloQuery {
   }
 
   firstUpdated() {
-    const onError = this.onSubscriptionError.bind(this);
+    const onError = error => this.error = error;
+    const userJoined = this.userJoined.bind(this);
+    const userParted = this.userParted.bind(this);
     // eslint-disable-next-line max-len
     this.subscribeToMore({ updateQuery: onStatusUpdated, document: UserStatusUpdatedSubscription, onError });
     // eslint-disable-next-line max-len
     this.subscribeToMore({ updateQuery: onLastSeenUpdated, document: UserLastSeenUpdatedSubscription, onError });
-    this.subscribeToMore({ updateQuery: onUserJoined, document: userJoinedSubscription, onError });
-    this.subscribeToMore({ updateQuery: onUserParted, document: userPartedSubscription, onError });
+    this.subscribeToMore({ updateQuery: userJoined, document: userJoinedSubscription, onError });
+    this.subscribeToMore({ updateQuery: userParted, document: userPartedSubscription, onError });
   }
 
-  onSubscriptionError(error) {
-    this.error = error;
+  userJoined(prev, { subscriptionData: { data: { userJoined } } }) {
+    document.getElementById('snackbar').labelText = `${userJoined.nick} joined!`;
+    document.getElementById('snackbar').show();
+    return {
+      ...prev,
+      users: [
+        userJoined,
+        ...prev.users,
+      ].filter(Boolean),
+    };
+  }
+
+  userParted(prev, { subscriptionData: { data: { userParted } } }) {
+    document.getElementById('snackbar').labelText = `${prev.users.find(x => x.id === userParted.id).nick} left!`;
+    document.getElementById('snackbar').show();
+    return {
+      ...prev,
+      users: prev.users.map(user => ({
+        ...user,
+        ...(user.id === userParted.id ? userParted : {}),
+      })),
+    };
   }
 }
 

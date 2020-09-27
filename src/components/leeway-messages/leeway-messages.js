@@ -16,14 +16,6 @@ import UserLastSeenUpdatedSubscription from '../../UserLastSeenUpdated.subscript
 import { ONE_WEEK } from '../../lib/constants';
 
 /**
- * @typedef {object} User
- * @property {string} id
- * @property {string} nick
- * @property {'OFFLINE'|'ONLINE'|'PARTED'} status
- * @property {string} lastSeen
- */
-
-/**
  * @typedef {object} Message
  * @property {string} date
  * @property {string} message
@@ -57,9 +49,9 @@ import { ONE_WEEK } from '../../lib/constants';
  * }
  * ```
  * @typedef {object} LeewayMessagesQuery
- * @property {LocalUser} localUser
+ * @property {import('../leeway-userlist/leeway-userlist').LocalUser} localUser
  * @property {readonly Message[]} messages
- * @property {readonly User[]} users
+ * @property {readonly import('../leeway-userlist/leeway-userlist').User[]} users
  */
 
 const longDateFormatter = new Intl.DateTimeFormat('en-US', {
@@ -67,35 +59,6 @@ const longDateFormatter = new Intl.DateTimeFormat('en-US', {
   weekday: 'long',
   month: 'long',
   year: 'numeric',
-});
-
-/**
- * msgTime :: String -> String
- * @param {string} iso
- * @return {string} formatted string
- */
-function msgTime(iso) {
-  const mtime = new Date(iso);
-  const today = new Date();
-  if (Math.abs(today - mtime) > ONE_WEEK)
-    return longDateFormatter.format(mtime);
-  else
-    return relativeDate(mtime);
-}
-
-const errorTemplate = ({ message = 'Unknown Error' } = {}) => html`
-  <h1>😢 Such Sad, Very Error! 😰</h1>
-  <div>${message}</div>
-`;
-
-const getUserWithId = ({ id: localId, users }, id) => ({
-  ...users.find(user => user.id === id),
-  me: localId === id,
-});
-
-const onMessageSent = (prev, { subscriptionData: { data: { messageSent } } }) => ({
-  ...prev,
-  messages: [...prev.messages, messageSent],
 });
 
 /**
@@ -109,60 +72,76 @@ class LeewayMessages extends ApolloQuery {
   }
 
   render() {
-    const { data, error, loading } = this;
-    return (
-      loading ? html`Loading...` : html`
-      ${error && errorTemplate(error)}
+    const { data, error } = this;
+    const messages = data && data.users && data.messages || [];
+    return html`
+      <aside id="error" ?hidden="${!error}">
+        <h1 >😢 Such Sad, Very Error! 😰</h1>
+        <pre>${error && error.message || 'Unknown Error'}</pre>
+      </aside>
       <ol>
-      ${data && data.users && data.messages.map(({ message, userId, nick: original, date }) => {
-        const { nick: current, status, me } = getUserWithId(data, userId);
-        const nick = current || original;
+      ${messages.map(msg => {
+        const { message, userId, nick: original, date } = msg;
+        const messageUser = data.users.find(user => user.id === userId);
+        const nick = messageUser.nick || original;
+        const me = messageUser.userId === this.data.localUser.id;
         return html`
           <li data-initial="${nick.substring(0, 1).toUpperCase()}"
-              class="${classMap({ user: true, me })}"
+              class="user ${classMap({ me })}"
               style="${getUserStyleMap({ nick, status })}">
             <article>
-              <span class="nick-time">${nick} <time>${msgTime(date)}</time></span>
+              <span class="nick-time">${nick} <time>${this.msgTime(date)}</time></span>
               <span>${message}</span>
             </article>
           </li>
         `;
       })}
       </ol>
-      `
-    );
-  }
-
-  constructor() {
-    super();
-    this.onError = this.onError.bind(this);
-  }
-
-  shouldUpdate() {
-    return this.data || this.error || this.loading != null;
+    `;
   }
 
   firstUpdated() {
-    const { onError } = this;
-    const updateQuery = onMessageSent;
-    this.subscribeToMore({ document: messageSentSubscription, onError, updateQuery });
+    const onError = error => this.error = error;
+    this.scrollTop = this.scrollHeight;
     this.subscribeToMore({ document: userJoinedSubscription, onError });
     this.subscribeToMore({ document: userPartedSubscription, onError });
     this.subscribeToMore({ document: UserLastSeenUpdatedSubscription, onError });
-    this.scrollTop = this.scrollHeight;
+    this.subscribeToMore({
+      document: messageSentSubscription,
+      onError,
+      updateQuery(prev, { subscriptionData: { data: { messageSent } } }) {
+        return {
+          ...prev,
+          messages: [...prev.messages, messageSent],
+        };
+      },
+    });
   }
 
   updated(changedProps) {
-    if (changedProps.has('data')) {
-      this.scrollTo({
-        behavior: 'smooth',
-        top: this.scrollHeight,
-      });
-    }
+    if (changedProps.has('data'))
+      this.scrollToLatest();
   }
 
-  onError(error) {
-    this.error = error;
+  /**
+   * msgTime :: String -> String
+   * @param {string} iso
+   * @return {string} formatted string
+   */
+  msgTime(iso) {
+    const mtime = new Date(iso);
+    const today = new Date();
+    if (Math.abs(today - mtime) > ONE_WEEK)
+      return longDateFormatter.format(mtime);
+    else
+      return relativeDate(mtime);
+  }
+
+  scrollToLatest() {
+    this.scrollTo({
+      behavior: 'smooth',
+      top: this.scrollHeight,
+    });
   }
 }
 

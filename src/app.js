@@ -55,8 +55,7 @@ async function resolveBody() {
   await Promise.all([
     customElements.whenDefined('leeway-input-fields'),
     customElements.whenDefined('leeway-messages'),
-    customElements.whenDefined('leeway-status-notifier'),
-    customElements.whenDefined('leeway-userlist'),
+    customElements.whenDefined('leeway-usrlist'),
     customElements.whenDefined('hy-drawer'),
   ])
 

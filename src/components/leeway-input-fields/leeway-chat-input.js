@@ -18,29 +18,44 @@ import { gql } from '@apollo/client/core';
 import { debounce } from 'mini-debounce';
 
 /**
- * @customElement
- * @extends {ApolloMutation<{ date: string, message: string, userId: string }, { userId: string, message: string }}
+ * ```graphql
+ * mutation sendMessage($userId: ID!, $message: String!) {
+ *   sendMessage(userId: $userId, message: $message) {
+ *     date
+ *     message
+ *     userId
+ *   }
+ * }
+ * ```
+ * @typedef {object} LeewayChatInputMutationData
+ * @property {string} date
+ * @property {string} message
+ * @property {string} userId
+ */
+
+/**
+ * @typedef {object} LeewayChatInputMutationVariables
+ * @property {string} userId
+ * @property {string} message
+ */
+
+/**
+ * @customElement leeway-chat-input
+ * @extends {ApolloMutation<LeewayChatInputMutationData, LeewayInputMutationVariables>}
  */
 class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
   static get styles() {
     return [shared, style];
   }
 
-  static get properties() {
-    return {
-      userinput: { type: String },
-    };
-  }
-
-  get input() {
-    return this.shadowRoot && this.shadowRoot.getElementById('input');
-  }
-
   render() {
     const { nick } = this.user || {};
     const placeholder = nick ? 'Message the Channel' : undefined;
     return html`
-      ${this.error && this.error}
+      <aside id="error" ?hidden="${!this.error}">
+        <h1>😢 Such Sad, Very Error! 😰</h1>
+        <pre>${this.error && this.error.message || 'Unknown Error'}</pre>
+      </aside>
 
       <input id="input"
           aria-label="Message"
@@ -55,7 +70,6 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
 
   constructor() {
     super();
-    this.userinput = '';
     this.ping = debounce(this.ping.bind(this), 1000);
   }
 
@@ -65,13 +79,12 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
     const mutation = ChangeNicknameMutation;
     const status = navigator.onLine ? 'ONLINE' : 'OFFLINE';
 
-    const update = (cache, { data: { changeNickname: { id, nick } } }) =>
-      localUserVar({ id, nick, status });
-
     await this.mutate({
       mutation,
       variables,
-      update,
+      update(_cache, { data: { changeNickname: { id, nick } } }) {
+        localUserVar({ id, nick, status });
+      },
       optimisticResponse: {
         __typename: 'Mutation',
         changeNickname: {
@@ -98,7 +111,7 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
     await this.mutate({
       mutation,
       variables,
-      update: cache => {
+      update(cache) {
         cache.writeFragment({
           id: `User:${id}`,
           fragment: gql`fragment userStatus on user { status }`,
@@ -114,10 +127,11 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
           status,
         },
       },
-    }).then(() => {
-      localUserVar({ id: null, nick: null, status });
-      localStorage.removeItem('leeway-user');
     });
+
+    localUserVar({ id: null, nick: null, status });
+
+    localStorage.removeItem('leeway-user');
   }
 
   handleSlashCommand(message) {
@@ -128,8 +142,9 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
     }
   }
 
-  ping() {
-    this.mutate({ mutation: UpdateLastSeenMutation, variables: { userId: this.user.id } });
+  ping(userId = this.user.id) {
+    if (userId)
+      this.mutate({ mutation: UpdateLastSeenMutation, variables: { userId } });
   }
 
   submit(message) {
@@ -144,7 +159,7 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
   }
 
   onKeyup({ key, target: { value: message } }) {
-    this.ping();
+    this.ping(this.user.id);
     if (key === 'Enter') return this.submit(message);
   }
 }
