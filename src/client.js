@@ -1,7 +1,6 @@
 import { ApolloClient, InMemoryCache, HttpLink, split } from '@apollo/client/core';
 import { WebSocketLink } from '@apollo/client/link/ws';
 import { getMainDefinition } from '@apollo/client/utilities';
-import { persistCache } from 'apollo-cache-persist';
 import { localUserVar } from './variables';
 import { mergeArrayByField } from './lib/merge-array-by-field';
 
@@ -87,8 +86,6 @@ let clientPromise;
 export async function getClient() {
   if (clientPromise) return clientPromise;
   clientPromise = new Promise(resolve =>
-    persistCache({ cache, storage: localStorage })
-      .then(() =>
-        resolve(new ApolloClient({ cache, link, ssrForceFetchDelay: 100 }))));
+    resolve(new ApolloClient({ cache, link, ssrForceFetchDelay: 100 })));
   return await clientPromise;
 }
