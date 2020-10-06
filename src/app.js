@@ -24,7 +24,7 @@ const isWideScreen =
   window.matchMedia('(min-width: 500px)');
 
 async function onServiceWorkerChanged(event) {
-  if (event.detail.state !== 'installed') return
+  if (event.detail.state !== 'installed') return;
   await import('details-dialog-element');
   updateDialog.removeAttribute('hidden');
 }
@@ -36,11 +36,11 @@ function onMediaChange(event) {
 
 function onDrawerToggle() {
   if (!isWideScreen.matches)
-    return
+    return;
   else if (drawer.opened)
-    document.body.setAttribute('menu-open', '')
+    document.body.setAttribute('menu-open', '');
   else
-    document.body.removeAttribute('menu-open', '')
+    document.body.removeAttribute('menu-open', '');
 }
 
 function onClickDrawerToggle() {
@@ -75,7 +75,7 @@ async function resolveBody() {
     customElements.whenDefined('leeway-messages'),
     customElements.whenDefined('leeway-usrlist'),
     customElements.whenDefined('hy-drawer'),
-  ])
+  ]);
 
   document.body.removeAttribute('unresolved');
 }

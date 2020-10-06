@@ -1,1 +1,4 @@
-{ "extends": "@pwrs" }
+{
+  "extends": "@pwrs",
+  "parser": "@typescript-eslint/parser"
+}
