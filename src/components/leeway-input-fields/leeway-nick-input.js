@@ -1,8 +1,9 @@
 import '@material/mwc-button';
+import '@material/mwc-dialog';
 
 import { ApolloMutation, html } from '@apollo-elements/lit-apollo';
+import { $Mixin } from '../../lib/$-mixin';
 
-import { LeewayInputMixin } from './leeway-input-mixin';
 import inputStyles from './input-fields-styles.css';
 import style from './leeway-nick-input.css';
 import shared from '../shared-styles.css';
@@ -30,12 +31,13 @@ import { localUserVar } from '../../variables';
  * @customElement
  * @extends {ApolloMutation<JoinMutationData, JoinMutationVariables>}
  */
-class LeewayNickInput extends LeewayInputMixin(ApolloMutation) {
+class LeewayNickInput extends $Mixin(ApolloMutation) {
   static get properties() {
     return {
-      nick: { type: String },
-      variables: { type: Object },
       closed: { type: Boolean, reflect: true },
+      nick: { type: String },
+      user: { type: Object },
+      variables: { type: Object },
     };
   }
 
@@ -45,21 +47,27 @@ class LeewayNickInput extends LeewayInputMixin(ApolloMutation) {
 
   render() {
     return (html`
-      ${this.error && this.error}
-
-      <input id="input"
-          aria-label="Username"
-          placeholder="Set Your Username"
-          @keyup="${this.onKeyup}"/>
-      <mwc-button id="submit"
-          icon="check"
-          ?disabled="${!this.variables || !this.variables.nick}"
-          @click="${this.onSubmit}">OK</mwc-button>
+      <mwc-button id="show" label="Join" @click="${() => this.$dialog.show()}"></mwc-button>
+      <mwc-dialog id="dialog" @closing="${this.onClosing}" heading="Set your Username">
+        <input id="input"
+            aria-label="Username"
+            placeholder="Username"
+            @keyup="${this.onKeyup}"/>
+        <mwc-button id="submit"
+            slot="primaryAction"
+            icon="${this.loading ? 'hourglass_empty' : 'check'}"
+            ?disabled="${this.loading || !this.variables || !this.variables.nick}"
+            @click="${this.onSubmit}">OK</mwc-button>
+      </mwc-dialog>
     `);
   }
 
+  onClosing(event) {
+    event.preventDefault();
+  }
+
   onSubmit() {
-    if (this.input.value)
+    if (this.$input.value)
       this.mutate();
   }
 
@@ -72,6 +80,19 @@ class LeewayNickInput extends LeewayInputMixin(ApolloMutation) {
   updater(_cache, { data: { join: { id, nick } } }) {
     localStorage.setItem('leeway-user', JSON.stringify({ id, nick }));
     localUserVar({ id, nick });
+  }
+
+  onCompleted() {
+    this.$input.value = '';
+    this.$dialog.close();
+  }
+
+  onError(error) {
+    this.dispatchEvent(new CustomEvent('mutation-error', {
+      composed: true,
+      bubbles: true,
+      detail: { error, element: this },
+    }));
   }
 }
 

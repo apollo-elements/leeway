@@ -6,4 +6,9 @@ export const $Mixin = superclass => class extends superclass {
       null
     );
   }
+
+  firstUpdated() {
+    for (const el of this.shadowRoot.querySelectorAll('[id]'))
+      this[`$${el.id}`] = el;
+  }
 };
