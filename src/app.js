@@ -17,6 +17,9 @@ const drawerToggle =
 const serviceWorker =
   document.getElementById('service-worker');
 
+const snackbar =
+  document.getElementById('snackbar');
+
 const isWideScreen =
   window.matchMedia('(min-width: 500px)');
 
@@ -45,6 +48,21 @@ function onClickDrawerToggle() {
   onDrawerToggle();
 }
 
+function onUserParted(event) {
+  snackbar.labelText = `${event.detail.nick} left!`;
+  snackbar.show();
+}
+
+function onUserJoined(event) {
+  snackbar.labelText = `${event.detail.nick} joined!`;
+  snackbar.show();
+}
+
+function onMutationError(event) {
+  snackbar.labelText = event.detail.error && event.detail.error.message || `Unknown Error in ${event.detail.element.tagName.toLowerCase()}`;
+  snackbar.show();
+}
+
 async function resolveBody() {
   const { getClient } = await import('./client');
 
@@ -67,6 +85,12 @@ isWideScreen.addEventListener('change', onMediaChange);
 drawerToggle.addEventListener('click', onClickDrawerToggle);
 
 serviceWorker.addEventListener('change', onServiceWorkerChanged);
+
+document.addEventListener('user-parted', onUserParted);
+
+document.addEventListener('user-joined', onUserJoined);
+
+document.addEventListener('mutation-error', onMutationError);
 
 onMediaChange(isWideScreen);
 

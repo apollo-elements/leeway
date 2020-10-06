@@ -37,10 +37,6 @@ class LeewayInputFields extends ApolloQuery {
   render() {
     const { localUser } = this.data;
     return html`
-      <aside id="error" ?hidden="${!this.error}">
-        <h1 >😢 Such Sad, Very Error! 😰</h1>
-        <pre>${this.error && this.error.message || 'Unknown Error'}</pre>
-      </aside>
       <div id="nick" ?hidden="${localUser && localUser.id}"><slot name="nick-input"></slot></div>
       <div id="chat" ?hidden="${!localUser || !localUser.id}"><slot name="chat-input"></slot></div>
     `;
@@ -48,8 +44,8 @@ class LeewayInputFields extends ApolloQuery {
 
   async focusInput() {
     const localId = this.data && this.data.localUser && this.data.localUser.id;
-    const mutator = this.querySelector(`leeway-${localId ? 'chat' : 'nick'}-input`);
-    const { input } = mutator;
+    const mutator = localId ? this.querySelector(`leeway-chat-input`) : this.querySelector('leeway-nick-input');
+    const input = localId ? mutator.$input : mutator.$show;
     await mutator.updateComplete;
     setTimeout(input.focus.bind(input));
   }

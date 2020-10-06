@@ -3,8 +3,9 @@ import '@material/mwc-button';
 import { ApolloMutation, html } from '@apollo-elements/lit-apollo';
 import { ifDefined } from 'lit-html/directives/if-defined';
 
-import { LeewayInputMixin } from './leeway-input-mixin';
-import style from './input-fields-styles.css';
+import { $Mixin } from '../../lib/$-mixin';
+import fields from './input-fields-styles.css';
+import style from './leeway-chat-input.css';
 import shared from '../shared-styles.css';
 
 import ChangeNicknameMutation from './ChangeNickname.mutation.graphql';
@@ -43,20 +44,21 @@ import { debounce } from 'mini-debounce';
  * @customElement leeway-chat-input
  * @extends {ApolloMutation<LeewayChatInputMutationData, LeewayInputMutationVariables>}
  */
-class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
+class LeewayChatInput extends $Mixin(ApolloMutation) {
   static get styles() {
-    return [shared, style];
+    return [shared, fields, style];
+  }
+
+  static get properties() {
+    return {
+      user: { type: Object },
+    };
   }
 
   render() {
     const { nick } = this.user || {};
     const placeholder = nick ? 'Message the Channel' : undefined;
     return html`
-      <aside id="error" ?hidden="${!this.error}">
-        <h1>😢 Such Sad, Very Error! 😰</h1>
-        <pre>${this.error && this.error.message || 'Unknown Error'}</pre>
-      </aside>
-
       <input id="input"
           aria-label="Message"
           placeholder="${ifDefined(placeholder)}"
@@ -99,6 +101,8 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
     this.user = { nick, id, status };
 
     localStorage.setItem('leeway-user', JSON.stringify(this.user));
+
+    this.$input.value = '';
   }
 
   async part() {
@@ -132,6 +136,8 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
     localUserVar({ id: null, nick: null, status });
 
     localStorage.removeItem('leeway-user');
+
+    this.$input.value = '';
   }
 
   handleSlashCommand(message) {
@@ -147,20 +153,30 @@ class LeewayChatInput extends LeewayInputMixin(ApolloMutation) {
       this.mutate({ mutation: UpdateLastSeenMutation, variables: { userId } });
   }
 
-  submit(message) {
+  async submit(message) {
     if (message.startsWith('/')) return this.handleSlashCommand(message.substr(1));
     const { user: { id: userId } } = this;
     this.variables = { message, userId };
-    return this.mutate();
+    const result = await this.mutate();
+    this.$input.value = '';
+    return result;
   }
 
   onClick() {
-    this.submit(this.input.value);
+    this.submit(this.$input.value);
   }
 
   onKeyup({ key, target: { value: message } }) {
     this.ping(this.user.id);
     if (key === 'Enter') return this.submit(message);
+  }
+
+  onError(error) {
+    this.dispatchEvent(new CustomEvent('mutation-error', {
+      composed: true,
+      bubbles: true,
+      detail: { error, element: this },
+    }));
   }
 }
 

@@ -1,6 +1,8 @@
-input,
-input::placeholder {
-  background: var(--purple);
-  color: var(--on-purple);
-  opacity: 1;
+:host {
+  width: 100%;
+}
+
+#show {
+  flex: 1;
+  display: flex;
 }

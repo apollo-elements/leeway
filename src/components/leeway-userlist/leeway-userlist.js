@@ -4,6 +4,8 @@ import { $Mixin } from '../../lib/$-mixin';
 
 import '@material/mwc-snackbar';
 
+import { not } from '../../lib/logic';
+import { byId } from '../../lib/by-id';
 import { getUserStyleMap } from '../../lib/user-style-map';
 import UserLastSeenUpdatedSubscription from '../../UserLastSeenUpdated.subscription.graphql';
 import UserStatusUpdatedSubscription from '../../UserStatusUpdated.subscription.graphql';
@@ -31,7 +33,7 @@ const isNotParted =
 
 const onLastSeenUpdated = (prev, { subscriptionData: { data: { userLastSeenUpdated } } }) => {
   const users = [...prev.users];
-  const index = users.findIndex(x => x.id === userLastSeenUpdated.id);
+  const index = users.findIndex(byId(userLastSeenUpdated.id));
   users[index] = { ...users[index], ...userLastSeenUpdated };
   return { ...prev, users };
 };
@@ -40,7 +42,7 @@ const onStatusUpdated = (prev, { subscriptionData: { data: { userStatusUpdated }
   ...prev,
   users: [
     userStatusUpdated,
-    ...prev.users.filter(user => user.id !== userStatusUpdated.id),
+    ...prev.users.filter(not(byId(userStatusUpdated.id))),
   ].filter(isNotParted),
 });
 
@@ -91,7 +93,7 @@ class LeewayUserlist extends $Mixin(ApolloQuery) {
           <span role="presentation" class="status ${myStatus}"></span>
           <span class="nick">${localUser.nick}</span>
         </header>
-        ${users.filter(user => user.id !== localUser.id).map(({ nick, status } = {}) => (html`
+        ${users.filter(not(byId(localUser.id))).map(({ nick, status } = {}) => (html`
         <div class="user" style="${getUserStyleMap({ nick, status })}">
           <span aria-label="${status}" class="status ${classMap({ ...status && { [status.toLowerCase()]: true } })}"></span>
           ${nick}
@@ -114,6 +116,9 @@ class LeewayUserlist extends $Mixin(ApolloQuery) {
   }
 
   userJoined(prev, { subscriptionData: { data: { userJoined } } }) {
+    const { nick } = prev.users.find(byId(userJoined.id)) || {};
+    const detail = { ...userJoined, nick };
+    this.dispatchEvent(new CustomEvent('user-joined', { bubbles: true, composed: true, detail }));
     document.getElementById('snackbar').labelText = `${userJoined.nick} joined!`;
     document.getElementById('snackbar').show();
     return {
@@ -126,8 +131,9 @@ class LeewayUserlist extends $Mixin(ApolloQuery) {
   }
 
   userParted(prev, { subscriptionData: { data: { userParted } } }) {
-    document.getElementById('snackbar').labelText = `${prev.users.find(x => x.id === userParted.id).nick} left!`;
-    document.getElementById('snackbar').show();
+    const { nick } = prev.users.find(byId(userParted.id)) || {};
+    const detail = { ...userParted, nick };
+    this.dispatchEvent(new CustomEvent('user-parted', { bubbles: true, composed: true, detail }));
     return {
       ...prev,
       users: prev.users.map(user => ({
