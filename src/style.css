@@ -6,6 +6,10 @@
   font-display: block;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 :root {
   --primary-hue: 270;
   --header-padding: 14px;
@@ -78,8 +82,70 @@ body[menu-open] {
   grid-template-columns: 300px 1fr;
 }
 
+legend {
+  padding: 0;
+  display: table;
+}
+
+fieldset {
+  border: 0;
+  padding: 0.01em 0 0 0;
+  margin: 0;
+  min-width: 0;
+}
+
+body:not(:-moz-handler-blocked) fieldset {
+  display: table-cell;
+}
+
+details-dialog {
+  background: var(--on-purple);
+  border-radius: 10px;
+  display: block;
+  left: 50%;
+  margin: 10vh auto;
+  max-height: 80vh;
+  max-width: 90vw;
+  padding: 20px;
+  position: fixed;
+  top: 0;
+  transform: translateX(-50%);
+  width: 448px;
+  z-index: 999;
+}
+
+details-dialog button {
+  outline: none;
+  padding: none;
+  border: none;
+  background: none;
+}
+
+details-dialog mwc-button {
+  width: 100%;
+}
+
+header h2 {
+  font-size: 18px;
+  margin: 0;
+}
+
+header p {
+  margin: 4px 0 0 0;
+  font-weight: lighter;
+  font-size: 12px;
+}
+
+header p a {
+  display: contents;
+}
+
 a:visited {
   color: var(--visited);
+}
+
+header svg {
+  max-height: 24px;
 }
 
 #info-box {
@@ -94,6 +160,38 @@ a:visited {
   grid-template-areas:
     'button heading'
     'button paragraph';
+}
+
+[slot="links"] {
+  background: hsla(0 0% 0% / 0.5);
+  color: var(--on-purple);
+  list-style-type: none;
+  padding: 4px;
+  width: 60px;
+  height: calc(100% - 8px);
+  margin: 0;
+}
+
+[slot="links"] li {
+  border-radius: 5px;
+  margin: 8px;
+  overflow: hidden;
+}
+
+[slot="links"] li a {
+  display: flex;
+  height: 44px;
+  width: 44px;
+  box-sizing: border-box;
+}
+
+[slot="links"] li a:focus {
+  border: 2px solid var(--on-purple);
+}
+
+[slot="links"] img,
+[slot="links"] svg {
+  width: 100%;
 }
 
 #drawer-toggle {
@@ -124,52 +222,6 @@ a:visited {
   background-color: var(--focus);
 }
 
-header h2 {
-  font-size: 18px;
-  margin: 0;
-}
-
-header p {
-  margin: 4px 0 0 0;
-  font-weight: lighter;
-  font-size: 12px;
-}
-
-header > a {
-  display: contents;
-}
-
-header svg {
-  max-height: 24px;
-}
-
-[slot="links"] {
-  background: hsla(0 0% 0% / 0.5);
-  color: var(--on-purple);
-  list-style-type: none;
-  padding: 4px;
-  width: 60px;
-  height: calc(100% - 8px);
-  margin: 0;
-}
-
-[slot="links"] li {
-  border-radius: 5px;
-  margin: 8px;
-  overflow: hidden;
-}
-
-[slot="links"] li a {
-  display: flex;
-  height: 44px;
-  width: 44px;
-}
-
-[slot="links"] img,
-[slot="links"] svg {
-  width: 100%;
-}
-
 header a::before {
   content: "↪";
   font-size: 10px;
@@ -190,23 +242,71 @@ leeway-messages {
   position: relative;
 }
 
-leeway-input-fields {
+form#inputs {
   grid-area: input;
+  display: flex;
+  align-items: center;
+  margin: 0 12px 24px;
   box-sizing: border-box;
   overflow: hidden;
-  margin: 0 12px 24px;
+  opacity: 1;
+  transition: opacity 0.2s ease-in-out;
+}
+
+form#inputs.loading {
+  opacity: 0;
+}
+
+form#inputs fieldset {
+  display: contents;
+}
+
+form#inputs mwc-button {
+  width: 100%;
+  flex: 0 1 54px;
+}
+
+form#inputs #nick-show {
+  flex: 1;
+}
+
+#nick-dialog > section {
+  display: grid;
+}
+
+apollo-mutation {
+  display: contents;
+}
+
+#inputs input {
+  flex: 1;
+  height: 50px;
+  display: block;
+  padding-left: 12px;
+  box-sizing: border-box;
   border: 2px solid var(--border);
   border-radius: 8px;
+}
+
+#inputs input:focus {
+  border-color: #9a9a9a;
+  outline: none;
+}
+
+input#message-input {
+  flex: 1 1 auto;
+  background: var(--background);
+  color: var(--on-background);
+}
+
+#message-submit {
+  order: 2;
 }
 
 leeway-userlist {
   grid-area: userlist;
   background-color: var(--purple);
   height: 100vh;
-}
-
-leeway-status-notifier {
-  display: none;
 }
 
 #loader-wrapper {
@@ -254,33 +354,6 @@ leeway-status-notifier {
 @keyframes loading {
   from { background-position-x: -200%; }
   to { background-position-x: 200%; }
-}
-
-details-dialog {
-  background: var(--on-purple);
-  border-radius: 10px;
-  display: block;
-  left: 50%;
-  margin: 10vh auto;
-  max-height: 80vh;
-  max-width: 90vw;
-  padding: 20px;
-  position: fixed;
-  top: 0;
-  transform: translateX(-50%);
-  width: 448px;
-  z-index: 999;
-}
-
-details-dialog button {
-  outline: none;
-  padding: none;
-  border: none;
-  background: none;
-}
-
-details-dialog mwc-button {
-  width: 100%;
 }
 
 #update-dialog {

@@ -15,7 +15,7 @@ const cache = new InMemoryCache({
         localUser: {
           merge: true,
           read() {
-            const cached = localUserVar();
+            const cached = localUserVar() || {};
             const status = !navigator.onLine ? 'OFFLINE' : cached.status || 'ONLINE';
             return { ...cached, status };
           },
@@ -31,7 +31,7 @@ const cache = new InMemoryCache({
         status(prev, { readField }) {
           if (prev === 'PARTED') return prev;
           const id = readField('id');
-          if (id === localUserVar().id)
+          if (id === localUserVar() && localUserVar().id)
             return navigator.onLine ? 'ONLINE' : 'OFFLINE';
           const lastSeen = readField('lastSeen');
           const timeDelta = Math.abs(new Date() - new Date(lastSeen));

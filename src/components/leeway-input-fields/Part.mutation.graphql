@@ -1,3 +1,0 @@
-mutation Part($id: ID!) {
-  part(id: $id)
-}

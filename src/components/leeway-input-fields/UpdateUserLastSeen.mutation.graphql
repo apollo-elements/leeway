@@ -1,6 +1,0 @@
-mutation UpdateUserLastSeen($userId: ID!) {
-  updateUserLastSeen(userId: $userId) {
-    id
-    lastSeen
-  }
-}

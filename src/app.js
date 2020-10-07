@@ -5,62 +5,45 @@ window.exports = {};
 import '@power-elements/service-worker';
 import 'hy-drawer/src/webcomponent/module';
 
-const updateDialog =
-  document.getElementById('update-dialog');
+import 'wicg-inert';
 
-const drawer =
-  document.getElementById('drawer');
-
-const drawerToggle =
-  document.getElementById('drawer-toggle');
-
-const serviceWorker =
-  document.getElementById('service-worker');
-
-const snackbar =
-  document.getElementById('snackbar');
+import { $ } from './lib/$';
 
 const isWideScreen =
   window.matchMedia('(min-width: 500px)');
 
-async function onServiceWorkerChanged(event) {
-  if (event.detail.state !== 'installed') return;
-  await import('details-dialog-element');
-  updateDialog.removeAttribute('hidden');
-}
-
 function onMediaChange(event) {
-  drawer.persistent = event.matches;
-  drawer.opened = event.matches;
+  $('#drawer').persistent = event.matches;
+  $('#drawer').opened = event.matches;
 }
 
 function onDrawerToggle() {
   if (!isWideScreen.matches)
     return;
-  else if (drawer.opened)
+  else if ($('#drawer').opened)
     document.body.setAttribute('menu-open', '');
   else
     document.body.removeAttribute('menu-open', '');
 }
 
 function onClickDrawerToggle() {
-  drawer.toggle();
+  $('#drawer').toggle();
   onDrawerToggle();
 }
 
 function onUserParted(event) {
-  snackbar.labelText = `${event.detail.nick} left!`;
-  snackbar.show();
+  $('#snackbar').labelText = `${event.detail.nick} left!`;
+  $('#snackbar').show();
 }
 
 function onUserJoined(event) {
-  snackbar.labelText = `${event.detail.nick} joined!`;
-  snackbar.show();
+  $('#snackbar').labelText = `${event.detail.nick} joined!`;
+  $('#snackbar').show();
 }
 
 function onMutationError(event) {
-  snackbar.labelText = event.detail.error && event.detail.error.message || `Unknown Error in ${event.detail.element.tagName.toLowerCase()}`;
-  snackbar.show();
+  $('#snackbar').labelText = event.detail.error && event.detail.error.message || `Unknown Error in ${event.detail.element.tagName.toLowerCase()}`;
+  $('#snackbar').show();
 }
 
 async function resolveBody() {
@@ -71,26 +54,34 @@ async function resolveBody() {
   await import('./components');
 
   await Promise.all([
-    customElements.whenDefined('leeway-input-fields'),
+    customElements.whenDefined('apollo-mutation'),
+    customElements.whenDefined('apollo-query'),
     customElements.whenDefined('leeway-messages'),
-    customElements.whenDefined('leeway-usrlist'),
+    customElements.whenDefined('leeway-userlist'),
     customElements.whenDefined('hy-drawer'),
   ]);
 
+  await import('./modules');
+
+  $('#nick-show').focus();
+  $('#inputs').classList.remove('loading');
   document.body.removeAttribute('unresolved');
 }
 
-isWideScreen.addEventListener('change', onMediaChange);
+isWideScreen
+  .addEventListener('change', onMediaChange);
 
-drawerToggle.addEventListener('click', onClickDrawerToggle);
+document
+  .addEventListener('user-parted', onUserParted);
 
-serviceWorker.addEventListener('change', onServiceWorkerChanged);
+document
+  .addEventListener('user-joined', onUserJoined);
 
-document.addEventListener('user-parted', onUserParted);
+document
+  .addEventListener('mutation-error', onMutationError);
 
-document.addEventListener('user-joined', onUserJoined);
-
-document.addEventListener('mutation-error', onMutationError);
+$('#drawer-toggle')
+  .addEventListener('click', onClickDrawerToggle);
 
 onMediaChange(isWideScreen);
 

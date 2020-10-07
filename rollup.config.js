@@ -20,6 +20,7 @@ function onwarn(warning, warn) {
 }
 
 const isProduction = arg => arg.includes('production');
+
 const {
   PRODUCTION =
   process.env.NODE_ENV === 'production' ||
@@ -27,7 +28,11 @@ const {
   process.argv.some(isProduction),
 } = process.env;
 
+const WATCH = process.argv.includes('-w') || process.argv.includes('--watch');
+
 console.log('Production?', PRODUCTION);
+
+console.log('Watch mode?', WATCH);
 
 export default {
   onwarn,
@@ -35,14 +40,14 @@ export default {
   treeshake: !!PRODUCTION,
   input: 'src/app.js',
   output: [{
-    dir: 'build/module',
+    dir: 'build',
     format: 'es',
     sourcemap: true,
-  }, {
+  }, WATCH ? null : {
     dir: 'build/system',
     format: 'system',
     sourcemap: true,
-  }],
+  }].filter(Boolean),
 
   plugins: [
 
@@ -90,11 +95,11 @@ export default {
       ],
     }),
 
-    generateSW(require('./workbox-config')),
+    WATCH ? null : generateSW(require('./workbox-config')),
 
     modulepreload({ index: 'build/index.html', prefix: 'module' }),
 
-    license({
+    WATCH ? null : license({
       thirdParty: {
         includePrivate: true,
         output: {
@@ -103,7 +108,7 @@ export default {
       },
     }),
 
-    ...(PRODUCTION ? [
+    ...(PRODUCTION && !WATCH ? [
 
       minifyHTML({
         failOnError: true,
@@ -124,9 +129,9 @@ export default {
 
     ] : [
 
-      visualizer({ sourcemap: true }),
+     WATCH ? null : visualizer({ sourcemap: true }),
 
-      notify(),
+     WATCH ? null : notify(),
 
     ]),
 
