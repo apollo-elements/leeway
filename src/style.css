@@ -42,7 +42,7 @@
     --focus: lightskyblue;
     --scrim: 0 0% 100%;
     --border: black;
-    --background: #222;
+    --background: #111;
     --on-background: white;
     --visited: lightcoral;
     --link: var(--focus);
@@ -80,6 +80,10 @@ body {
 
 body[menu-open] {
   grid-template-columns: 300px 1fr;
+}
+
+main {
+  display: contents;
 }
 
 legend {
@@ -125,7 +129,7 @@ details-dialog mwc-button {
   width: 100%;
 }
 
-header h2 {
+header h1 {
   font-size: 18px;
   margin: 0;
 }
@@ -134,6 +138,10 @@ header p {
   margin: 4px 0 0 0;
   font-weight: lighter;
   font-size: 12px;
+}
+
+a {
+  color: var(--focus);
 }
 
 header p a {
@@ -305,7 +313,7 @@ input#message-input {
 
 leeway-userlist {
   grid-area: userlist;
-  background-color: var(--purple);
+  background: var(--purple);
   height: 100vh;
 }
 

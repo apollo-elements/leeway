@@ -44,7 +44,7 @@
           <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
         </svg>
       </button>
-      <h2>#leeway</h2>
+      <h1>#leeway</h1>
       <p>⭐️ | 👨‍🚀 | A wee chat app using <a href="https://npmjs.com/package/@apollo-elements/lit-apollo"><code>@apollo-elements/lit-apollo</code></a> and GraphQL subscriptions.</p>
       <details id="update-dialog" hidden>
         <summary onfocus="this.firstElementChild.focus()">
@@ -58,7 +58,7 @@
       </details>
     </header>
 
-    <hy-drawer id="drawer" touch-events>
+    <hy-drawer id="drawer" touch-events role="complementary">
       <leeway-userlist>
         <script type="application/graphql">
           query Users {
@@ -125,130 +125,133 @@
       </leeway-userlist>
     </hy-drawer>
 
-    <leeway-messages>
-      <script type="application/graphql">
-        query Messages {
+    <main>
 
-          localUser @client {
-            id
-            nick
-            status
+      <leeway-messages tabindex="0">
+        <script type="application/graphql">
+          query Messages {
+
+            localUser @client {
+              id
+              nick
+              status
+            }
+
+            messages {
+              date
+              message
+              userId
+              nick
+            }
+
+            users {
+              id
+              nick
+              status
+              lastSeen
+            }
           }
+        </script>
 
-          messages {
-            date
-            message
-            userId
-            nick
-          }
-
-          users {
-            id
-            nick
-            status
-            lastSeen
-          }
-        }
-      </script>
-
-      <div id="loader-wrapper">
-        <div id="loader-animation">
-          <svg viewBox="0 0 336 448" xmlns="http://www.w3.org/2000/svg">
-            <path d="M5 0a5 5 0 0 0-5 5V0h5zm30 0h301v365a3 3 0 0 0-3-3H49a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h284a3 3 0 0 0 3-3v73H35a5 5 0 0 0 5-5v-30a5 5 0 0 0-5-5H5a5 5 0 0 0-5 5v-38a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5v-30a5 5 0 0 0-5-5H5a5 5 0 0 0-5 5v-38a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5v-30a5 5 0 0 0-5-5H5a5 5 0 0 0-5 5v-38a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5v-30a5 5 0 0 0-5-5H5a5 5 0 0 0-5 5v-38a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5v-30a5 5 0 0 0-5-5H5a5 5 0 0 0-5 5v-38a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5V73a5 5 0 0 0-5-5H5a5 5 0 0 0-5 5V35a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5V5a5 5 0 0 0-5-5zM5 448H0v-5a5 5 0 0 0 5 5zM49 3a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h83a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3H49zm92 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3h-98zM49 22a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h130a3 3 0 0 0 3-3V25a3 3 0 0 0-3-3H49zm0 49a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h67a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3H49zm76 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-98zM49 90a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h31a3 3 0 0 0 3-3V93a3 3 0 0 0-3-3H49zm0 49a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h91a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3H49zm100 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-98zM49 158a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h171a3 3 0 0 0 3-3v-10a3 3 0 0 0-3-3H49zm0 49a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h66a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3H49zm75 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-98zm-75 17a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h95a3 3 0 0 0 3-3v-10a3 3 0 0 0-3-3H49zm0 49a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h83a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3H49zm92 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-98zm-92 17a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h67a3 3 0 0 0 3-3v-10a3 3 0 0 0-3-3H49zm0 49a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h48a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3H49zm57 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-98zm-57 66a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h83a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3H49zm92 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-98zm-92 17a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h83a3 3 0 0 0 3-3v-10a3 3 0 0 0-3-3H49z"/>
-          </svg>
+        <div id="loader-wrapper">
+          <div id="loader-animation">
+            <svg viewBox="0 0 336 448" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5 0a5 5 0 0 0-5 5V0h5zm30 0h301v365a3 3 0 0 0-3-3H49a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h284a3 3 0 0 0 3-3v73H35a5 5 0 0 0 5-5v-30a5 5 0 0 0-5-5H5a5 5 0 0 0-5 5v-38a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5v-30a5 5 0 0 0-5-5H5a5 5 0 0 0-5 5v-38a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5v-30a5 5 0 0 0-5-5H5a5 5 0 0 0-5 5v-38a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5v-30a5 5 0 0 0-5-5H5a5 5 0 0 0-5 5v-38a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5v-30a5 5 0 0 0-5-5H5a5 5 0 0 0-5 5v-38a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5V73a5 5 0 0 0-5-5H5a5 5 0 0 0-5 5V35a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5V5a5 5 0 0 0-5-5zM5 448H0v-5a5 5 0 0 0 5 5zM49 3a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h83a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3H49zm92 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3h-98zM49 22a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h130a3 3 0 0 0 3-3V25a3 3 0 0 0-3-3H49zm0 49a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h67a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3H49zm76 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-98zM49 90a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h31a3 3 0 0 0 3-3V93a3 3 0 0 0-3-3H49zm0 49a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h91a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3H49zm100 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-98zM49 158a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h171a3 3 0 0 0 3-3v-10a3 3 0 0 0-3-3H49zm0 49a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h66a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3H49zm75 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-98zm-75 17a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h95a3 3 0 0 0 3-3v-10a3 3 0 0 0-3-3H49zm0 49a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h83a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3H49zm92 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-98zm-92 17a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h67a3 3 0 0 0 3-3v-10a3 3 0 0 0-3-3H49zm0 49a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h48a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3H49zm57 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-98zm-57 66a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h83a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3H49zm92 2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h98a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-98zm-92 17a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h83a3 3 0 0 0 3-3v-10a3 3 0 0 0-3-3H49z"/>
+            </svg>
+          </div>
         </div>
-      </div>
-    </leeway-messages>
+      </leeway-messages>
 
-    <apollo-query id="local-user-query">
-      <script type="application/graphql">
-        query LocalUser {
-          localUser @client {
-            id
-            nick
-            status
+      <apollo-query id="local-user-query">
+        <script type="application/graphql">
+          query LocalUser {
+            localUser @client {
+              id
+              nick
+              status
+            }
           }
-        }
-      </script>
-    </apollo-query>
+        </script>
+      </apollo-query>
 
-    <form id="inputs" class="loading">
-      <fieldset id="nick-inputs">
-        <mwc-button id="nick-show" label="Join"></mwc-button>
-        <mwc-dialog id="nick-dialog" heading="Join">
-          <section>
-            <label for="nick-input">Enter your Nickname</label>
-            <apollo-mutation id="nick-mutation">
-              <input id="nick-input" slot="variable" data-variable="nick"/>
-              <script type="application/graphql">
-                mutation Join($nick: String!) {
-                  join(nick: $nick) {
-                    id
-                    nick
-                    status
-                    lastSeen
+      <form id="inputs" class="loading">
+        <fieldset id="nick-inputs">
+          <mwc-button id="nick-show" label="Join"></mwc-button>
+          <mwc-dialog id="nick-dialog" heading="Join">
+            <section>
+              <label for="nick-input">Enter your Nickname</label>
+              <apollo-mutation id="nick-mutation">
+                <input id="nick-input" slot="variable" data-variable="nick"/>
+                <script type="application/graphql">
+                  mutation Join($nick: String!) {
+                    join(nick: $nick) {
+                      id
+                      nick
+                      status
+                      lastSeen
+                    }
                   }
+                </script>
+              </apollo-mutation>
+            </section>
+
+            <mwc-button id="nick-submit" slot="primaryAction" label="OK"></mwc-button>
+          </mwc-dialog>
+        </fieldset>
+
+        <fieldset id="message-inputs" inert>
+          <mwc-button id="message-submit" icon="send">Send</mwc-button>
+
+          <apollo-mutation id="message-mutation">
+            <input id="user-id-input" slot="variable" data-variable="userId" hidden disabled/>
+            <input id="message-input" slot="variable" data-variable="message"
+                aria-label="Enter your message"
+                placeholder="Message the Channel"/>
+            <script type="application/graphql">
+              mutation sendMessage($userId: ID!, $message: String!) {
+                sendMessage(userId: $userId, message: $message) {
+                  date
+                  message
+                  userId
                 }
-              </script>
-            </apollo-mutation>
-          </section>
-
-          <mwc-button id="nick-submit" slot="primaryAction" label="OK"></mwc-button>
-        </mwc-dialog>
-      </fieldset>
-
-      <fieldset id="message-inputs" inert>
-        <mwc-button id="message-submit" icon="send">Send</mwc-button>
-
-        <apollo-mutation id="message-mutation">
-          <input id="user-id-input" slot="variable" data-variable="userId" hidden disabled/>
-          <input id="message-input" slot="variable" data-variable="message"
-              aria-label="Enter your message"
-              placeholder="Message the Channel"/>
-          <script type="application/graphql">
-            mutation sendMessage($userId: ID!, $message: String!) {
-              sendMessage(userId: $userId, message: $message) {
-                date
-                message
-                userId
               }
-            }
-          </script>
-        </apollo-mutation>
+            </script>
+          </apollo-mutation>
 
-        <apollo-mutation id="ping-mutation">
-          <script type="application/graphql">
-            mutation UpdateUserLastSeen($userId: ID!) {
-              updateUserLastSeen(userId: $userId) {
-                id
-                lastSeen
+          <apollo-mutation id="ping-mutation">
+            <script type="application/graphql">
+              mutation UpdateUserLastSeen($userId: ID!) {
+                updateUserLastSeen(userId: $userId) {
+                  id
+                  lastSeen
+                }
               }
-            }
-          </script>
-        </apollo-mutation>
+            </script>
+          </apollo-mutation>
 
-        <apollo-mutation id="part-mutation">
-          <script type="application/graphql">
-            mutation Part($id: ID!) {
-              part(id: $id)
-            }
-          </script>
-        </apollo-mutation>
-
-        <apollo-mutation id="change-nick-mutation">
-          <script type="application/graphql">
-            mutation ChangeNickname($id: ID!, $nick: String!) {
-              changeNickname(id: $id, nick: $nick) {
-                id
-                nick
-                lastSeen
+          <apollo-mutation id="part-mutation">
+            <script type="application/graphql">
+              mutation Part($id: ID!) {
+                part(id: $id)
               }
-            }
-          </script>
-        </apollo-mutation>
-      </fieldset>
-    </form>
+            </script>
+          </apollo-mutation>
 
+          <apollo-mutation id="change-nick-mutation">
+            <script type="application/graphql">
+              mutation ChangeNickname($id: ID!, $nick: String!) {
+                changeNickname(id: $id, nick: $nick) {
+                  id
+                  nick
+                  lastSeen
+                }
+              }
+            </script>
+          </apollo-mutation>
+        </fieldset>
+      </form>
+
+    </main>
     <mwc-snackbar id="snackbar"></mwc-snackbar>
 
     <script src="/assets/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>

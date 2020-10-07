@@ -95,7 +95,20 @@ export default {
       ],
     }),
 
-    WATCH ? null : generateSW(require('./workbox-config')),
+    WATCH ? generateSW({
+      swDest: 'build/sw.js',
+      globPatterns: ['nothing'],
+      globDirectory: 'build',
+      globIgnores: ['**/*'],
+      runtimeCaching: [
+        {
+          // You can use a RegExp as the pattern:
+          urlPattern: '*',
+          handler: 'NetworkOnly',
+        },
+      ],
+    })
+      : generateSW(require('./workbox-config')),
 
     modulepreload({ index: 'build/index.html', prefix: 'module' }),
 
