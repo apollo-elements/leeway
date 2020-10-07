@@ -1,6 +1,5 @@
 import { ApolloQuery, html } from '@apollo-elements/lit-apollo';
 import { classMap } from 'lit-html/directives/class-map';
-import { $Mixin } from '../../lib/$-mixin';
 
 import '@material/mwc-snackbar';
 
@@ -72,7 +71,7 @@ const onStatusUpdated = (prev, { subscriptionData: { data: { userStatusUpdated }
  * @customElement
  * @extends {ApolloQuery<LeewayUserlistQueryData, null}
  */
-class LeewayUserlist extends $Mixin(ApolloQuery) {
+class LeewayUserlist extends ApolloQuery {
   static get styles() {
     return [shared, style];
   }

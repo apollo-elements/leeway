@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
   <head>
+    <meta charset="utf-8">
     <title>Leeway: Chat over GraphQL</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤷‍♂️</text></svg>"></link>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤷‍♂️</text></svg>">
 
     <link rel="preconnect" href="https://fonts.gstatic.com/">
     <link rel="preconnect" href="https://fonts.googleapis.com/">
@@ -14,7 +15,6 @@
     <link rel="preload" as="style" href="/style.css">
 
     <meta name="Description" content="A wee chat app using web components and GraphQL subscriptions. #UseThePlatform">
-    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#663399">
     <meta name="twitter:card" content="summary">
@@ -31,12 +31,11 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&family=Ubuntu:wght@300;400;700&display=swap">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="stylesheet" href="/style.css">
-
-    <script src="/assets/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
   </head>
 
   <body unresolved>
     <service-worker id="service-worker" path="/sw.js" auto-reload></service-worker>
+
     <header id="info-box">
       <button id="drawer-toggle">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -161,7 +160,7 @@
       </div>
     </leeway-messages>
 
-    <leeway-input-fields>
+    <apollo-query id="local-user-query">
       <script type="application/graphql">
         query LocalUser {
           localUser @client {
@@ -171,42 +170,91 @@
           }
         }
       </script>
+    </apollo-query>
 
-      <leeway-nick-input slot="nick-input">
-        <script type="application/graphql">
-          mutation Join($nick: String!) {
-            join(nick: $nick) {
-              id
-              nick
-              status
-              lastSeen
-            }
-          }
-        </script>
-      </leeway-nick-input>
+    <form id="inputs" class="loading">
+      <fieldset id="nick-inputs">
+        <mwc-button id="nick-show" label="Join"></mwc-button>
+        <mwc-dialog id="nick-dialog" heading="Join">
+          <section>
+            <label for="nick-input">Enter your Nickname</label>
+            <apollo-mutation id="nick-mutation">
+              <input id="nick-input" slot="variable" data-variable="nick"/>
+              <script type="application/graphql">
+                mutation Join($nick: String!) {
+                  join(nick: $nick) {
+                    id
+                    nick
+                    status
+                    lastSeen
+                  }
+                }
+              </script>
+            </apollo-mutation>
+          </section>
 
-      <leeway-chat-input slot="chat-input">
-        <script type="application/graphql">
-          mutation sendMessage($userId: ID!, $message: String!) {
-            sendMessage(userId: $userId, message: $message) {
-              date
-              message
-              userId
+          <mwc-button id="nick-submit" slot="primaryAction" label="OK"></mwc-button>
+        </mwc-dialog>
+      </fieldset>
+
+      <fieldset id="message-inputs" inert>
+        <mwc-button id="message-submit" icon="send">Send</mwc-button>
+
+        <apollo-mutation id="message-mutation">
+          <input id="user-id-input" slot="variable" data-variable="userId" hidden disabled/>
+          <input id="message-input" slot="variable" data-variable="message"
+              aria-label="Enter your message"
+              placeholder="Message the Channel"/>
+          <script type="application/graphql">
+            mutation sendMessage($userId: ID!, $message: String!) {
+              sendMessage(userId: $userId, message: $message) {
+                date
+                message
+                userId
+              }
             }
-          }
-        </script>
-      </leeway-chat-input>
-    </leeway-input-fields>
+          </script>
+        </apollo-mutation>
+
+        <apollo-mutation id="ping-mutation">
+          <script type="application/graphql">
+            mutation UpdateUserLastSeen($userId: ID!) {
+              updateUserLastSeen(userId: $userId) {
+                id
+                lastSeen
+              }
+            }
+          </script>
+        </apollo-mutation>
+
+        <apollo-mutation id="part-mutation">
+          <script type="application/graphql">
+            mutation Part($id: ID!) {
+              part(id: $id)
+            }
+          </script>
+        </apollo-mutation>
+
+        <apollo-mutation id="change-nick-mutation">
+          <script type="application/graphql">
+            mutation ChangeNickname($id: ID!, $nick: String!) {
+              changeNickname(id: $id, nick: $nick) {
+                id
+                nick
+                lastSeen
+              }
+            }
+          </script>
+        </apollo-mutation>
+      </fieldset>
+    </form>
 
     <mwc-snackbar id="snackbar"></mwc-snackbar>
 
-    <script>
-      import('/module/app.js');
-      window.supportsDynamicImport = true;
-    </script>
+    <script src="/assets/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
 
     <script>
-      if (!window.supportsDynamicImport) {
+      window.loadSystemScripts = function loadSystemScripts() {
         const s = document.createElement('script');
         s.src = '/assets/systemjs/dist/s.min.js';
         const a = document.createElement('script');
@@ -214,7 +262,27 @@
         a.onload = () => System.import('./system/app.js');
         document.head.appendChild(s);
         document.head.appendChild(a);
+      };
+    </script>
+
+    <script nomodule>
+      // for nomodule browsers, just load systemjs
+      window.loadSystemScripts();
+      window.isNomoduleBrowser = true;
+    </script>
+
+    <script>
+      if (!window.isNomoduleBrowser) {
+        import('/app.js');
+        window.supportsDynamicImport = true;
       }
     </script>
+
+    <script>
+      // if the previous script fails to parse, load the systemjs bundle
+      if (!window.supportsDynamicImport && !window.isNomoduleBrowser)
+        window.loadSystemScripts();
+    </script>
+
   </body>
 </html>

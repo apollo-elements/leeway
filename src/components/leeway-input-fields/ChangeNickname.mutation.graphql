@@ -1,7 +1,0 @@
-mutation ChangeNickname($id: ID!, $nick: String!) {
-  changeNickname(id: $id, nick: $nick) {
-    id
-    nick
-    lastSeen
-  }
-}

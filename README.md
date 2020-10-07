@@ -1,5 +1,7 @@
 [`#leeway`](https://leeway.apolloelements.dev) is an example chat PWA that uses `lit-apollo` to make it easier for you to avoid doing actual work. [Source Repository](https://github.com/apollo-elements/leeway)
 
+This repo demonstrates how to build an app using Apollo Elements with minimal use of JavaScript and Shadow DOM. There are many ways to build an app with web components, for a more traditional component-oriented approach with stronger encapsulation, see [launchctl](https://github.com/apollo-elements/launchctl).
+
 ## Features
 - Page loads offline via Service Worker
 - <abbr title="server side rendering">SSR</abbr> for initial data payload via Apollo Server

@@ -54,11 +54,13 @@ async function ssr(file, client) {
   const dom =
     await JSDOM.fromFile(file);
 
+  const { window: { document } } = dom;
+
   const script =
-    dom.window.document.createElement('script');
+    document.createElement('script');
 
   const queryText =
-    dom.window.document.querySelector('leeway-messages').firstElementChild.innerHTML;
+    document.querySelector('leeway-messages').firstElementChild.innerHTML;
 
   // Turns out we don't need to do this :shrug:
   // but i'm keeping the comment here because it's kind of a cool regexp
@@ -76,7 +78,7 @@ async function ssr(file, client) {
     window.__APOLLO_STATE__ = JSON.parse('${JSON.stringify(client.extract())}')
   `;
 
-  dom.window.document.head.append(script);
+  document.body.insertBefore(script, document.getElementById('snackbar').nextElementSibling);
 
   return dom.serialize();
 }
@@ -100,15 +102,16 @@ app.use(express.static('build', {
 
 server.applyMiddleware({ app, path: '/graphql' });
 
+const port = process.env.PORT || 4000;
 const httpServer = app.listen({
-  port: process.env.PORT || 4000,
+  port,
   cors: {
     origin: '*',
     credentials: true,
   },
 }, () => {
-  console.log(`🤘 Server listening at ${server.graphqlPath}`);
-  console.log(`🗞 Subscriptions ready at ${server.subscriptionsPath}`);
+  console.log(`🤘 Server listening at ${server.graphqlPath} on ${port}`);
+  console.log(`🗞 Subscriptions ready at ${server.subscriptionsPath} on ${port}`);
 });
 
 server.installSubscriptionHandlers(httpServer);
