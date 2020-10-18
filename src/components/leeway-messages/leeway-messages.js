@@ -4,6 +4,7 @@ import { classMap } from 'lit-html/directives/class-map';
 import relativeDate from 'tiny-relative-date';
 
 import { getUserStyleMap } from '../../lib/user-style-map';
+import { errorTemplate } from '../../lib/error-template';
 
 import shared from '../shared-styles.css';
 import style from './leeway-messages.css';
@@ -72,19 +73,16 @@ class LeewayMessages extends ApolloQuery {
   }
 
   render() {
-    const { data, error } = this;
+    const { data } = this;
     const messages = data && data.users && data.messages || [];
     return html`
-      <aside id="error" ?hidden="${!error}">
-        <h1 >😢 Such Sad, Very Error! 😰</h1>
-        <pre>${error && error.message || 'Unknown Error'}</pre>
-      </aside>
+      ${errorTemplate(this.error)}
       <ol>
       ${messages.map(msg => {
         const { message, userId, nick: original, date } = msg;
         const messageUser = data.users.find(user => user.id === userId);
         const nick = messageUser.nick || original;
-        const me = messageUser.userId === this.data.localUser.id;
+        const me = messageUser.userId === data.localUser.id;
         return html`
           <li data-initial="${nick.substring(0, 1).toUpperCase()}"
               class="user ${classMap({ me })}"

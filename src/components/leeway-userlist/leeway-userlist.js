@@ -6,6 +6,8 @@ import '@material/mwc-snackbar';
 import { not } from '../../lib/logic';
 import { byId } from '../../lib/by-id';
 import { getUserStyleMap } from '../../lib/user-style-map';
+import { errorTemplate } from '../../lib/error-template';
+
 import UserLastSeenUpdatedSubscription from '../../UserLastSeenUpdated.subscription.graphql';
 import UserStatusUpdatedSubscription from '../../UserStatusUpdated.subscription.graphql';
 import userPartedSubscription from '../../user-parted-subscription.graphql';
@@ -81,11 +83,7 @@ class LeewayUserlist extends ApolloQuery {
     const localUser = this.data && this.data.localUser || { nick: '', status: 'OFFLINE', id: '' };
     const myStatus = localUser.status.toLowerCase();
     return (html`
-      <aside id="error" ?hidden="${!this.error}">
-        <h1>😢 Such Sad, Very Error! 😰</h1>
-        <pre>${this.error && this.error.message || 'Unknown Error'}</pre>
-      </aside>
-
+      ${errorTemplate(this.error)}
       <section id="links"><slot name="links"></slot></section>
       <section id="users">
         <header style="${getUserStyleMap(localUser)}" class="${classMap({ invisible: !localUser.id })}">

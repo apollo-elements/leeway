@@ -1,4 +1,5 @@
 {
-  "extends": "@pwrs",
-  "parser": "@typescript-eslint/parser"
+  "extends": ["@pwrs", "plugin:lit-a11y/recommended"],
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["lit-a11y"]
 }
