@@ -18,7 +18,7 @@ function onNickMutationCompleted() {
   $('#message-input').focus();
 }
 
-function onNickSubmit(event) {
+function onNickSubmit() {
   if ($('#nick-input').value)
     $('#nick-mutation').mutate();
 }

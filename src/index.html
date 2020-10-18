@@ -256,21 +256,14 @@
 
     <script src="/assets/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
 
-    <script>
-      window.loadSystemScripts = function loadSystemScripts() {
-        const s = document.createElement('script');
-        s.src = '/assets/systemjs/dist/s.min.js';
-        const a = document.createElement('script');
-        a.src = '/system/app.js';
-        a.onload = () => System.import('./system/app.js');
-        document.head.appendChild(s);
-        document.head.appendChild(a);
-      };
-    </script>
+    <template id="system-scripts">
+      <script src="/assets/systemjs/dist/s.min.js"></script>
+      <script src="/system/app.js" onload="System.import('./system/app.js')"></script>
+    </template>
 
     <script nomodule>
       // for nomodule browsers, just load systemjs
-      window.loadSystemScripts();
+      document.head.appendChild(document.getElementById('system-scripts').content.cloneNode(true));
       window.isNomoduleBrowser = true;
     </script>
 
@@ -284,7 +277,7 @@
     <script>
       // if the previous script fails to parse, load the systemjs bundle
       if (!window.supportsDynamicImport && !window.isNomoduleBrowser)
-        window.loadSystemScripts();
+        document.head.appendChild(document.getElementById('system-scripts').content.cloneNode(true));
     </script>
 
   </body>
