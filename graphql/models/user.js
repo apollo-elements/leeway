@@ -1,27 +1,27 @@
-import map from 'crocks/pointfree/map';
+import map from 'crocks/pointfree/map.js';
 
-import { ONLINE, PARTED, USERS } from '../constants';
-import { redis } from './redis';
+import * as C from '../constants.js';
+import { redis } from './redis.js';
 
 export const getUser = id =>
-  redis.hget(USERS, id).then(JSON.parse);
+  redis.hget(C.USERS, id).then(JSON.parse);
 
 export const changeNickname = (id, nick) =>
-  redis.hset(USERS, id, JSON.stringify({ nick, id, status: ONLINE }));
+  redis.hset(C.USERS, id, JSON.stringify({ nick, id, status: C.ONLINE }));
 
 export const create = user =>
-  redis.hmset(USERS, user.id, JSON.stringify(user));
+  redis.hmset(C.USERS, user.id, JSON.stringify(user));
 
 export const getUsers = () =>
-  redis.hgetall(USERS)
+  redis.hgetall(C.USERS)
     .then(Object.values)
     .then(map(JSON.parse));
 
 export const deleteUser = async id =>
-  redis.hmset(USERS, id, JSON.stringify({
+  redis.hmset(C.USERS, id, JSON.stringify({
     ...(await getUser(id)),
-    status: PARTED,
+    status: C.PARTED,
   }));
 
 export const update = (id, user) =>
-  redis.hmset(USERS, id, JSON.stringify(user));
+  redis.hmset(C.USERS, id, JSON.stringify(user));

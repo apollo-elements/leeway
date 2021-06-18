@@ -4,26 +4,30 @@ import compression from 'compression';
 import express from 'express';
 import path from 'path';
 
-import { JSDOM } from 'jsdom';
+import { createRequire } from 'module';
 import { HTTPS } from 'express-sslify';
-import { ApolloClient, InMemoryCache } from '@apollo/client/core';
-import { SchemaLink } from '@apollo/client/link/schema';
+
+import { parse } from 'parse5';
+import { append, createNode, createTextNode, serialize } from 'parse5-utils';
+
 import { ApolloServer, PubSub, gql } from 'apollo-server-express';
 import { readFileSync } from 'fs';
 
-import * as Subscription from './subscriptions';
-import * as Query from './queries';
-import * as Mutation from './mutations';
+import * as Resolvers from './resolvers/index.js';
 import * as user from './models/user.js';
 import * as message from './models/message.js';
 
+const require = createRequire(import.meta.url);
+const { ApolloClient, InMemoryCache } = require('@apollo/client/core');
+const { SchemaLink } = require('@apollo/client/link/schema');
+
 const pubsub = new PubSub();
 
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const typeDefs = gql(readFileSync(`${__dirname}/schema.graphql`, 'utf8'));
 
 const context = { pubsub, message, user };
-const resolvers = { Mutation, Query, Subscription };
-const server = new ApolloServer({ context, resolvers, typeDefs });
+const server = new ApolloServer({ context, resolvers: { ...Resolvers }, typeDefs });
 
 // const port = process.env.PORT || 8000;
 // const url = process.env.URL || `http://localhost:${port}`;
@@ -50,48 +54,51 @@ if (process.env.NODE_ENV === 'production') {
   app.use(compression({ threshold: 0 }));
 }
 
-async function ssr(file, client) {
-  const dom =
-    await JSDOM.fromFile(file);
+const queryText = readFileSync(path.join(__dirname, '../src/Messages.query.graphql'), 'utf-8');
 
-  const { window: { document } } = dom;
+const query = gql(queryText);
 
-  const script =
-    document.createElement('script');
+const isTag = tag => x => x?.tagName === tag;
 
-  const queryText =
-    document.querySelector('leeway-messages').firstElementChild.innerHTML;
+async function ssr() {
+  const cache = new InMemoryCache();
+  const link = new SchemaLink({ schema: server.schema, context });
+  const client = new ApolloClient({ cache, link, ssrMode: true });
+  await client.query({ query });
 
-  // Turns out we don't need to do this :shrug:
-  // but i'm keeping the comment here because it's kind of a cool regexp
-  // that {([&}]+)} matches "any inner brace"
-  // I suppose it will fail if you have nested braces.
-  // const CLIENT_FIELD_REGEXP =
-  //   /(\s+\w+ @client {([^}]+)})|(\s+\w+ @client)/gs;
-
-  await client.query({ query: gql(queryText) });
+  const html = readFileSync(path.join(__dirname, '../build/index.html'), 'utf-8');
 
   // NB: it's faster for the browser to `JSON.parse` than it would be to parse a POJO,
   // since JSON is a restricted syntax
   // see https://v8.dev/blog/cost-of-javascript-2019#json
-  script.innerHTML = `
-    window.__APOLLO_STATE__ = JSON.parse('${JSON.stringify(client.extract())}')
-  `;
+  const content = createTextNode(`
+    // so embarassing: graphql/jsutils/instanceOf.mjs:16
+    globalThis.process ??= { env: { PRODUCTION: true } };
+    globalThis.exports = {};
+    window.__APOLLO_STATE__ = JSON.parse('${JSON.stringify(client.extract())}');
+  `);
 
-  document.body.insertBefore(script, document.getElementById('snackbar').nextElementSibling);
+  const script = createNode('script');
 
-  return dom.serialize();
+  append(script, content);
+
+  const ast = parse(html);
+
+  const body = ast.childNodes.find(isTag('html')).childNodes.find(isTag('body'));
+
+  append(body, script);
+
+  return serialize(ast);
 }
 
-app.get(/^(?!.*(\.)|(graphi?ql).*)/, async function sendSPA(req, res) {
-  const cache = new InMemoryCache();
-  const link = new SchemaLink({ schema: server.schema, context });
-  const client = new ApolloClient({ cache, link, ssrMode: true });
-  const cacheHeaders = shouldCache(req.path) ? shortHeaders : longHeaders;
-  const index = path.resolve('build', 'index.html');
-  const body = await ssr(index, client);
-  res.set('Cache-Control', cacheHeaders);
-  res.send(body);
+app.get(/^\/(?!.*(\.)|(graphi?ql).*)/, async function sendSPA(req, res) {
+  res.set('Cache-Control', shouldCache(req.path) ? shortHeaders : longHeaders);
+  res.send(await ssr());
+});
+
+app.get('/*.graphql', (req, res, next) => {
+  res.set({ 'Content-Type': 'text/plain' });
+  next();
 });
 
 app.use(express.static('build', {

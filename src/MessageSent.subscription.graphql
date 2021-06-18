@@ -2,7 +2,9 @@ subscription MessageSentSubscription {
   messageSent {
     date
     message
-    userId
-    nick
+    user {
+      id
+      nick
+    }
   }
 }

@@ -1,6 +1,7 @@
 subscription UserPartedSubscription {
   userParted {
     id
+    nick
     status
   }
 }

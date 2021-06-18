@@ -1,16 +1,16 @@
-import map from 'crocks/pointfree/map';
+import map from 'crocks/pointfree/map.js';
 
-import { MESSAGES } from '../constants';
-import { getTime } from '../lib';
-import { redis } from './redis';
+import * as C from '../constants.js';
+import { getTime } from '../lib.js';
+import { redis } from './redis.js';
 
 export const addMessage = ({ userId, message, date }) =>
   redis.zadd(
-    MESSAGES,
+    C.MESSAGES,
     getTime(date),
     JSON.stringify({ userId, message, date })
   );
 
 export const getMessages = () =>
-  redis.zrangebyscore(MESSAGES, -Infinity, Infinity)
+  redis.zrangebyscore(C.MESSAGES, -Infinity, Infinity)
     .then(map(JSON.parse));
