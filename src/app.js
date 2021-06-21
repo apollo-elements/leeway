@@ -5,6 +5,8 @@ import relativeDate from 'tiny-relative-date';
 
 import { ApolloClientElement } from '@apollo-elements/components';
 
+import '@webcomponents/webcomponentsjs/webcomponents-loader.js';
+
 import 'hy-drawer/src/webcomponent/module';
 
 /** @type {typeof document.querySelector} */
