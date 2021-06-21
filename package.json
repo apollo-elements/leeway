@@ -10,7 +10,7 @@
   },
   "heroku-run-build-script": true,
   "scripts": {
-    "build": "run-s build:*",
+    "build": "npx run-s build:*",
     "build:rollup": "rollup -c",
     "patch": "npx patch-package",
     "postinstall": "npm dedupe && npm run patch",
