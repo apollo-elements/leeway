@@ -224,6 +224,7 @@ class Leeway extends ApolloClientElement {
     const userActive = !!id;
 
     this.joinInputs.hidden = userActive;
+    this.nickShow.hidden = userActive;
     this.messageInputs.hidden = !userActive;
     this.joinInputs.setAttribute('aria-hidden', this.joinInputs.hidden.toString());
     this.nickShow.setAttribute('aria-expanded', userActive.toString());
@@ -234,8 +235,12 @@ class Leeway extends ApolloClientElement {
 
     if (userActive)
       this.messageInput.focus();
-    else
-      this.nickInput.focus();
+    else {
+      this.messageInput.value = '';
+      this.messageInput.blur();
+      await new Promise(r => setTimeout(r));
+      this.nickShow.focus();
+    }
 
     this.settingsDiag.querySelector('input').value = local.nick || '';
     this.scrollMessages('auto');
@@ -256,13 +261,6 @@ class Leeway extends ApolloClientElement {
     });
 
     this.localUser = ({ id: null, nick: null, status });
-
-    localStorage.removeItem('leeway-user');
-
-    this.messageInput.value = '';
-    this.messageInput.blur();
-    await new Promise(r => setTimeout(r));
-    this.nickShow.focus();
   }
 
   /** @param {string} nick */
@@ -515,6 +513,11 @@ class Leeway extends ApolloClientElement {
       customElements.whenDefined('apollo-mutation'),
       customElements.whenDefined('apollo-query'),
       customElements.whenDefined('hy-drawer'),
+    ]);
+
+    await Promise.all([
+      this.messagesQuery.updateComplete,
+      this.userListQuery.updateComplete,
     ]);
 
     this.nickShow.focus();

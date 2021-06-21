@@ -194,7 +194,8 @@ header svg {
 }
 
 #links li a:focus {
-  border: 2px solid var(--on-purple);
+  transform: scale(1.1);
+  transition: transform 0.2s ease-in;
 }
 
 #links img,
