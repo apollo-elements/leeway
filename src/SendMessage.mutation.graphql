@@ -1,0 +1,11 @@
+mutation SendMessage($userId: ID!, $message: String!) {
+  sendMessage(userId: $userId, message: $message) {
+    date
+    message
+    user {
+      id
+      nick
+      status
+    }
+  }
+}

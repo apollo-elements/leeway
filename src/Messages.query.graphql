@@ -1,0 +1,12 @@
+query Messages {
+  messages {
+    date
+    message
+    user {
+      id
+      nick
+      status
+      isMe @client
+    }
+  }
+}

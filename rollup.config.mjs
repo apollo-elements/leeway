@@ -1,18 +1,23 @@
+// @ts-check
 import path from 'path';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
+import replace from '@rollup/plugin-replace';
 import resolve from '@rollup/plugin-node-resolve';
-import copy from 'rollup-plugin-copy';
-import graphql from '@apollo-elements/rollup-plugin-graphql';
-import litcss from 'rollup-plugin-lit-css';
 import minifyHTML from 'rollup-plugin-minify-html-literals';
 import modulepreload from 'rollup-plugin-modulepreload';
 import notify from 'rollup-plugin-notify';
-import visualizer from 'rollup-plugin-visualizer';
 import license from 'rollup-plugin-license';
 import watchAssets from 'rollup-plugin-watch-assets';
+
+import { visualizer } from 'rollup-plugin-visualizer';
+import { copy } from '@web/rollup-plugin-copy';
 import { generateSW } from 'rollup-plugin-workbox';
 import { terser } from 'rollup-plugin-terser';
+import { rollupPluginHTML as html } from '@web/rollup-plugin-html';
+
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 
 function onwarn(warning, warn) {
   if (warning.code === 'THIS_IS_UNDEFINED') return;
@@ -21,12 +26,10 @@ function onwarn(warning, warn) {
 
 const isProduction = arg => arg.includes('production');
 
-const {
-  PRODUCTION =
+const PRODUCTION =
   process.env.NODE_ENV === 'production' ||
   process.env.NETLIFY_ENV === 'production' ||
-  process.argv.some(isProduction),
-} = process.env;
+  process.argv.some(isProduction);
 
 const WATCH = process.argv.includes('-w') || process.argv.includes('--watch');
 
@@ -38,20 +41,14 @@ export default {
   onwarn,
   preserveEntrySignatures: false,
   treeshake: !!PRODUCTION,
-  input: 'src/app.js',
-  output: [{
+  input: 'index.html',
+  output: {
     dir: 'build',
     format: 'es',
     sourcemap: true,
-  }, WATCH ? null : {
-    dir: 'build/system',
-    format: 'system',
-    sourcemap: true,
-  }].filter(Boolean),
+  },
 
   plugins: [
-
-    commonjs(),
 
     {
       // needed to specifically use the browser bundle for subscriptions-transport-ws
@@ -62,38 +59,34 @@ export default {
       },
     },
 
+    WATCH ? null : license({
+      thirdParty: {
+        includePrivate: true,
+        output: {
+          file: 'src/dependencies.json',
+          template(dependencies) {
+            return JSON.stringify(dependencies, null, 2);
+          },
+        },
+      },
+    }),
+
+    commonjs(),
+
+    html({
+      minify: PRODUCTION,
+      rootDir: path.join(process.cwd(), 'src'),
+    }),
+
     resolve(),
 
     json(),
 
-    graphql(),
+    watchAssets({ assets: ['src/index.html', 'src/style.css'] }),
 
-    litcss({ uglify: PRODUCTION }),
+    copy({ patterns: 'LICENSE.md' }),
 
-    watchAssets({
-      assets: [
-        'src/index.html',
-        'src/style.css',
-      ],
-    }),
-
-    copy({
-      targets: [
-        { src: 'dependencies.txt', dest: 'build' },
-        { src: 'src/index.html', dest: 'build' },
-        { src: 'src/manifest.webmanifest', dest: 'build' },
-        { src: 'src/style.css', dest: 'build' },
-      ],
-    }),
-
-    copy({
-      flatten: false,
-      targets: [
-        { src: 'src/fonts', dest: 'build' },
-        { src: 'node_modules/@webcomponents/**/*.js', dest: 'build/assets' },
-        { src: 'node_modules/systemjs/dist/**/*.js', dest: 'build/assets' },
-      ],
-    }),
+    replace({ PROTOCOL_SUFFIX: PRODUCTION ? 's' : '' }),
 
     WATCH ? generateSW({
       swDest: 'build/sw.js',
@@ -108,18 +101,9 @@ export default {
         },
       ],
     })
-      : generateSW(require('./workbox-config')),
+      : generateSW(require('./workbox-config.cjs')),
 
-    modulepreload({ index: 'build/index.html', prefix: 'module' }),
-
-    WATCH ? null : license({
-      thirdParty: {
-        includePrivate: true,
-        output: {
-          file: './dependencies.txt',
-        },
-      },
-    }),
+    // modulepreload({ index: 'build/index.html', prefix: 'module' }),
 
     ...(PRODUCTION && !WATCH ? [
 
@@ -138,7 +122,7 @@ export default {
         },
       }),
 
-      terser({ mangle: false }),
+      terser({ mangle: false, format: { comments: false } }),
 
     ] : [
 

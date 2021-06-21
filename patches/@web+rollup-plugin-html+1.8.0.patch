@@ -1,0 +1,46 @@
+diff --git a/node_modules/@web/rollup-plugin-html/dist/assets/utils.js b/node_modules/@web/rollup-plugin-html/dist/assets/utils.js
+index 80da7ee..2702ca7 100644
+--- a/node_modules/@web/rollup-plugin-html/dist/assets/utils.js
++++ b/node_modules/@web/rollup-plugin-html/dist/assets/utils.js
+@@ -8,7 +8,7 @@ const path_1 = __importDefault(require("path"));
+ const parse5_utils_1 = require("@web/parse5-utils");
+ const utils_1 = require("../utils");
+ const v8_1 = require("v8");
+-const hashedLinkRels = ['stylesheet'];
++const hashedLinkRels = ['stylesheet', 'preload'];
+ const linkRels = [...hashedLinkRels, 'icon', 'manifest', 'apple-touch-icon', 'mask-icon'];
+ function getSrcSetUrls(srcset) {
+     if (!srcset) {
+@@ -48,11 +48,15 @@ function isAsset(node) {
+                 path = (_e = parse5_utils_1.getAttribute(node, 'content')) !== null && _e !== void 0 ? _e : '';
+             }
+             break;
+-        case 'script':
+-            if (parse5_utils_1.getAttribute(node, 'type') !== 'module' && parse5_utils_1.getAttribute(node, 'src')) {
+-                path = (_f = parse5_utils_1.getAttribute(node, 'src')) !== null && _f !== void 0 ? _f : '';
+-            }
+-            break;
++        case 'script': {
++          const JS_MIME_TYPE_RE = /(module)|(application\/(x-)?(java|ecma)script)|text\/(x-)?(j(ava)?|ecma|live)script(1\.[0-5])?/;
++          const type = parse5_utils_1.getAttribute(node, 'type');
++          const src = parse5_utils_1.getAttribute(node, 'src');
++          if ((type && !type.match(JS_MIME_TYPE_RE)) && src) {
++              path = (_f = src) !== null && _f !== void 0 ? _f : '';
++          }
++          break;
++        }
+         default:
+             return false;
+     }
+@@ -127,7 +131,10 @@ function getSourcePaths(node) {
+ }
+ exports.getSourcePaths = getSourcePaths;
+ function findAssets(document) {
+-    return parse5_utils_1.findElements(document, isAsset);
++    const documentElements = parse5_utils_1.findElements(document, isAsset);
++    const templates = parse5_utils_1.findElements(document, x => x.tagName === 'template');
++    const templateAssets = templates.flatMap(x => parse5_utils_1.findElements(x.content, isAsset));
++    return [...documentElements, ...templateAssets];
+ }
+ exports.findAssets = findAssets;
+ //# sourceMappingURL=utils.js.map
