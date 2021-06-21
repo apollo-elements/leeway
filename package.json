@@ -11,7 +11,8 @@
   },
   "heroku-run-build-script": true,
   "scripts": {
-    "heroku-prebuild": "NPM_CONFIG_PRODUCTION=false NODE_ENV=development npm ci",
+    "heroku-prebuild": "export NPM_CONFIG_PRODUCTION=false; export NODE_ENV=development",
+    "heroku-postbuild": "export NPM_CONFIG_PRODUCTION=true; export NODE_ENV=production",
     "build": "run-s build:*",
     "build:rollup": "rollup -c",
     "patch": "patch-package",
