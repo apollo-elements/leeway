@@ -1,30 +1,11 @@
 /* eslint-disable max-len */
 
 import type { HyDrawer } from 'hy-drawer/lib';
-import type { MutationErrorEvent } from '@apollo-elements/components/events';
-import type { ServiceWorkerElement } from '@power-elements/service-worker';
-import type { Dialog } from '@material/mwc-dialog';
 import type { Snackbar } from '@material/mwc-snackbar';
 
-import type {
-  ApolloClient,
-  InMemoryCache,
-  NormalizedCacheObject,
-  ReactiveVar,
-  TypedDocumentNode,
-} from '@apollo/client/core';
+import type { NormalizedCacheObject, TypedDocumentNode } from '@apollo/client/core';
 
-import type {
-  ApolloClientElement,
-  ApolloQueryElement,
-  ApolloMutationElement,
-  ApolloSubscriptionElement,
-} from '@apollo-elements/components';
-
-import type {
-  ApolloQueryResultEvent,
-  ApolloSubscriptionResultEvent,
-} from '@apollo-elements/core';
+import type { ApolloQueryElement } from '@apollo-elements/components';
 
 export interface User {
   id: number;
