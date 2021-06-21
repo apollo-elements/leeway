@@ -1,3 +1,5 @@
+globalThis.process ??= { env: '' };
+
 import { ApolloClient, InMemoryCache, HttpLink, split, makeVar } from '@apollo/client/core';
 import { WebSocketLink } from '@apollo/client/link/ws';
 import { getMainDefinition } from '@apollo/client/utilities';
