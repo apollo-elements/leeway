@@ -19,8 +19,6 @@ import { rollupPluginHTML as html } from '@web/rollup-plugin-html';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
-console.log(minifyHTML);
-
 function onwarn(warning, warn) {
   if (warning.code === 'THIS_IS_UNDEFINED') return;
   else warn(warning);

@@ -528,7 +528,7 @@ class Leeway extends ApolloClientElement {
 
     window.addEventListener('mutation-error', this.onMutationError.bind(this));
 
-    await this.resolveBody.bind(this);
+    await this.resolveBody().catch(console.error);
 
     window.__APOLLO_CLIENT__ = this.client;
 
