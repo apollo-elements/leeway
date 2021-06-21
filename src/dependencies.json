@@ -991,29 +991,9 @@
     "contributors": []
   },
   {
-    "name": "zero-md",
-    "maintainers": [],
-    "version": "2.1.1",
-    "description": "Ridiculously simple zero-config markdown displayer",
-    "repository": {
-      "type": "git",
-      "url": "git+https://github.com/zerodevx/zero-md.git"
-    },
-    "homepage": "https://zerodevx.github.io/zero-md/",
-    "private": false,
-    "license": "ISC",
-    "licenseText": "ISC License\n\nCopyright (c) 2021, Jason Lee <jason@zerodevx.com>\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted, provided that the above\ncopyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES\nWITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF\nMERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR\nANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\nWHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN\nACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF\nOR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.\n",
-    "author": {
-      "name": "Jason Lee",
-      "email": "jason@zerodevx.com",
-      "url": null
-    },
-    "contributors": []
-  },
-  {
     "name": "@power-elements/package-info",
     "maintainers": [],
-    "version": "0.0.2",
+    "version": "0.1.1",
     "description": "Display Information about an NPM package",
     "repository": null,
     "homepage": null,
@@ -1040,6 +1020,26 @@
     "author": {
       "name": "open-wc",
       "email": null,
+      "url": null
+    },
+    "contributors": []
+  },
+  {
+    "name": "zero-md",
+    "maintainers": [],
+    "version": "2.1.1",
+    "description": "Ridiculously simple zero-config markdown displayer",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/zerodevx/zero-md.git"
+    },
+    "homepage": "https://zerodevx.github.io/zero-md/",
+    "private": false,
+    "license": "ISC",
+    "licenseText": "ISC License\n\nCopyright (c) 2021, Jason Lee <jason@zerodevx.com>\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted, provided that the above\ncopyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES\nWITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF\nMERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR\nANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\nWHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN\nACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF\nOR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.\n",
+    "author": {
+      "name": "Jason Lee",
+      "email": "jason@zerodevx.com",
       "url": null
     },
     "contributors": []

@@ -6,21 +6,22 @@
   "main": "index.js",
   "type": "module",
   "engines": {
-    "node": "16.x"
+    "node": "16.x",
+    "npm": "7.x"
   },
   "heroku-run-build-script": true,
   "scripts": {
-    "build": "npx run-s build:*",
+    "build": "run-s build:*",
     "build:rollup": "rollup -c",
-    "patch": "npx patch-package",
+    "patch": "patch-package",
     "postinstall": "npm dedupe && npm run patch",
-    "lint": "npx run-s lint:*",
-    "lint:client": "npx eslint src",
-    "lint:server": "npx eslint graphql",
+    "lint": "run-s lint:*",
+    "lint:client": "eslint src",
+    "lint:server": "eslint graphql",
     "start": "node ./graphql/app.js",
-    "watch": "npx run-p watch:*",
-    "watch:rollup": "npx rollup -c -w",
-    "watch:heroku": "npx nodemon -x 'heroku local' --signal SIGTERM --config server.nodemon.json"
+    "watch": "run-p watch:*",
+    "watch:rollup": "rollup -c -w",
+    "watch:heroku": "nodemon -x 'heroku local' --signal SIGTERM --config server.nodemon.json"
   },
   "author": "Benny Powers <web@bennypowers.com>",
   "license": "ISC",
