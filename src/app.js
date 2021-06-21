@@ -1,11 +1,12 @@
-globalThis.process ??= { env: '' };
+// @ts-expect-error: ugh
+window.process ??= { env: '' };
 
 import { ApolloClient, InMemoryCache, HttpLink, split, makeVar } from '@apollo/client/core';
 import { WebSocketLink } from '@apollo/client/link/ws';
 import { getMainDefinition } from '@apollo/client/utilities';
 import relativeDate from 'tiny-relative-date';
 
-import { ApolloClientElement } from '@apollo-elements/components';
+import { ApolloClientElement } from '@apollo-elements/components/apollo-client';
 
 import 'hy-drawer/src/webcomponent/module';
 
@@ -204,23 +205,6 @@ class Leeway extends ApolloClientElement {
     const { message } = error;
     this.snackbar.labelText = message || `Unknown Error in ${event.detail.element.tagName.toLowerCase()}`;
     this.snackbar.show();
-  }
-
-  async resolveBody() {
-    await Promise.all([
-      import('@apollo-elements/components'),
-      import('@material/mwc-button'),
-      import('@material/mwc-icon-button'),
-      import('@material/mwc-snackbar'),
-      import('@power-elements/service-worker'),
-      customElements.whenDefined('apollo-mutation'),
-      customElements.whenDefined('apollo-query'),
-      customElements.whenDefined('hy-drawer'),
-    ]);
-
-    this.nickShow.focus();
-    this.inputs.classList.remove('loading');
-    document.body.removeAttribute('unresolved');
   }
 
   /**
@@ -455,21 +439,17 @@ class Leeway extends ApolloClientElement {
   /** @param {CustomEvent<{ value: ServiceWorker }>} event */
   async onServiceWorkerChanged(event) {
     if (event.detail.value.state !== 'installed') return;
-    await import('@material/mwc-dialog');
+    await import('./components/dialog.js');
     this.versionButton.hidden = false;
   }
 
   async openSettingsDiag() {
-    await Promise.all([
-      import('@material/mwc-dialog'),
-      import('@material/mwc-switch'),
-      import('@material/mwc-formfield'),
-    ]);
+    await import('./components/dialog.js');
     this.settingsDiag.show();
   }
 
   async openLegalDiag() {
-    await import('./dependencies.js');
+    await import('./components/dependencies.js');
     this.legalDiag.show();
   }
 
@@ -528,7 +508,18 @@ class Leeway extends ApolloClientElement {
 
     window.addEventListener('mutation-error', this.onMutationError.bind(this));
 
-    await this.resolveBody().catch(console.error);
+
+    await import('./components/register.js');
+
+    await Promise.all([
+      customElements.whenDefined('apollo-mutation'),
+      customElements.whenDefined('apollo-query'),
+      customElements.whenDefined('hy-drawer'),
+    ]);
+
+    this.nickShow.focus();
+    this.inputs.classList.remove('loading');
+    document.body.removeAttribute('unresolved');
 
     window.__APOLLO_CLIENT__ = this.client;
 
