@@ -31,6 +31,7 @@ const isProduction = arg => arg.includes('production');
 const PRODUCTION =
   process.env.NODE_ENV === 'production' ||
   process.env.NETLIFY_ENV === 'production' ||
+  process.env.PRODUCTION === 'true' ||
   process.argv.some(isProduction);
 
 const WATCH = process.argv.includes('-w') || process.argv.includes('--watch');
