@@ -5,8 +5,6 @@ import relativeDate from 'tiny-relative-date';
 
 import { ApolloClientElement } from '@apollo-elements/components';
 
-import '@webcomponents/webcomponentsjs/webcomponents-loader.js';
-
 import 'hy-drawer/src/webcomponent/module';
 
 /** @type {typeof document.querySelector} */
@@ -492,7 +490,7 @@ class Leeway extends ApolloClientElement {
     this.notificationsSwitch.checked = this.notificationPermission === 'granted';
   }
 
-  connectedCallback() {
+  async connectedCallback() {
     const SUB_EVT = 'apollo-subscription-result';
     const MUT_EVT = 'mutation-completed';
     const QUR_EVT = 'apollo-query-result';
@@ -528,7 +526,7 @@ class Leeway extends ApolloClientElement {
 
     window.addEventListener('mutation-error', this.onMutationError.bind(this));
 
-    window.WebComponents.waitFor(this.resolveBody.bind(this));
+    await this.resolveBody.bind(this);
 
     window.__APOLLO_CLIENT__ = this.client;
 
