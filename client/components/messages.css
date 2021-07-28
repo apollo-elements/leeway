@@ -1,6 +1,5 @@
 .message {
   display: grid;
-  align-items: baseline;
   gap: 6px;
   grid-template:
     'i n d' 1fr

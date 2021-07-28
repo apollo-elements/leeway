@@ -76,6 +76,12 @@ body[menu-open] {
   grid-template-columns: 300px 1fr;
 }
 
+@media (min-width: 600px) {
+  body[unresolved] {
+    grid-template-columns: 300px 1fr;
+  }
+}
+
 main,
 leeway-chat {
   display: contents;
