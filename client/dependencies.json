@@ -2,7 +2,7 @@
   {
     "name": "tslib",
     "maintainers": [],
-    "version": "1.14.1",
+    "version": "2.3.0",
     "description": "Runtime library for TypeScript helper functions",
     "repository": {
       "type": "git",
@@ -22,7 +22,7 @@
   {
     "name": "ts-invariant",
     "maintainers": [],
-    "version": "0.7.5",
+    "version": "0.9.0",
     "description": "TypeScript implementation of invariant(condition, message)",
     "repository": {
       "type": "git",
@@ -35,6 +35,26 @@
     "author": {
       "name": "Ben Newman",
       "email": "ben@apollographql.com",
+      "url": null
+    },
+    "contributors": []
+  },
+  {
+    "name": "@apollo/client",
+    "maintainers": [],
+    "version": "3.4.0",
+    "description": "A fully-featured caching GraphQL client.",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/apollographql/apollo-client.git"
+    },
+    "homepage": "https://www.apollographql.com/docs/react/",
+    "private": false,
+    "license": "MIT",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2021 Apollo Graph, Inc. (Formerly Meteor Development Group, Inc.)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n\n",
+    "author": {
+      "name": "opensource@apollographql.com",
+      "email": null,
       "url": null
     },
     "contributors": []
@@ -56,55 +76,18 @@
     "contributors": []
   },
   {
-    "name": "@apollo/client",
+    "name": "zen-observable-ts",
     "maintainers": [],
-    "version": "3.3.20",
-    "description": "A fully-featured caching GraphQL client.",
+    "version": "1.1.0",
+    "description": "Thin wrapper around zen-observable and @types/zen-observable, to support ESM exports as well as CommonJS exports",
     "repository": {
       "type": "git",
-      "url": "git+https://github.com/apollographql/apollo-client.git"
+      "url": "git+https://github.com/apollographql/zen-observable-ts.git"
     },
-    "homepage": "https://www.apollographql.com/docs/react/",
+    "homepage": null,
     "private": false,
     "license": "MIT",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2021 Apollo Graph, Inc. (Formerly Meteor Development Group, Inc.)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n\n",
-    "author": {
-      "name": "opensource@apollographql.com",
-      "email": null,
-      "url": null
-    },
-    "contributors": []
-  },
-  {
-    "name": "fast-json-stable-stringify",
-    "maintainers": [],
-    "version": "2.1.0",
-    "description": "deterministic `JSON.stringify()` - a faster version of substack's json-stable-strigify without jsonify",
-    "repository": {
-      "type": "git",
-      "url": "git://github.com/epoberezkin/fast-json-stable-stringify.git"
-    },
-    "homepage": "https://github.com/epoberezkin/fast-json-stable-stringify",
-    "private": false,
-    "license": "MIT",
-    "licenseText": "This software is released under the MIT license:\n\nCopyright (c) 2017 Evgeny Poberezkin\nCopyright (c) 2013 James Halliday\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
-    "author": {
-      "name": "James Halliday",
-      "email": "mail@substack.net",
-      "url": "http://substack.net"
-    },
-    "contributors": []
-  },
-  {
-    "name": "zen-observable",
-    "maintainers": [],
-    "version": "0.8.15",
-    "description": "An Implementation of ES Observables",
-    "repository": "zenparsing/zen-observable",
-    "homepage": "https://github.com/zenparsing/zen-observable",
-    "private": false,
-    "license": "MIT",
-    "licenseText": "Copyright (c) 2018 zenparsing (Kevin Smith)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,\nWHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2021 Apollo Graph, Inc. (Formerly Meteor Development Group, Inc.)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
     "author": null,
     "contributors": []
   },
@@ -203,22 +186,6 @@
       "email": "ben@benjamn.com",
       "url": null
     },
-    "contributors": []
-  },
-  {
-    "name": "graphql-tag",
-    "maintainers": [],
-    "version": "2.12.4",
-    "description": "A JavaScript template literal tag that parses GraphQL queries",
-    "repository": {
-      "type": "git",
-      "url": "git+https://github.com/apollographql/graphql-tag.git"
-    },
-    "homepage": "https://github.com/apollographql/graphql-tag#readme",
-    "private": false,
-    "license": "MIT",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2021 Apollo Graph, Inc. (Formerly Meteor Development Group, Inc.)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
-    "author": null,
     "contributors": []
   },
   {
@@ -486,7 +453,7 @@
   {
     "name": "@material/mwc-base",
     "maintainers": [],
-    "version": "0.21.0",
+    "version": "0.22.1",
     "description": null,
     "repository": {
       "type": "git",
@@ -503,7 +470,7 @@
   {
     "name": "@material/switch",
     "maintainers": [],
-    "version": "12.0.0-canary.197f64fa2.0",
+    "version": "12.0.0-canary.22d29cbb4.0",
     "description": "The Material Components for the web switch component",
     "repository": {
       "type": "git",
@@ -537,7 +504,7 @@
   {
     "name": "@material/mwc-switch",
     "maintainers": [],
-    "version": "0.21.0",
+    "version": "0.22.1",
     "description": "Material Design switch web component",
     "repository": {
       "type": "git",
@@ -554,7 +521,7 @@
   {
     "name": "@material/form-field",
     "maintainers": [],
-    "version": "12.0.0-canary.197f64fa2.0",
+    "version": "12.0.0-canary.22d29cbb4.0",
     "description": "Material Components for the web wrapper for laying out form fields and labels next to one another",
     "repository": {
       "type": "git",
@@ -571,7 +538,7 @@
   {
     "name": "@material/mwc-formfield",
     "maintainers": [],
-    "version": "0.21.0",
+    "version": "0.22.1",
     "description": "Material Design formfield web component",
     "repository": {
       "type": "git",
@@ -649,7 +616,7 @@
   {
     "name": "@material/dialog",
     "maintainers": [],
-    "version": "12.0.0-canary.197f64fa2.0",
+    "version": "12.0.0-canary.22d29cbb4.0",
     "description": "The Material Components Web dialog component",
     "repository": {
       "type": "git",
@@ -666,7 +633,7 @@
   {
     "name": "@material/animation",
     "maintainers": [],
-    "version": "12.0.0-canary.197f64fa2.0",
+    "version": "12.0.0-canary.22d29cbb4.0",
     "description": "Animation Variables and Mixins used by Material Components for the web",
     "repository": {
       "type": "git",
@@ -683,7 +650,7 @@
   {
     "name": "@material/dom",
     "maintainers": [],
-    "version": "12.0.0-canary.197f64fa2.0",
+    "version": "12.0.0-canary.22d29cbb4.0",
     "description": "DOM manipulation utilities for Material Components for the web",
     "repository": {
       "type": "git",
@@ -700,7 +667,7 @@
   {
     "name": "@material/mwc-dialog",
     "maintainers": [],
-    "version": "0.21.0",
+    "version": "0.22.1",
     "description": "Material Design dialog web component",
     "repository": {
       "type": "git",
@@ -717,15 +684,15 @@
   {
     "name": "lit-element",
     "maintainers": [],
-    "version": "2.4.0",
+    "version": "2.5.1",
     "description": "A simple base class for creating fast, lightweight web components",
-    "repository": "Polymer/lit-element",
+    "repository": "lit/lit-element",
     "homepage": "https://lit-element.polymer-project.org/",
     "private": false,
     "license": "BSD-3-Clause",
     "licenseText": "BSD 3-Clause License\n\nCopyright (c) 2017, The Polymer Authors. All rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n* Redistributions of source code must retain the above copyright notice, this\n  list of conditions and the following disclaimer.\n\n* Redistributions in binary form must reproduce the above copyright notice,\n  this list of conditions and the following disclaimer in the documentation\n  and/or other materials provided with the distribution.\n\n* Neither the name of the copyright holder nor the names of its\n  contributors may be used to endorse or promote products derived from\n  this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\nAND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\nIMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE\nFOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\nDAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR\nSERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER\nCAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,\nOR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
     "author": {
-      "name": "The Polymer Authors",
+      "name": "Google LLC",
       "email": null,
       "url": null
     },
@@ -734,7 +701,7 @@
   {
     "name": "@material/base",
     "maintainers": [],
-    "version": "12.0.0-canary.197f64fa2.0",
+    "version": "12.0.0-canary.22d29cbb4.0",
     "description": "The set of base classes for Material Components for the web",
     "repository": {
       "type": "git",
@@ -751,7 +718,7 @@
   {
     "name": "@material/ripple",
     "maintainers": [],
-    "version": "12.0.0-canary.197f64fa2.0",
+    "version": "12.0.0-canary.22d29cbb4.0",
     "description": "The Material Components for the web Ink Ripple effect for web element interactions",
     "repository": {
       "type": "git",
@@ -768,7 +735,7 @@
   {
     "name": "@material/mwc-ripple",
     "maintainers": [],
-    "version": "0.21.0",
+    "version": "0.22.1",
     "description": "Material Design ripple web component",
     "repository": {
       "type": "git",
@@ -819,7 +786,7 @@
   {
     "name": "zero-md",
     "maintainers": [],
-    "version": "2.1.1",
+    "version": "2.2.0",
     "description": "Ridiculously simple zero-config markdown displayer",
     "repository": {
       "type": "git",
@@ -855,6 +822,22 @@
       "email": null,
       "url": null
     },
+    "contributors": []
+  },
+  {
+    "name": "graphql-tag",
+    "maintainers": [],
+    "version": "2.12.5",
+    "description": "A JavaScript template literal tag that parses GraphQL queries",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/apollographql/graphql-tag.git"
+    },
+    "homepage": "https://github.com/apollographql/graphql-tag#readme",
+    "private": false,
+    "license": "MIT",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2021 Apollo Graph, Inc. (Formerly Meteor Development Group, Inc.)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+    "author": null,
     "contributors": []
   },
   {
@@ -939,7 +922,7 @@
   {
     "name": "@material/mwc-icon",
     "maintainers": [],
-    "version": "0.21.0",
+    "version": "0.22.1",
     "description": "Material Design icon web component",
     "repository": {
       "type": "git",
@@ -956,7 +939,7 @@
   {
     "name": "@material/mwc-button",
     "maintainers": [],
-    "version": "0.21.0",
+    "version": "0.22.1",
     "description": "Material Design button web component",
     "repository": {
       "type": "git",
@@ -973,7 +956,7 @@
   {
     "name": "@material/mwc-icon-button",
     "maintainers": [],
-    "version": "0.21.0",
+    "version": "0.22.1",
     "description": "Material Design icon button web component",
     "repository": {
       "type": "git",
@@ -990,7 +973,7 @@
   {
     "name": "@material/snackbar",
     "maintainers": [],
-    "version": "12.0.0-canary.197f64fa2.0",
+    "version": "12.0.0-canary.22d29cbb4.0",
     "description": "The Material Components for the web snackbar component",
     "repository": {
       "type": "git",
@@ -1007,7 +990,7 @@
   {
     "name": "@material/mwc-snackbar",
     "maintainers": [],
-    "version": "0.21.0",
+    "version": "0.22.1",
     "description": "Material Design snackbar web component",
     "repository": {
       "type": "git",

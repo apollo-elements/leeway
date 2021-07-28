@@ -9,7 +9,7 @@ module.exports = {
     // For now ignoring split chunks, since rollup-plugin-workbox is not as robust as the webpack version
     '**/chunk*.js',
   ],
-  swDest: 'build/sw.js',
+  swDest: 'public/sw.js',
 
   // Define runtime caching rules.
   runtimeCaching: [{

@@ -11,6 +11,7 @@ import modulepreload from 'rollup-plugin-modulepreload';
 import notify from 'rollup-plugin-notify';
 import license from 'rollup-plugin-license';
 import watchAssets from 'rollup-plugin-watch-assets';
+import { minify } from 'html-minifier-terser';
 
 import { visualizer } from 'rollup-plugin-visualizer';
 import { copy } from '@web/rollup-plugin-copy';
@@ -66,7 +67,7 @@ export default {
       thirdParty: {
         includePrivate: true,
         output: {
-          file: 'dependencies.json',
+          file: 'client/dependencies.json',
           template(dependencies) {
             return JSON.stringify(dependencies, null, 2);
           },
@@ -77,7 +78,15 @@ export default {
     commonjs(),
 
     html({
-      minify: PRODUCTION,
+      transformHtml: html => !PRODUCTION ? html : minify(html, {
+        collapseWhitespace: true,
+        removeComments: true,
+        removeScriptTypeAttributes: false,
+        removeStyleLinkTypeAttributes: true,
+        useShortDoctype: true,
+        minifyCSS: false,
+        minifyJS: true,
+      }),
       rootDir: path.join(process.cwd(), 'client'),
     }),
 
