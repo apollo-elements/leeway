@@ -1,8 +1,7 @@
 {
-  "ignore": ["src/**/*", "build/**/*.*", ".git", "node_modules/**/node_modules"],
+  "ignore": ["client/**/*", "public/**/*.*", ".git", "node_modules/**/node_modules"],
   "watch": [
-    "graphql/**/*",
-    "index.js",
+    "server/**/*",
     "package-lock.json"
   ]
 }

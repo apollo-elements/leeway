@@ -1,5 +1,5 @@
 diff --git a/node_modules/@web/rollup-plugin-html/dist/assets/utils.js b/node_modules/@web/rollup-plugin-html/dist/assets/utils.js
-index 80da7ee..2702ca7 100644
+index 80da7ee..9a80ed1 100644
 --- a/node_modules/@web/rollup-plugin-html/dist/assets/utils.js
 +++ b/node_modules/@web/rollup-plugin-html/dist/assets/utils.js
 @@ -8,7 +8,7 @@ const path_1 = __importDefault(require("path"));
@@ -44,3 +44,4 @@ index 80da7ee..2702ca7 100644
  }
  exports.findAssets = findAssets;
  //# sourceMappingURL=utils.js.map
+\ No newline at end of file

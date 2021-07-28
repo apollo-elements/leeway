@@ -75,6 +75,7 @@ async function ssr() {
     // so embarassing: graphql/jsutils/instanceOf.mjs:16
     globalThis.process ??= { env: { PRODUCTION: true } };
     globalThis.exports = {};
+    // SSR
     window.__APOLLO_STATE__ = JSON.parse('${JSON.stringify(client.extract())}');
   `);
 
@@ -91,12 +92,13 @@ async function ssr() {
   return serialize(ast);
 }
 
-app.get(/^\/(?!.*(\.)|(graphi?ql).*)/, async function sendSPA(req, res) {
+app.get('/', async function sendSPA(req, res) {
   res.set('Cache-Control', shouldCache(req.path) ? shortHeaders : longHeaders);
   res.send(await ssr());
 });
 
 app.get('/*.graphql', (req, res, next) => {
+  console.log(req.path);
   res.set({ 'Content-Type': 'text/plain' });
   next();
 });

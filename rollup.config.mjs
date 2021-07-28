@@ -1,5 +1,7 @@
 // @ts-check
 import path from 'path';
+import fs from 'fs';
+
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import replace from '@rollup/plugin-replace';
@@ -44,7 +46,7 @@ export default {
   treeshake: !!PRODUCTION,
   input: 'index.html',
   output: {
-    dir: 'build',
+    dir: 'public',
     format: 'es',
     sourcemap: true,
   },
@@ -64,7 +66,7 @@ export default {
       thirdParty: {
         includePrivate: true,
         output: {
-          file: 'src/dependencies.json',
+          file: 'dependencies.json',
           template(dependencies) {
             return JSON.stringify(dependencies, null, 2);
           },
@@ -79,20 +81,38 @@ export default {
       rootDir: path.join(process.cwd(), 'src'),
     }),
 
+    {
+      name: 'transform-preload-assets',
+      writeBundle: () => {
+        const INDEX = new URL('./public/index.html', import.meta.url);
+        const ASSETS = fs.readdirSync(new URL('./public/assets', import.meta.url));
+        const ASSETS_NO_HASHES = ASSETS.map(x => x.replace(/-\w+\./, '.'));
+        fs.writeFileSync(
+          INDEX,
+          fs.readFileSync(INDEX, 'utf8')
+            .replace(/href="(\w+)"/, (_match, g1) => `href="${ASSETS[ASSETS_NO_HASHES.findIndex(x => x === g1.replace)] || g1}"`),
+          'utf8',
+        );
+      },
+    },
+
     resolve(),
 
     json(),
 
-    watchAssets({ assets: ['src/index.html', 'src/style.css'] }),
+    watchAssets({ assets: ['client/index.html', 'client/style.css'] }),
 
     copy({ patterns: 'LICENSE.md' }),
 
-    replace({ PROTOCOL_SUFFIX: PRODUCTION ? 's' : '' }),
+    replace({
+      preventAssignment: true,
+      PROTOCOL_SUFFIX: PRODUCTION ? 's' : '',
+    }),
 
     WATCH ? generateSW({
-      swDest: 'build/sw.js',
+      swDest: 'public/sw.js',
       globPatterns: ['nothing'],
-      globDirectory: 'build',
+      globDirectory: 'public',
       globIgnores: ['**/*'],
       runtimeCaching: [
         {

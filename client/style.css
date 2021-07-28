@@ -230,12 +230,13 @@ form#inputs {
   grid-area: input;
   display: flex;
   align-items: center;
-  margin: 0 12px 24px;
+  margin: 0 12px 0 0;
   box-sizing: border-box;
   overflow: hidden;
   opacity: 1;
   transition: opacity 0.2s ease-in-out;
   width: 100%;
+  padding-left: 12px;
 }
 
 #nick-inputs {

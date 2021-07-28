@@ -443,11 +443,13 @@ class Leeway extends ApolloClientElement {
 
   async openSettingsDiag() {
     await import('./components/dialog.js');
+    this.drawer.close();
     this.settingsDiag.show();
   }
 
   async openLegalDiag() {
     await import('./components/dependencies.js');
+    this.drawer.close();
     this.legalDiag.show();
   }
 

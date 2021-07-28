@@ -1,7 +1,7 @@
 module.exports = {
   skipWaiting: true,
   clientsClaim: true,
-  globDirectory: 'build/',
+  globDirectory: 'public/',
   globPatterns: [
     '**/*.{html,js,css}',
   ],
