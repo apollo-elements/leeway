@@ -54,7 +54,7 @@ if (process.env.NODE_ENV === 'production') {
   app.use(compression({ threshold: 0 }));
 }
 
-const queryText = readFileSync(path.join(__dirname, '../src/Messages.query.graphql'), 'utf-8');
+const queryText = readFileSync(path.join(__dirname, '../client/Messages.query.graphql'), 'utf-8');
 
 const query = gql(queryText);
 
@@ -66,7 +66,7 @@ async function ssr() {
   const client = new ApolloClient({ cache, link, ssrMode: true });
   await client.query({ query });
 
-  const html = readFileSync(path.join(__dirname, '../build/index.html'), 'utf-8');
+  const html = readFileSync(path.join(__dirname, '../public/index.html'), 'utf-8');
 
   // NB: it's faster for the browser to `JSON.parse` than it would be to parse a POJO,
   // since JSON is a restricted syntax
@@ -103,7 +103,7 @@ app.get('/*.graphql', (req, res, next) => {
   next();
 });
 
-app.use(express.static('build', {
+app.use(express.static('public', {
   setHeaders(res, path) {
     res.setHeader('Cache-Control', shouldCache(path) ? shortHeaders : longHeaders);
   },

@@ -275,8 +275,6 @@ apollo-mutation {
   display: contents;
 }
 
-#inputs {}
-
 #inputs input {
   flex: 1;
   height: 50px;
@@ -390,4 +388,18 @@ package-dependencies {
   max-height: 600px;
   max-width: 512px;
   overflow-y: scroll;
+}
+
+.screen-l {
+  display: none;
+}
+
+@media (min-width: 600px) {
+  .screen-s {
+    display: none;
+  }
+
+  .screen-l {
+    display: block;
+  }
 }

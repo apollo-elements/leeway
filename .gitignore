@@ -1,5 +1,5 @@
 node_modules
 dump.rdb
-build
+public
 stats.html
 functions/graphql.zip

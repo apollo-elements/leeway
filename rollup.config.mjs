@@ -78,7 +78,7 @@ export default {
 
     html({
       minify: PRODUCTION,
-      rootDir: path.join(process.cwd(), 'src'),
+      rootDir: path.join(process.cwd(), 'client'),
     }),
 
     {
@@ -124,7 +124,7 @@ export default {
     })
       : generateSW(require('./workbox-config.cjs')),
 
-    // modulepreload({ index: 'build/index.html', prefix: 'module' }),
+    // modulepreload({ index: 'public/index.html', prefix: 'module' }),
 
     ...(PRODUCTION && !WATCH ? [
 

@@ -1,8 +1,14 @@
-.user {
-  flex-flow: row wrap;
+.message {
+  display: grid;
+  align-items: baseline;
+  gap: 6px;
+  grid-template:
+    'i n d' 1fr
+    'i m m' max-content / 40px auto auto;
 }
 
-.user::before {
+.message::before {
+  grid-area: i;
   align-items: center;
   background: hsla(calc(var(--hue-coeff) * var(--primary-hue)) var(--saturation, 50%) 50% / 0.3);
   border-radius: 5px;
@@ -21,20 +27,26 @@ ol {
   padding-left: var(--messages-padding-left);
 }
 
-article {
-  display: flex;
-  flex-flow: row wrap;
-  flex: 1 0 auto;
-  margin-left: 6px;
-}
-
-.nick-time {
+.nick {
   font-weight: bold;
   width: 100%;
+  grid-area: n;
 }
 
 time {
-  font-size: 80%;
+  font-size: 75%;
   font-weight: lighter;
   opacity: 0.9;
+  grid-area: d;
+  justify-self: end;
+}
+
+.text {
+  grid-area: m;
+}
+
+@media (min-width: 400px) {
+  time {
+    font-size: 80%;
+  }
 }

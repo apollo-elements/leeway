@@ -55,7 +55,8 @@
         <header id="info-box">
           <mwc-icon-button id="drawer-toggle" icon="menu"></mwc-icon-button>
           <h1>#leeway</h1>
-          <p>⭐️ | 👨‍🚀 | A wee chat app using <a href="https://npmjs.com/package/@apollo-elements/components"><code>@apollo-elements/components</code></a> and GraphQL subscriptions.</p>
+          <p class="screen-l">⭐️ | 👨‍🚀 | A wee chat app using <a href="https://npmjs.com/package/@apollo-elements/components"><code>@apollo-elements/components</code></a> and GraphQL subscriptions.</p>
+          <p class="screen-s">Chat app with <a href="https://npmjs.com/package/@apollo-elements/components">web components</a> and GraphQL</p>
           <mwc-button id="version-button" hidden onclick="() => document.getElementById('version-dialog').show()">🎁 Update</mwc-button>
         </header>
 
@@ -237,12 +238,11 @@
               <template type="repeat" repeat="{{ data.messages ?? [] }}">
                 <li data-initial="{{ item.user.nick.substring(0, 1).toUpperCase() }}"
                     data-is-me="{{ item.user.isMe ?? false }}"
-                    class="user"
+                    class="user message"
                     style="{{ '--hue-coeff:' + (item.user.nick.length || 1) + ';' + '--saturation:' + (item.user.status === 'ONLINE' ? '50%;' : '20%;') }}">
-                  <article>
-                    <span class="nick-time">{{ item.user.nick }} <time datetime="{{ item.date }}">{{ formatDate(item.date) }}</time></span>
-                    <span>{{ item.message }}</span>
-                  </article>
+                  <span class="nick">{{ item.user.nick }}</span>
+                  <time datetime="{{ item.date }}">{{ formatDate(item.date) }}</time>
+                  <span class="text">{{ item.message }}</span>
                 </li>
               </template>
             </ol>
