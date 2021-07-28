@@ -9,7 +9,7 @@
 .message::before {
   grid-area: i;
   align-items: center;
-  background: hsla(calc(var(--hue-coeff) * var(--primary-hue)) var(--saturation, 50%) 50% / 0.3);
+  background: hsla(calc(var(--hue-coeff) * var(--primary-hue)) var(--saturation, 20%) 50% / 0.3);
   border-radius: 5px;
   content: attr(data-initial);
   display: flex;
@@ -48,4 +48,8 @@ time {
   time {
     font-size: 80%;
   }
+}
+
+.message.online::before {
+  --saturation: 50%;
 }

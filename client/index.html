@@ -238,8 +238,8 @@
               <template type="repeat" repeat="{{ data.messages ?? [] }}">
                 <li data-initial="{{ item.user.nick.substring(0, 1).toUpperCase() }}"
                     data-is-me="{{ item.user.isMe ?? false }}"
-                    class="user message"
-                    style="{{ '--hue-coeff:' + (item.user.nick.length || 1) + ';' + '--saturation:' + (item.user.status === 'ONLINE' ? '50%;' : '20%;') }}">
+                    class="user message {{ item.user.status.toLowerCase() }}"
+                    style="--hue-coeff:{{ item.user.nick.length || 1 }};">
                   <span class="nick">{{ item.user.nick }}</span>
                   <time datetime="{{ item.date }}">{{ formatDate(item.date) }}</time>
                   <span class="text">{{ item.message }}</span>

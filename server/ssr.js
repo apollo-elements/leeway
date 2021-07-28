@@ -28,7 +28,6 @@ const query = gql`
       id
       nick
       status
-      isMe @client
     }
   }
 }
@@ -71,10 +70,9 @@ export async function ssr() {
   messages.children.push(h('template', { shadowroot: 'open' }, [
     ...selectAll('link', select('template', messages).content),
     h('ol', [
-      result.data.messages.map(item => h('li.user.message', {
+      result.data.messages.map(item => h(`li.user.message.${item.user.status.toLowerCase()}`, {
         'data-initial': item.user.nick.substring(0, 1).toUpperCase(),
-        'data-is-me': item.user.isMe ?? false,
-        'style': `--hue-coeff:${item.user.nick.length || 1};` + `--saturation:${item.user.status === 'ONLINE' ? '50%;' : '20%;'}`,
+        'style': `--hue-coeff:${item.user.nick.length || 1};`,
       }, [
         h('span.nick', [item.user.nick]),
         h('time', { datetime: item.date }, [formatDate(item.date)]),
