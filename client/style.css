@@ -160,8 +160,8 @@ header svg {
   position: relative;
   box-shadow: 2px 0 2px hsla(var(--scrim) / 0.3);
   grid-template:
-    'b h'
-    'b p' / 48px 1fr;
+    'b h u'
+    'b p u' / 48px 1fr max-content;
 }
 
 #info-box #drawer-toggle { grid-area: b; }
