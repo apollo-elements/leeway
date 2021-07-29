@@ -26,6 +26,7 @@
   --mdc-theme-primary: var(--purple);
   --hy-drawer-background: var(--purple);
   --package-info-name-font-size: 14px;
+  --mdc-button-disabled-ink-color: lightgray;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -168,6 +169,7 @@ header svg {
     'b p u' / 48px 1fr max-content;
 }
 
+#drawer { grid-area: userlist; }
 #info-box #drawer-toggle { grid-area: b; }
 #info-box p { grid-area: p; }
 #info-box h1 { grid-area: h; }
@@ -416,4 +418,25 @@ package-dependencies {
   .screen-l {
     display: block;
   }
+}
+
+mwc-button:not(:defined) {
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  font-family: var(--mdc-typography-button-font-family, var(--mdc-typography-font-family, Roboto, sans-serif));
+  font-size: var(--mdc-typography-button-font-size, 0.875rem);
+  line-height: var(--mdc-typography-button-line-height, 2.25rem);
+  font-weight: var(--mdc-typography-button-font-weight, 500);
+  letter-spacing: var(--mdc-typography-button-letter-spacing, 0.0892857143em);
+  text-decoration: var(--mdc-typography-button-text-decoration, none);
+  text-transform: var(--mdc-typography-button-text-transform, uppercase);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  pointer-events: none;
+}
+
+mwc-button[disabled]:not(:defined) {
+  color: var(--mdc-button-disabled-ink-color, rgba(0, 0, 0, 0.38));
 }

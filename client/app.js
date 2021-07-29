@@ -515,7 +515,6 @@ class Leeway extends ApolloClientElement {
 
     window.addEventListener('mutation-error', this.onMutationError.bind(this));
 
-
     await import('./components/register.js');
 
     await Promise.all([
