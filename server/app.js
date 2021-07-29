@@ -1,6 +1,3 @@
-// @ts-check
-/* eslint-disable no-console */
-/* eslint-env node */
 import compression from 'compression';
 import express from 'express';
 

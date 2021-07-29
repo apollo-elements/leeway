@@ -71,8 +71,8 @@ export async function ssr() {
     ...selectAll('link', select('template', messages).content),
     h('ol', [
       result.data.messages.map(item => h(`li.user.message.${item.user.status.toLowerCase()}`, {
-        'data-initial': item.user.nick.substring(0, 1).toUpperCase(),
-        'style': `--hue-coeff:${item.user.nick.length || 1};`,
+        dataInitial: item.user.nick.substring(0, 1).toUpperCase(),
+        style: `--hue-coeff:${item.user.nick.length || 1};`,
       }, [
         h('span.nick', [item.user.nick]),
         h('time', { datetime: item.date }, [formatDate(item.date)]),

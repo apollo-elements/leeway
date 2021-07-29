@@ -3,5 +3,14 @@
   "parser": "@typescript-eslint/parser",
   "rules": {
     "valid-jsdoc": "off"
-  }
+  },
+  "overrides": [{
+    "files": "server/**/*.js",
+    "env": {
+      "node": true
+    },
+    "rules": {
+      "no-console": "off"
+    }
+  }]
 }
