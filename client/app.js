@@ -216,6 +216,8 @@ class Leeway extends ApolloClientElement {
     await new Promise(r => setTimeout(r));
     await this.messagesQuery.updateComplete;
     this.messagesQuery.scroll({ behavior, top: this.messagesQuery.scrollHeight });
+    if (this.messagesQuery.shadowRoot?.querySelectorAll?.('li')?.length)
+      this.didInitialScroll = true;
   }
 
   async onLocalUserChanged() {
@@ -479,11 +481,12 @@ class Leeway extends ApolloClientElement {
     this.notificationsSwitch.checked = this.notificationPermission === 'granted';
   }
 
+  didInitialScroll = false;
+
   async connectedCallback() {
     const SUB_EVT = 'apollo-subscription-result';
     const MUT_EVT = 'mutation-completed';
     const QUR_EVT = 'apollo-query-result';
-    this.scrollMessages('auto');
     this.versionButton.addEventListener('click', () => this.versionDiag.show());
     this.drawerToggle.addEventListener('click', this.onClickDrawerToggle.bind(this));
     this.isWideScreen.addEventListener('change', this.onMediaChange);
@@ -494,7 +497,8 @@ class Leeway extends ApolloClientElement {
     this.messageMut.addEventListener('will-mutate', this.onWillSendMessage.bind(this));
     this.messageMut.updater = this.messageUpdater.bind(this);
     this.messageSentSub.addEventListener(SUB_EVT, this.onMessageSent.bind(this));
-    this.messagesQuery.addEventListener(QUR_EVT, () => this.scrollMessages());
+    this.messagesQuery.addEventListener(QUR_EVT, () =>
+      this.scrollMessages(this.didInitialScroll ? 'smooth' : 'auto'));
     this.nickInput.addEventListener('keyup', this.onNickInputKeyup.bind(this));
     this.nickShow.addEventListener('click', this.onClickJoin.bind(this));
     this.nickMut.addEventListener(MUT_EVT, this.onChangeNickname.bind(this));
