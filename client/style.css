@@ -239,7 +239,6 @@ header a::before {
 
 #leeway-messages {
   grid-area: messages;
-  overflow-y: scroll;
   position: relative;
 }
 

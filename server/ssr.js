@@ -74,7 +74,7 @@ export async function ssr() {
   attachShadow(select('#nick-show', tree), fromParse5(parse(nickShowShadow)));
 
   const messages = select('#leeway-messages', tree);
-  attachShadow(messages, h('root', [
+  attachShadow(messages, h(null, [
     ...selectAll('link', select('template', messages).content),
     h('ol', [
       result.data.messages.map(item => h(`li.user.message.${item.user.status.toLowerCase()}`, {
@@ -89,7 +89,7 @@ export async function ssr() {
   ]));
 
   const userlist = select('#leeway-userlist', tree);
-  attachShadow(userlist, h('root', [
+  attachShadow(userlist, h(null, [
     ...selectAll('link', select('template', userlist).content),
     h('header', [
       h('span.status.offline', { role: 'presentation' }),
