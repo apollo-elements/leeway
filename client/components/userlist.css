@@ -1,7 +1,6 @@
 :host {
   display: flex;
   flex-flow: column;
-  padding: 4px 6px;
 }
 
 section {

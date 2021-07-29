@@ -26,7 +26,6 @@
   --mdc-theme-primary: var(--purple);
   --hy-drawer-background: var(--purple);
   --package-info-name-font-size: 14px;
-  --mdc-button-disabled-ink-color: lightgray;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -46,6 +45,8 @@
     --link: var(--focus);
     --mdc-theme-primary: var(--visited);
     --license-badge-background-color: var(--away);
+    --mdc-button-disabled-ink-color: lightgray;
+    --mdc-theme-text-disabled-on-light: lightgray;
   }
 }
 
@@ -324,6 +325,7 @@ input#message-input {
   grid-area: users;
   background: var(--purple);
   height: calc(100% - 8px);
+  padding: 4px 6px;
 }
 
 #loader-wrapper {

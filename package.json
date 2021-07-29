@@ -15,6 +15,7 @@
     "lint": "run-s lint:*",
     "lint:client": "eslint client",
     "lint:server": "eslint server",
+    "clean": "rimraf public",
     "start": "node ./server/app.js",
     "watch": "run-p watch:*",
     "watch:rollup": "rollup -c -w",

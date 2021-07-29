@@ -529,8 +529,11 @@ class Leeway extends ApolloClientElement {
     ]);
 
     this.nickShow.focus();
-    this.inputs.classList.remove('loading');
     document.body.removeAttribute('unresolved');
+    document.getElementById('nick-show').removeAttribute('disabled');
+    document.getElementById('nick-show').innerHTML = '';
+    document.getElementById('drawer-toggle').removeAttribute('disabled');
+    document.getElementById('drawer-toggle').innerHTML = '';
 
     window.__APOLLO_CLIENT__ = this.client;
 
