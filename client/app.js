@@ -483,6 +483,7 @@ class Leeway extends ApolloClientElement {
     const SUB_EVT = 'apollo-subscription-result';
     const MUT_EVT = 'mutation-completed';
     const QUR_EVT = 'apollo-query-result';
+    this.scrollMessages('auto');
     this.versionButton.addEventListener('click', () => this.versionDiag.show());
     this.drawerToggle.addEventListener('click', this.onClickDrawerToggle.bind(this));
     this.isWideScreen.addEventListener('change', this.onMediaChange);
@@ -533,7 +534,6 @@ class Leeway extends ApolloClientElement {
     document.getElementById('nick-show').removeAttribute('disabled');
     document.getElementById('nick-show').innerHTML = '';
     document.getElementById('drawer-toggle').removeAttribute('disabled');
-    document.getElementById('drawer-toggle').innerHTML = '';
 
     window.__APOLLO_CLIENT__ = this.client;
 
