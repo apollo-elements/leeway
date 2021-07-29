@@ -2,6 +2,10 @@
   display: none !important;
 }
 
+* {
+  overflow-anchor: none;
+}
+
 :root {
   --primary-hue: 270;
   --header-padding: 14px;
@@ -230,6 +234,10 @@ header a::before {
   grid-area: messages;
   overflow-y: scroll;
   position: relative;
+}
+
+#leeway-messages::after {
+  overflow-anchor: auto;
 }
 
 form#inputs {

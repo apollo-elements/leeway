@@ -10,3 +10,7 @@
   display: flex;
   padding: 14px;
 }
+
+* {
+  overflow-anchor: none;
+}
