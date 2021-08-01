@@ -1,0 +1,12 @@
+mutation EditMessage($date: String!, $message: String!) {
+  editMessage(date: $date, message: $message) {
+    date
+    message
+    user {
+      id
+      nick
+      status
+      isMe
+    }
+  }
+}

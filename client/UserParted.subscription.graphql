@@ -3,5 +3,6 @@ subscription UserPartedSubscription {
     id
     nick
     status
+    isMe
   }
 }

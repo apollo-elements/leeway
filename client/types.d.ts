@@ -3,7 +3,7 @@
 import type { HyDrawer } from 'hy-drawer/lib';
 import type { Snackbar } from '@material/mwc-snackbar';
 
-import type { NormalizedCacheObject, TypedDocumentNode } from '@apollo/client/core';
+import type { MutationUpdaterFunction, NormalizedCacheObject, TypedDocumentNode } from '@apollo/client/core';
 
 import type { ApolloQueryElement } from '@apollo-elements/components';
 
@@ -18,6 +18,7 @@ export interface User {
 export interface UsersQueryData {
   localUser: User;
   users: User[];
+  me: User;
 }
 
 export interface Message {
@@ -56,6 +57,10 @@ export interface JoinMutationVariables {
   nick: string;
 }
 
+export interface MessageEditedSubscriptionData {
+  messageEdited: Message;
+}
+
 export interface MessageSentSubscriptionData {
   messageSent: Message;
 }
@@ -72,8 +77,12 @@ export type ChangeNickMutation = TypedDocumentNode<ChangeNickMutationData, Chang
 export type JoinMutation = TypedDocumentNode<JoinMutationData, JoinMutationVariables>;
 export type MessagesQuery = TypedDocumentNode<MessagesQueryData, null>;
 export type UsersQuery = TypedDocumentNode<UsersQueryData, null>;
-export type MessagesElType = ApolloQueryElement<MessagesQuery>;
 export type UsersElType = ApolloQueryElement<UsersQuery>;
+export type MessagesElType = ApolloQueryElement<MessagesQuery> & {
+  editing: boolean;
+  onToggleEditMessage: (event: Event) => void
+  editMessageUpdater: MutationUpdaterFunction<any, any, any, any>;
+};
 
 declare global {
   interface Window {

@@ -78,6 +78,7 @@ export default {
     commonjs(),
 
     html({
+      rootDir: path.join(process.cwd(), 'client'),
       transformHtml: html => !PRODUCTION ? html : minify(html, {
         collapseWhitespace: true,
         removeComments: true,
@@ -87,7 +88,6 @@ export default {
         minifyCSS: false,
         minifyJS: true,
       }),
-      rootDir: path.join(process.cwd(), 'client'),
     }),
 
     {
@@ -96,10 +96,19 @@ export default {
         const INDEX = new URL('./public/index.html', import.meta.url);
         const ASSETS = fs.readdirSync(new URL('./public/assets', import.meta.url));
         const ASSETS_NO_HASHES = ASSETS.map(x => x.replace(/-\w+\./, '.'));
+        const getAsset = pre =>
+          ASSETS[ASSETS_NO_HASHES.findIndex(x => x === pre)] ||
+          pre;
+        const preloadReplacer = (_, g1) => `href="${getAsset(g1)}"`;
+        const srcReplacer = (_, g1) => `src="assets/${getAsset(g1)}"`;
+
+        const preTransform = fs.readFileSync(INDEX, 'utf8');
+
         fs.writeFileSync(
           INDEX,
-          fs.readFileSync(INDEX, 'utf8')
-            .replace(/href="(\w+)"/, (_match, g1) => `href="${ASSETS[ASSETS_NO_HASHES.findIndex(x => x === g1.replace)] || g1}"`),
+          preTransform
+            .replace(/href="(\w+)"/, preloadReplacer)
+            .replace(/src="((?:\w|\.)+)"/g, srcReplacer),
           'utf8',
         );
       },

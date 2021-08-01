@@ -6,6 +6,12 @@ export const messageSent = {
   },
 };
 
+export const messageEdited = {
+  subscribe(_, __, { pubsub }) {
+    return pubsub.asyncIterator(C.MESSAGE_EDITED);
+  },
+};
+
 export const userStatusUpdated = {
   subscribe(_, __, { pubsub }) {
     return pubsub.asyncIterator(C.USER_STATUS_UPDATED);

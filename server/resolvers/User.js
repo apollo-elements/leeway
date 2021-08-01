@@ -8,3 +8,10 @@ export function status({ status, lastSeen }) {
     default: return status;
   }
 }
+
+export async function isMe({ id }, __, context) {
+  if (!context)
+    throw new Error('no context!');
+  await context.wsSessionReady;
+  return context.user?.id && id === context.user.id;
+}

@@ -1,13 +1,10 @@
 query Users {
-  localUser @client {
-    id
-    nick
-    status
-  }
+  me { id nick status }
   users {
     id
     nick
     status
     lastSeen
+    isMe
   }
 }

@@ -26,6 +26,47 @@
   width: 40px;
 }
 
+apollo-mutation {
+  display: none;
+}
+
+.message .edit-toggle {
+  display: inline-block;
+}
+
+.message.editing .edit-toggle {
+  display: none;
+}
+
+.message.editing apollo-mutation {
+  display: flex;
+  gap: 6px;
+  flex: 1 0 auto;
+}
+
+input {
+  background: transparent;
+  color: inherit;
+  border: none;
+  border-bottom: 1px solid currentColor;
+  flex: 1 0 auto;
+}
+
+button {
+  background: none;
+  border: none;
+  color: currentColor;
+}
+
+button svg {
+  fill: currentColor;
+}
+
+button:focus,
+button:hover {
+  background-color: grey;
+}
+
 ol {
   list-style-type: none;
   margin: 0;
@@ -46,8 +87,14 @@ time {
   justify-self: end;
 }
 
-.text {
+.message-container {
   grid-area: m;
+  display: flex;
+  justify-content: space-between
+}
+
+.message.editing .text {
+  display: none;
 }
 
 @media (min-width: 400px) {

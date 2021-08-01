@@ -287,7 +287,7 @@ form#inputs mwc-button {
   flex: 0 1 54px;
 }
 
-form#inputs #nick-show {
+form#inputs #show-login {
   flex: 1;
 }
 
@@ -444,4 +444,14 @@ mwc-button:not(:defined) {
 
 mwc-button[disabled]:not(:defined) {
   color: var(--mdc-button-disabled-ink-color, rgba(0, 0, 0, 0.38));
+}
+
+#join-mutation {
+  display: grid;
+  grid-template: max-content auto / auto auto;
+  gap: 6px;
+}
+
+#join-mutation mwc-button {
+  grid-column: 2/3;
 }

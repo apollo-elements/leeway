@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com/">
     <link rel="preconnect" href="https://fonts.googleapis.com/">
 
-    <link rel="modulepreload" href="app.js">
+    <link rel="modulepreload" href="client.js">
 
     <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Icons" as="style">
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&family=Ubuntu:wght@300;400;700&display=swap">
@@ -21,8 +21,8 @@
 
     <link rel="preload" as="fetch" href="Join.mutation.graphql">
     <link rel="preload" as="fetch" href="Messages.query.graphql">
-    <link rel="preload" as="fetch" href="Part.mutation.graphql">
     <link rel="preload" as="fetch" href="SendMessage.mutation.graphql">
+    <link rel="preload" as="fetch" href="EditMessage.mutation.graphql">
     <link rel="preload" as="fetch" href="UpdateUserLastSeen.mutation.graphql">
     <link rel="preload" as="fetch" href="UserJoined.subscription.graphql">
     <link rel="preload" as="fetch" href="UserParted.subscription.graphql">
@@ -73,12 +73,12 @@
                     <pre>{{ error.message || 'Unknown Error' }}</pre>
                   </aside>
                 </template>
-                <header>
-                  <span role="presentation" class="status {{ data.localUser.id ? data.localUser.status.toLowerCase() : 'offline' }}"></span>
-                  <span class="nick">{{ data.localUser.nick ?? 'Users' }}</span>
+                <header aria-label="Users">
+                  <span role="presentation" class="status {{ data.me ? data.me.status.toLowerCase() : 'offline' }}"></span>
+                  <span class="nick">{{ data.me.nick ?? 'Users' }}</span>
                 </header>
                 <template type="repeat" repeat="{{ data.users ?? [] }}">
-                  <template type="if" if="{{ item.id !== data.localUser.id }}">
+                  <template type="if" if="{{ item.id !== data.me.id }}">
                     <div class="user">
                       <span aria-label="{{ item.status }}" class="status {{ item.status ? item.status.toLowerCase() : 'offline' }}"></span>
                       {{ item.nick ?? '' }}
@@ -239,11 +239,27 @@
               <template type="repeat" repeat="{{ data.messages ?? [] }}">
                 <li data-initial="{{ item.user.nick.substring(0, 1).toUpperCase() }}"
                     data-is-me="{{ item.user.isMe ?? false }}"
+                    data-message-date="{{ item.date }}"
                     class="user message {{ item.user.status.toLowerCase() }}"
                     style="--hue-coeff:{{ item.user.nick.length || 1 }}">
                   <span class="nick">{{ item.user.nick }}</span>
                   <time datetime="{{ item.date }}">{{ formatDate(item.date) }}</time>
-                  <span class="text">{{ item.message }}</span>
+                  <span class="message-container">
+                    <span class="text">{{ item.message }}</span>
+                    <template type="if" if="{{ item.user.isMe }}">
+                    <button class="edit-toggle" aria-label="edit message" @click="{{ onToggleEditMessage }}">
+                      <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px"><path d="M0 0h24v24H0z" fill="none"/><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                    </button>
+                    <apollo-mutation data-date="{{ item.date }}">
+                      <script type="application/graphql" src="EditMessage.mutation.graphql"></script>
+                      <template><slot></slot></template>
+                      <input data-variable="message" aria-label="edit message" value="{{ item.message }}"></input>
+                      <button trigger aria-label="save">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px"><path d="M0 0h24v24H0z" fill="none"/><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                      </button>
+                    </apollo-mutation>
+                  </template>
+                  </span>
                 </li>
               </template>
             </ol>
@@ -259,22 +275,13 @@
 
         <form id="inputs">
           <fieldset id="join-inputs" aria-hidden="false">
-            <mwc-button id="nick-show"
+            <mwc-button id="show-login"
                         label="Join"
                         disabled
                         aria-controls="nick-inputs"
                         aria-expanded="false">
               <noscript>Please Enable JavaScript to</noscript>&nbsp;Join&nbsp;<noscript>the Chat</noscript>
             </mwc-button>
-            <apollo-mutation id="join-mutation" refetch-queries="LocalUser">
-              <script type="application/graphql" src="Join.mutation.graphql"></script>
-              <div id="nick-inputs" aria-hidden="true" hidden>
-                <label for="nick-input">Enter your Nickname</label>
-                <input id="nick-input" data-variable="nick"/>
-                <mwc-button trigger label="OK"></mwc-button>
-              </div>
-              <template><slot></slot></template>
-            </apollo-mutation>
           </fieldset>
           <fieldset id="message-inputs" hidden>
             <apollo-mutation id="message-mutation">
@@ -290,12 +297,12 @@
           <script type="application/graphql" src="UpdateUserLastSeen.mutation.graphql"></script>
         </apollo-mutation>
 
-        <apollo-mutation id="part-mutation">
-          <script type="application/graphql" src="Part.mutation.graphql"></script>
-        </apollo-mutation>
-
         <apollo-subscription id="message-sent-subscription">
           <script type="application/graphql" src="MessageSent.subscription.graphql"></script>
+        </apollo-subscription>
+
+        <apollo-subscription id="message-edited-subscription">
+          <script type="application/graphql" src="MessageEdited.subscription.graphql"></script>
         </apollo-subscription>
 
         <apollo-subscription id="user-joined-subscription">
@@ -319,16 +326,34 @@
           <mwc-button slot="primaryAction" dialogAction="ok">OK</mwc-button>
         </mwc-dialog>
 
+        <mwc-dialog id="login-dialog" heading="Login" hideactions>
+          <p>Set a password to reserve a nick.</p>
+          <p>If you forget your password you can <code>/msg NickServe help</code></p>
+          <p>LOL just kidding this is a demo, silly!<p>
+          <form>
+            <apollo-mutation id="join-mutation">
+              <script type="application/graphql" src="Join.mutation.graphql"></script>
+              <label for="login-username">Username</label>
+              <input data-variable="nick" id="login-nick" autocomplete="nickname"/>
+              <label for="login-password">Password</label>
+              <input data-variable="password" type="password" id="login-password" autocomplete="current-password"/>
+              <mwc-button id="login-button" trigger label="Login"></mwc-button>
+            </apollo-mutation>
+          </form>
+        </mwc-dialog>
+
         <mwc-dialog id="settings-dialog" heading="Settings">
           <mwc-formfield label="Allow Notifications"><mwc-switch></mwc-switch></mwc-formfield>
           <br/>
           <apollo-mutation id="change-nick-mutation">
             <script type="application/graphql" src="ChangeNickname.mutation.graphql"></script>
-            <template><slot></slot></template>
             <input data-variable="nick" id="nick-change" aria-labelledby="change-nick-button"/>
             <mwc-button id="change-nick-button" trigger label="Change Nickname"></mwc-button>
           </apollo-mutation>
-          <mwc-button slot="primaryAction" dialogaction="ok" label="OK"></mwc-button>
+          <apollo-mutation id="part-mutation">
+            <script type="application/graphql" src="Part.mutation.graphql"></script>
+            <mwc-button id="part-button" trigger label="Part"></mwc-button>
+          </apollo-mutation>
         </mwc-dialog>
 
         <mwc-dialog id="legal-dialog" heading="Legal">
@@ -344,6 +369,6 @@
 
     <service-worker id="service-worker" path="/sw.js" auto-reload></service-worker>
 
-    <script type="module" src="app.js"></script>
+    <script type="module" src="client.js"></script>
   </body>
 </html>

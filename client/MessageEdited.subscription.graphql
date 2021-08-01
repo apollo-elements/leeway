@@ -1,12 +1,10 @@
-query Messages {
-  messages {
+subscription MessageEditedSubscription {
+  messageEdited {
     date
     message
     user {
       id
       nick
-      status
-      isMe
     }
   }
 }

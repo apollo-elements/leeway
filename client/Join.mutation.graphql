@@ -1,8 +1,9 @@
-mutation Join($nick: String!) {
-  join(nick: $nick) {
+mutation Join($nick: String!, $password: String) {
+  join(nick: $nick, password: $password) {
     id
     nick
     status
     lastSeen
+    isMe
   }
 }

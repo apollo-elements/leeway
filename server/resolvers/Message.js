@@ -1,3 +1,3 @@
-export async function user({ userId }, _, { user }) {
-  return await user.getUser(userId);
+export async function user({ userId }, _, { models }) {
+  return await models.User.getUser(userId);
 }

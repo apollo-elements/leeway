@@ -8,8 +8,18 @@ import objOf from 'crocks/helpers/objOf.js';
 
 import { getNick, isValidMessage, isListableUser } from '../lib.js';
 
-export const users = (_, __, { user: { getUsers } }) =>
-  getUsers()
+const bulletproofSec = x => {
+  if (!x)
+    return null;
+  else {
+    const { password, ...user } = x;
+    return user;
+  }
+};
+
+export const users = (_, __, { models: { User } }) =>
+  User.getUsers()
+    .then(map(bulletproofSec))
     .then(filter(isListableUser))
     .then(xs => xs.sort(
       (a, b) =>
@@ -26,13 +36,22 @@ function validateMessage(message) {
 
 const assignNick = getUser => ({ userId, ...message }) =>
   getUser(userId)
+    .then(bulletproofSec)
     .then(getNick)
     .then(objOf('nick'))
     .then(assign({ ...message, userId }));
 
-export const messages = (_, __, { message: { getMessages }, user: { getUser } }) =>
-  getMessages()
+export const messages = (_, __, context) =>
+  context.models.Message.getMessages()
     .then(map(composeP(
       validateMessage,
-      assignNick(getUser)
-    )));
+      assignNick(context.models.User.getUser)
+    )))
+    .catch(console.error);
+
+export async function me(_, __, context) {
+  await context.wsSessionReady;
+  if (!context.user)
+    return null;
+  return context.models.User.getUser(context.user.id);
+}

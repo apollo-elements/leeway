@@ -53,25 +53,27 @@ function formatDate(iso) {
     return relativeDate(mtime);
 }
 
-const html = readFileSync(new URL('../public/index.html', import.meta.url), 'utf-8');
-const drawerShadow = readFileSync(new URL('shadowRoots/drawer.html', import.meta.url), 'utf-8');
-const iconButtonShadow = readFileSync(new URL('shadowRoots/drawer-toggle.html', import.meta.url), 'utf-8');
-const nickShowShadow = readFileSync(new URL('shadowRoots/nick-show.html', import.meta.url), 'utf-8');
+/* eslint-disable no-multi-spaces, max-len */
+const html              = readFileSync(new URL('../public/index.html', import.meta.url), 'utf-8');
+const drawerShadow      = readFileSync(new URL('shadowRoots/drawer.html', import.meta.url), 'utf-8');
+const iconButtonShadow  = readFileSync(new URL('shadowRoots/drawer-toggle.html', import.meta.url), 'utf-8');
+const showLoginShadow    = readFileSync(new URL('shadowRoots/show-login.html', import.meta.url), 'utf-8');
+/* eslint-enable no-multi-spaces, max-len */
 
 function attachShadow(tree, shadowRoot) {
   tree.children.push(h('template', { shadowroot: 'open' }, [shadowRoot]));
 }
 
-export async function ssr() {
+export async function ssr(req, res) {
   const cache = new InMemoryCache();
-  const link = new SchemaLink({ schema: server.schema, context });
+  const link = new SchemaLink({ schema: server.schema, context: context({ req, res }) });
   const client = new ApolloClient({ cache, link, ssrMode: true });
   const result = await client.query({ query });
   const tree = fromParse5(parse(html));
 
   attachShadow(select('#drawer-toggle', tree), fromParse5(parse(iconButtonShadow)));
   attachShadow(select('#drawer', tree), fromParse5(parse(drawerShadow)));
-  attachShadow(select('#nick-show', tree), fromParse5(parse(nickShowShadow)));
+  attachShadow(select('#show-login', tree), fromParse5(parse(showLoginShadow)));
 
   const messages = select('#leeway-messages', tree);
   attachShadow(messages, h(null, [

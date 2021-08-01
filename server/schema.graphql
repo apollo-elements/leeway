@@ -6,7 +6,7 @@ enum Status {
 }
 
 type Message {
-  message: String!
+  message: String
   user: User
   date: String
 }
@@ -16,15 +16,18 @@ type User {
   nick: String!
   lastSeen: String
   status: Status
+  isMe: Boolean
 }
 
 type Query {
   messages: [Message]
   users: [User]
+  me: User
 }
 
 type Subscription {
   messageSent: Message
+  messageEdited: Message
   userStatusUpdated: User
   userLastSeenUpdated: User
   userJoined: User
@@ -36,7 +39,8 @@ type Mutation {
   changeNickname(id: ID!, nick: String!): User
   updateUserStatus(id: ID!, status: Status!): Status
   updateUserLastSeen(userId: ID!): User
-  join(nick: String!): User
+  editMessage(date: String, message: String): Message
+  join(nick: String!, password: String): User
   # Such sweet sorrow. Returns null.
-  part(id: ID!): String
+  part: String
 }

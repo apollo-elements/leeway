@@ -1,7 +1,7 @@
 // @ts-expect-error: ugh
 window.process ??= { env: '' };
 
-import { ApolloClient, InMemoryCache, HttpLink, split, makeVar } from '@apollo/client/core';
+import { ApolloClient, InMemoryCache, HttpLink, split } from '@apollo/client/core';
 import { WebSocketLink } from '@apollo/client/link/ws';
 import { getMainDefinition } from '@apollo/client/utilities';
 import relativeDate from 'tiny-relative-date';
@@ -39,29 +39,31 @@ class Leeway extends ApolloClientElement {
   messageMut = $('#message-mutation');
   /** @type {import('@apollo-elements/components').ApolloSubscriptionElement} */
   messageSentSub = $('#message-sent-subscription');
+  /** @type {import('@apollo-elements/components').ApolloSubscriptionElement} */
+  messageEditedSub = $('#message-edited-subscription');
   /** @type {import("./types").MessagesElType} */
   messagesQuery = $('#leeway-messages');
   /** @type {HTMLInputElement} */
-  nickInput = $('#nick-input');
-  /** @type {HTMLElement} */
-  nickInputs = $('#nick-inputs');
+  nickInput = $('#login-nick');
+  /** @type {HTMLInputElement} */
+  passwordInput = $('#login-password');
   /** @type {import('@apollo-elements/components').ApolloMutationElement} */
   joinMut = $('#join-mutation');
   /** @type {import('@apollo-elements/components').ApolloMutationElement} */
   nickMut = $('#change-nick-mutation');
   /** @type {import('@material/mwc-icon-button').IconButton} */
-  nickShow = $('#nick-show');
+  showLogin = $('#show-login');
   /** @type {import('@apollo-elements/components').ApolloSubscriptionElement} */
   partedSub = $('#user-parted-subscription');
   /** @type {import('@apollo-elements/components').ApolloMutationElement} */
   pingMut = $('#ping-mutation');
-  /** @type {import('@apollo-elements/components').ApolloMutationElement} */
-  partMut = $('#part-mutation')
   /** @type {import('./types').UsersElType} */
   userListQuery = $('#leeway-userlist');
   sw = $('service-worker');
   /** @type {import('@material/mwc-dialog').Dialog} */
   versionDiag = $('#version-dialog');
+  /** @type {import('@material/mwc-dialog').Dialog} */
+  loginDiag = $('#login-dialog');
   /** @type {import('@material/mwc-button').Button} */
   versionButton = $('#version-button');
   /** @type {import('@material/mwc-dialog').Dialog} */
@@ -84,22 +86,6 @@ class Leeway extends ApolloClientElement {
     year: 'numeric',
   });
 
-  localUserVar = makeVar({
-    id: null,
-    nick: null,
-    status: null,
-    ...JSON.parse(localStorage.getItem('leeway-user')),
-  });
-
-  get localUser() {
-    return this.localUserVar();
-  }
-
-  set localUser(user) {
-    this.localUserVar(user);
-    localStorage.setItem('leeway-user', JSON.stringify(user));
-  }
-
   static splitter({ query }) {
     const definition = getMainDefinition(query);
     return definition.kind === 'OperationDefinition' && definition.operation === 'subscription';
@@ -107,7 +93,10 @@ class Leeway extends ApolloClientElement {
 
   link = split(
     Leeway.splitter,
-    new WebSocketLink({ uri: `ws${'PROTOCOL_SUFFIX'}://${host}/graphql`, options: { reconnect: true } }),
+    new WebSocketLink({
+      uri: `ws${'PROTOCOL_SUFFIX'}://${host}/graphql`,
+      options: { reconnect: true },
+    }),
     new HttpLink({ uri: `http${'PROTOCOL_SUFFIX'}://${host}/graphql` }),
   );
 
@@ -118,14 +107,6 @@ class Leeway extends ApolloClientElement {
       typePolicies: {
         Query: {
           fields: {
-            localUser: {
-              merge: true,
-              read: () => {
-                const cached = this.localUserVar() || {};
-                const status = !navigator.onLine ? 'OFFLINE' : cached.status || 'ONLINE';
-                return { ...cached, status };
-              },
-            },
             users: {
               /** @type {import('@apollo/client/core').FieldMergeFunction<import('@apollo/client/core').StoreObject[]>} */
               merge: (prev, next, { readField, mergeObjects }) => {
@@ -161,8 +142,7 @@ class Leeway extends ApolloClientElement {
           fields: {
             status: (prev, { readField }) => {
               if (prev === 'PARTED') return prev;
-              const id = readField('id');
-              if (id === this.localUserVar()?.id)
+              if (readField('isMe'))
                 return navigator.onLine ? 'ONLINE' : 'OFFLINE';
               const lastSeen = readField('lastSeen');
               // @ts-expect-error: JS can subtract dates
@@ -178,8 +158,87 @@ class Leeway extends ApolloClientElement {
       },
     });
     cache.restore(window.__APOLLO_STATE__);
-    this.client = new ApolloClient({ cache, link, ssrForceFetchDelay: 100 });
+    this.client = new ApolloClient({
+      cache,
+      link,
+      credentials: 'same-origin',
+      ssrForceFetchDelay: 100,
+    });
     return this.client;
+  }
+
+  async connectedCallback() {
+    const SUB_EVT = 'apollo-subscription-result';
+    const MUT_EVT = 'mutation-completed';
+    const QUR_EVT = 'apollo-query-result';
+    this.scrollMessages('auto');
+    this.versionButton.addEventListener('click', () => this.versionDiag.show());
+    this.drawerToggle.addEventListener('click', this.onClickDrawerToggle.bind(this));
+    this.isWideScreen.addEventListener('change', this.onMediaChange);
+    this.joinedSub.addEventListener(SUB_EVT, this.onUserJoined.bind(this));
+    this.joinMut.addEventListener(MUT_EVT, this.onJoinMutation.bind(this));
+    this.joinMut.updater = (cache, result) => {
+      const { query } = this.userListQuery;
+      cache.writeQuery({ query, data: {
+        ...cache.readQuery({ query }),
+        me: result.data.join,
+      } });
+    };
+    this.messageInput.addEventListener('keyup', this.onMessageKeyup.bind(this));
+    this.messageMut.addEventListener(MUT_EVT, event => {
+      this.messageInput.value = '';
+    });
+    this.messageMut.updater = this.messageUpdater.bind(this);
+    this.messageSentSub.addEventListener(SUB_EVT, this.onMessageSent.bind(this));
+    this.messageEditedSub.addEventListener(SUB_EVT, this.onMessageEdited.bind(this));
+    this.messagesQuery.addEventListener(QUR_EVT, () => this.scrollMessages());
+    this.nickInput.addEventListener('keyup', this.onNickInputKeyup.bind(this));
+    this.showLogin.addEventListener('click', this.onClickJoin.bind(this));
+    this.partedSub.addEventListener(SUB_EVT, this.onUserParted.bind(this));
+    this.sw.addEventListener('change', this.onServiceWorkerChanged.bind(this));
+    this.userListQuery.addEventListener(QUR_EVT, this.onUserListUpdate.bind(this));
+    this.versionDiag.addEventListener('closed', this.onVersionDialogClosed.bind(this));
+    this.settingsToggle.addEventListener('click', this.openSettingsDiag.bind(this));
+    this.legalToggle.addEventListener('click', this.openLegalDiag.bind(this));
+    this.notificationsSwitch.addEventListener('click', this.onNotificationsSwitch.bind(this));
+    this.notificationsSwitch.checked = this.notificationPermission === 'granted';
+    this.loginDiag.addEventListener('opened', e => e.target.querySelector('input').focus());
+
+    for (const form of this.querySelectorAll('form'))
+      form.addEventListener('submit', e => e.preventDefault());
+
+    for (const el of this.querySelectorAll('apollo-query'))
+      // @ts-expect-error: I know, but I'm adding it to the prototype lookup
+      el.formatDate = Leeway.formatDate;
+
+    window.addEventListener('mutation-error', this.onMutationError.bind(this));
+
+    await import('./components/register.js');
+
+    await Promise.all([
+      customElements.whenDefined('apollo-mutation'),
+      customElements.whenDefined('apollo-query'),
+      customElements.whenDefined('hy-drawer'),
+    ]);
+
+    await Promise.all([
+      this.messagesQuery.updateComplete,
+      this.userListQuery.updateComplete,
+    ]);
+
+    this.showLogin.focus();
+    document.body.removeAttribute('unresolved');
+    document.getElementById('show-login').removeAttribute('disabled');
+    document.getElementById('show-login').innerHTML = '';
+    document.getElementById('drawer-toggle').removeAttribute('disabled');
+
+    window.__APOLLO_CLIENT__ = this.client;
+
+    super.connectedCallback();
+
+    this.onMediaChange(this.isWideScreen);
+    this.onDrawerToggle();
+    this.onUserListUpdate();
   }
 
   /** @param {MediaQueryList|MediaQueryListEvent} event */
@@ -218,31 +277,29 @@ class Leeway extends ApolloClientElement {
     this.messagesQuery.scroll({ behavior, top: this.messagesQuery.scrollHeight });
   }
 
-  async onLocalUserChanged() {
-    const local = this.localUser;
-    const id = local?.id?.toString?.();
-    const userActive = !!id;
-
-    this.joinInputs.hidden = userActive;
-    this.nickShow.hidden = userActive;
-    this.messageInputs.hidden = !userActive;
-    this.joinInputs.setAttribute('aria-hidden', this.joinInputs.hidden.toString());
-    this.nickShow.setAttribute('aria-expanded', userActive.toString());
-    this.updateId(id);
-
+  async onUserListUpdate() {
     await this.userListQuery.updateComplete;
     await this.messagesQuery.updateComplete;
 
-    if (userActive)
+    const { me } = this.userListQuery.data ?? {};
+
+    this.joinInputs.hidden = !!me;
+    this.showLogin.hidden = !!me;
+    this.messageInputs.hidden = !me;
+    this.joinInputs.setAttribute('aria-hidden', this.joinInputs.hidden.toString());
+    this.showLogin.setAttribute('aria-expanded', (!!me).toString());
+
+    if (me) {
       this.messageInput.focus();
-    else {
+      this.updateId(me.id);
+    } else {
       this.messageInput.value = '';
       this.messageInput.blur();
       await new Promise(r => setTimeout(r));
-      this.nickShow.focus();
+      this.showLogin.focus();
     }
 
-    this.settingsDiag.querySelector('input').value = local.nick || '';
+    this.settingsDiag.querySelector('input').value = me?.nick ?? '';
     this.scrollMessages('auto');
   }
 
@@ -252,52 +309,21 @@ class Leeway extends ApolloClientElement {
     this.pingMut.setAttribute('data-user-id', id);
   }
 
-  async part() {
-    const { id, nick } = this.localUser;
-    const status = navigator.onLine ? 'ONLINE' : 'OFFLINE';
-    await this.partMut.mutate({
-      variables: { id },
-      optimisticResponse: { part: { id, nick, status } },
-    });
-
-    this.localUser = ({ id: null, nick: null, status });
-  }
-
-  /** @param {string} nick */
-  async changeUsername(nick) {
-    const { id } = this.localUser;
-    if (!this.changeNickMut) return;
-    const status = navigator.onLine ? 'ONLINE' : 'OFFLINE';
-    await this.changeNickMut.mutate({
-      variables: { id, nick },
-      optimisticResponse: {
-        __typename: 'Mutation',
-        changeNickname: { __typename: 'User', id, nick, status },
-      },
-      update: (_, { data: { changeNickname: { id, nick } } }) => {
-        this.localUser = ({ id, nick, status });
-      },
-    });
-
-    this.messageInput.value = '';
-  }
-
-  /** @param {string} message */
-  handleSlashCommand(message) {
-    const [command, ...args] = message.split(' ');
-    switch (command) {
-      case 'nick': return this.changeUsername(args.join(' '));
-      case 'part': return this.part();
-    }
-  }
-
   /** @param {KeyboardEvent & { target: HTMLInputElement }} event */
   onMessageKeyup(event) {
     // @ts-expect-error: little white lie
     this.pingMut.debouncedMutate();
-    if (event.key === 'Enter') {
-      if (this.onWillSendMessage(event.target.value))
+    switch (event.key) {
+      case 'Enter':
         this.messageMut.mutate();
+        break;
+      case 'ArrowUp': {
+        if (event.target.value) return;
+        const last = this.messagesQuery.$('li[data-is-me="true"]:last-of-type');
+        if (last)
+          this.onToggleEditMessage({ target: last });
+        break;
+      }
     }
   }
 
@@ -307,13 +333,9 @@ class Leeway extends ApolloClientElement {
       event.target.closest('apollo-mutation').mutate();
   }
 
-  onClickJoin() {
-    const { nickInput, nickInputs, nickShow } = this;
-    nickInputs.hidden = false;
-    nickInputs.setAttribute('aria-hidden', 'false');
-    nickShow.hidden = true;
-    nickShow.setAttribute('aria-hidden', 'true');
-    nickInput.focus();
+  async onClickJoin() {
+    await import('./components/dialog.js');
+    this.loginDiag.show();
   }
 
   /**
@@ -321,47 +343,51 @@ class Leeway extends ApolloClientElement {
    * @param  {import('@apollo/client/core').ApolloQueryResult<import('./types').SendMessageMutationData>} result
    */
   messageUpdater(cache, result) {
-    const { query } = this.messagesQuery;
-    const cached = cache.readQuery({ query }) ?? this.messagesQuery.data;
+    const { query } = this.userListQuery;
     cache.writeQuery({ query, data: {
-      ...cached,
-      messages: [...cached.messages, result.data.sendMessage],
+      ...cache.readQuery({ query }),
+      me: result.data.sendMessage.user,
     } });
+
+    if (result.data.sendMessage.message) {
+      const { query } = this.messagesQuery;
+      const cached = cache.readQuery({ query });
+      cache.writeQuery({ query, data: {
+        ...cached,
+        messages: [...cached.messages, result.data.sendMessage],
+      } });
+    }
+
+    this.onUserListUpdate();
   }
 
-  /** @param {string|import('@apollo-elements/components/events').WillMutateEvent} [evOrString] */
-  onWillSendMessage(evOrString) {
-    const message =
-        typeof evOrString === 'string' ? evOrString
-      : evOrString?.detail?.variables.message;
-
-    if (!message.startsWith('/'))
-      return true;
-    else {
-      this.handleSlashCommand(message.substr(1));
-      return false;
-    }
+  editMessageUpdater(cache, result) {
+    const { query } = this.messagesQuery;
+    const cached = cache.readQuery({ query }) ?? this.messagesQuery.data;
+    const { editMessage } = result.data;
+    cache.writeQuery({ query, data: {
+      ...cached,
+      messages: cached.messages.map(x =>
+          x.date !== editMessage.date ? x
+        : ({ ...x, ...editMessage })),
+    } });
+    const item = this.messagesQuery.shadowRoot.querySelector(`li[data-message-date="${editMessage.date}"]`);
+    item.classList.remove('editing');
   }
 
   /** @param {import('@apollo-elements/core/events').ApolloMutationResultEvent<import('./types').JoinMutationData>} event */
   onJoinMutation(event) {
     const id = event.detail.data.join.id.toString();
     this.updateId(id);
-    this.nickInputs.hidden = true;
     this.messageInputs.hidden = false;
     this.nickInput.value = '';
+    this.passwordInput.value = '';
     const { data } = this.joinMut;
     const user = data?.join ?? null;
     if (!user) return;
-    this.localUser = (user);
-    localStorage.setItem('leeway-user', JSON.stringify(user));
     this.messageInput.tabIndex = 0;
+    this.loginDiag.close();
     this.messageInput.focus();
-  }
-
-  /** @param {import('@apollo-elements/core/events').ApolloMutationResultEvent<import('./types').ChangeNickMutationData>} event */
-  onChangeNickname(event) {
-    this.localUser = event.detail.data.changeNickname;
   }
 
   /** @param {import('@apollo-elements/core/events').ApolloSubscriptionResultEvent<import('./types').MessageSentSubscriptionData>} event */
@@ -376,6 +402,23 @@ class Leeway extends ApolloClientElement {
     this.scrollMessages();
     if (document.hidden)
       this.notify(`${messageSent.user.nick} sent a message`, messageSent.message);
+  }
+
+  /** @param {import('@apollo-elements/core/events').ApolloSubscriptionResultEvent<import('./types').MessageEditedSubscriptionData>} event */
+  onMessageEdited(event) {
+    // update the query element
+    const { client, subscriptionData } = event.detail;
+    const { data: { messageEdited } } = subscriptionData;
+    const { query } = this.messagesQuery;
+    const cached = client.readQuery({ query }) ?? this.messagesQuery.data;
+    client.writeQuery({
+      query,
+      data: {
+        messages: cached.messages.map(x =>
+            x.date !== messageEdited.date ? x
+          : ({ ...x, ...messageEdited })),
+      },
+    });
   }
 
   /** @param {import('@apollo-elements/components').ApolloSubscriptionElement|string} el */
@@ -408,9 +451,21 @@ class Leeway extends ApolloClientElement {
   onUserJoined(event) {
     // update the query element
     const { client, subscriptionData } = event.detail;
+    const { userJoined } = subscriptionData.data;
     const { query } = this.userListQuery;
     const cached = client.readQuery({ query }) ?? this.userListQuery.data;
-    const users = [...cached.users, subscriptionData.data.userJoined];
+    let updatedExistingUser = false;
+    const users = [];
+    // sometimes you just don't want to iterate twice
+    // eslint-disable-next-line easy-loops/easy-loops
+    for (const user of cached.users) {
+      if (user.id === userJoined.id)
+        users.push((updatedExistingUser = true, userJoined));
+      else
+        users.push(user);
+    }
+    if (!updatedExistingUser)
+      users.push(userJoined);
     client.writeQuery({ query, data: { ...cached, users } });
     this.notify(event.target);
   }
@@ -420,9 +475,15 @@ class Leeway extends ApolloClientElement {
     // update the query element
     const { client, subscriptionData } = event.detail;
     const { query } = this.userListQuery;
+    const { userParted } = subscriptionData.data;
     const cached = client.readQuery({ query }) ?? this.userListQuery.data;
-    const users = cached.users.filter(x => x.id !== subscriptionData.data.userParted.id);
-    client.writeQuery({ query, data: { ...cached, users } });
+    client.writeQuery({ query, data: {
+      ...cached,
+      users: cached.users.map(x => x.id !== userParted.id ? x : ({
+        ...x,
+        status: 'PARTED',
+      })),
+    } });
     this.notify(event.target);
   }
 
@@ -479,69 +540,31 @@ class Leeway extends ApolloClientElement {
     this.notificationsSwitch.checked = this.notificationPermission === 'granted';
   }
 
-  async connectedCallback() {
-    const SUB_EVT = 'apollo-subscription-result';
-    const MUT_EVT = 'mutation-completed';
-    const QUR_EVT = 'apollo-query-result';
-    this.scrollMessages('auto');
-    this.versionButton.addEventListener('click', () => this.versionDiag.show());
-    this.drawerToggle.addEventListener('click', this.onClickDrawerToggle.bind(this));
-    this.isWideScreen.addEventListener('change', this.onMediaChange);
-    this.joinedSub.addEventListener(SUB_EVT, this.onUserJoined.bind(this));
-    this.joinMut.addEventListener(MUT_EVT, this.onJoinMutation.bind(this));
-    this.messageInput.addEventListener('keyup', this.onMessageKeyup.bind(this));
-    this.messageMut.addEventListener(MUT_EVT, () => this.messageInput.value = '');
-    this.messageMut.addEventListener('will-mutate', this.onWillSendMessage.bind(this));
-    this.messageMut.updater = this.messageUpdater.bind(this);
-    this.messageSentSub.addEventListener(SUB_EVT, this.onMessageSent.bind(this));
-    this.messagesQuery.addEventListener(QUR_EVT, () => this.scrollMessages());
-    this.nickInput.addEventListener('keyup', this.onNickInputKeyup.bind(this));
-    this.nickShow.addEventListener('click', this.onClickJoin.bind(this));
-    this.nickMut.addEventListener(MUT_EVT, this.onChangeNickname.bind(this));
-    this.partedSub.addEventListener(SUB_EVT, this.onUserParted.bind(this));
-    this.sw.addEventListener('change', this.onServiceWorkerChanged.bind(this));
-    this.userListQuery.addEventListener(QUR_EVT, this.onLocalUserChanged.bind(this));
-    this.versionDiag.addEventListener('closed', this.onVersionDialogClosed.bind(this));
-    this.settingsToggle.addEventListener('click', this.openSettingsDiag.bind(this));
-    this.legalToggle.addEventListener('click', this.openLegalDiag.bind(this));
-    this.notificationsSwitch.addEventListener('click', this.onNotificationsSwitch.bind(this));
-    this.notificationsSwitch.checked = this.notificationPermission === 'granted';
+  onToggleEditMessage = e => {
+    const item = e.target.closest('li');
+    const mutation = item.querySelector('apollo-mutation');
+    const input = item.querySelector('input');
+    mutation.updater ??= this.editMessageUpdater.bind(this);
+    item.classList.toggle('editing');
+    if (!item.classList.contains('editing'))
+      input.blur();
+    else {
+      input.focus();
+      input.addEventListener('keyup', this.onEditKeyup);
+    }
+  };
 
-    for (const form of this.querySelectorAll('form'))
-      form.addEventListener('submit', e => e.preventDefault());
-
-    for (const el of this.querySelectorAll('apollo-query'))
-      // @ts-expect-error: I know, but I'm adding it to the prototype lookup
-      el.formatDate = Leeway.formatDate;
-
-    window.addEventListener('mutation-error', this.onMutationError.bind(this));
-
-    await import('./components/register.js');
-
-    await Promise.all([
-      customElements.whenDefined('apollo-mutation'),
-      customElements.whenDefined('apollo-query'),
-      customElements.whenDefined('hy-drawer'),
-    ]);
-
-    await Promise.all([
-      this.messagesQuery.updateComplete,
-      this.userListQuery.updateComplete,
-    ]);
-
-    this.nickShow.focus();
-    document.body.removeAttribute('unresolved');
-    document.getElementById('nick-show').removeAttribute('disabled');
-    document.getElementById('nick-show').innerHTML = '';
-    document.getElementById('drawer-toggle').removeAttribute('disabled');
-
-    window.__APOLLO_CLIENT__ = this.client;
-
-    super.connectedCallback();
-
-    this.onMediaChange(this.isWideScreen);
-    this.onDrawerToggle();
-    this.onLocalUserChanged();
+  onEditKeyup = event => {
+    const { key, target } = event;
+    const mutation = target.closest('li').querySelector('apollo-mutation');
+    switch (key) {
+      case 'Enter':
+        target.removeEventListener('keyup', this.onEditKeyup);
+        return mutation.mutate();
+      case 'Escape':
+        target.removeEventListener('keyup', this.onEditKeyup);
+        return this.onToggleEditMessage(event);
+    }
   }
 
   static formatDate(iso) {
