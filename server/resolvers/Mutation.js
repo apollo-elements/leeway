@@ -31,28 +31,38 @@ export async function changeNickname(_, { id, nick }, context) {
   return await context.models.User.getUser(id);
 }
 
-export async function sendMessage(_, args, context) {
-  await context.wsSessionReady;
-  if (args.userId !== context.user.id)
-    throw new AuthenticationError('Unauthorized');
-  const { userId, message } = args;
-  const trimmed = args.message.trim();
-  if (trimmed.startsWith('/part'))
+async function slashCommand(_, { message, userId }, context) {
+  if (message.startsWith('/msg NickServe'))
+    return doSendMessage(_, { userId, message: `👋 I'm that one person who had to try messaging the NickServe to see if it would work` }, context);
+  if (message.startsWith('/part'))
     return part(_, { id: userId }, context).then(() => ({ userId: null }));
-  if (trimmed.startsWith('/nick')) {
+  if (message.startsWith('/nick')) {
     return changeNickname(_, { id: userId, nick: message.replace('/nick', '').trim() }, context)
       .then(() => ({ userId }));
   }
+}
+
+async function doSendMessage(_, args, context) {
+  const { userId, message } = args;
   const date = new Date().toISOString();
   const { nick } = await context.models.User.getUser(userId);
   const messageSent = { userId, message, date, nick };
-  if (trimmed === '/msg NickServe help')
-    messageSent.message = `👋 I'm that one person who had to try messaging the NickServe to see if it would work`;
   if (!isValidMessage.runWith(messageSent)) throw new ValidationError('Invalid Message');
   await context.models.Message.addMessage(messageSent);
   context.pubsub.publish(C.MESSAGE_SENT, { messageSent });
   trace('messageSent', Object.values(messageSent));
   return messageSent;
+}
+
+export async function sendMessage(_, args, context) {
+  await context.wsSessionReady;
+  const trimmed = args.message.trim();
+  if (args.userId !== context.user.id)
+    throw new AuthenticationError('Unauthorized');
+  if (trimmed.startsWith('/'))
+    return slashCommand(_, { ...args, message: trimmed }, context);
+  else
+    return doSendMessage(_, args, context);
 }
 
 export async function editMessage(_, { date, message }, context) {

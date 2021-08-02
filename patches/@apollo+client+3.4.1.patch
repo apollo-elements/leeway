@@ -1,0 +1,10 @@
+diff --git a/node_modules/@apollo/client/utilities/globals/graphql.js b/node_modules/@apollo/client/utilities/globals/graphql.js
+index 62c0bf2..6af50cf 100644
+--- a/node_modules/@apollo/client/utilities/globals/graphql.js
++++ b/node_modules/@apollo/client/utilities/globals/graphql.js
+@@ -1,4 +1,4 @@
+-import { remove } from 'ts-invariant/process';
++import { remove } from 'ts-invariant/process/main.js';
+ import { isType } from 'graphql';
+ export function removeTemporaryGlobals() {
+     isType(null);

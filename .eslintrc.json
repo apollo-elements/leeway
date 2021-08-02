@@ -2,7 +2,8 @@
   "extends": "@pwrs",
   "parser": "@typescript-eslint/parser",
   "rules": {
-    "valid-jsdoc": "off"
+    "valid-jsdoc": "off",
+    "no-invalid-this": "off"
   },
   "overrides": [{
     "files": "server/**/*.js",

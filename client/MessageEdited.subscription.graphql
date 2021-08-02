@@ -5,6 +5,8 @@ subscription MessageEditedSubscription {
     user {
       id
       nick
+      isMe
+      status
     }
   }
 }

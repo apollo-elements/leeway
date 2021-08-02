@@ -5,7 +5,12 @@ import type { Snackbar } from '@material/mwc-snackbar';
 
 import type { MutationUpdaterFunction, NormalizedCacheObject, TypedDocumentNode } from '@apollo/client/core';
 
-import type { ApolloQueryElement } from '@apollo-elements/components';
+import type { ApolloMutationElement, ApolloQueryElement, ApolloSubscriptionElement } from '@apollo-elements/components';
+import { IconButton } from '@material/mwc-icon-button';
+import { ServiceWorkerElement } from '@power-elements/service-worker';
+import { Button } from '@material/mwc-button';
+import { Dialog } from '@material/mwc-dialog';
+import { Switch } from '@material/mwc-switch';
 
 export interface User {
   id: number;
@@ -73,10 +78,22 @@ export interface UserPartedSubscriptionData {
   userParted: User;
 }
 
+export interface UpdateUserLastSeenMutationData {
+  id: string;
+  lastSeen: string;
+  isMe: boolean;
+}
+
 export type ChangeNickMutation = TypedDocumentNode<ChangeNickMutationData, ChangeNickMutationVariables>;
+export type UpdateUserLastSeenMutation = TypedDocumentNode<UpdateUserLastSeenMutationData>;
 export type JoinMutation = TypedDocumentNode<JoinMutationData, JoinMutationVariables>;
-export type MessagesQuery = TypedDocumentNode<MessagesQueryData, null>;
-export type UsersQuery = TypedDocumentNode<UsersQueryData, null>;
+export type MessagesQuery = TypedDocumentNode<MessagesQueryData>;
+export type UsersQuery = TypedDocumentNode<UsersQueryData>;
+export type SendMessageMutation = TypedDocumentNode<SendMessageMutationData, SendMessageMutationVariables>;
+export type UserJoinedSubscription = TypedDocumentNode<UserJoinedSubscriptionData>;
+export type UserPartedSubscription = TypedDocumentNode<UserPartedSubscriptionData>;
+export type MessageSentSubscription = TypedDocumentNode<MessageSentSubscriptionData>;
+export type MessageEditedSubscription = TypedDocumentNode<MessageEditedSubscriptionData>;
 export type UsersElType = ApolloQueryElement<UsersQuery>;
 export type MessagesElType = ApolloQueryElement<MessagesQuery> & {
   editing: boolean;
@@ -94,4 +111,37 @@ declare global {
     'hy-drawer': HTMLElement & HyDrawer;
     'mwc-snackbar': Snackbar;
   }
+}
+
+export interface $ {
+  changeNickMutation: ApolloMutationElement<ChangeNickMutation>;
+  drawer: HyDrawer;
+  userJoinedSubscription: ApolloSubscriptionElement<UserJoinedSubscription>;
+  joinInputs: HTMLElement;
+  inputs: HTMLElement;
+  messageInput: HTMLInputElement;
+  messageInputs: HTMLElement;
+  messageMutation: ApolloMutationElement<SendMessageMutation>;
+  messageSentSubscription: ApolloSubscriptionElement<MessageSentSubscription>;
+  messageEditedSubscription: ApolloSubscriptionElement<MessageEditedSubscription>;
+  leewayMessages: MessagesElType;
+  loginNick: HTMLInputElement;
+  passwordInput: HTMLInputElement;
+  joinMutation: ApolloMutationElement<JoinMutation>;
+  changeNickMutation: ApolloMutationElement<ChangeNickMutation>;
+  showLogin: IconButton;
+  userPartedSubscription: ApolloSubscriptionElement<UserPartedSubscription>;
+  pingMutation: ApolloMutationElement<UpdateUserLastSeenMutation>;
+  leewayUserlist: UsersElType;
+  sw: ServiceWorkerElement;
+  versionDialog: Dialog;
+  loginDialog: Dialog;
+  versionButton: Button;
+  settingsDialog: Dialog;
+  legalDialog: Dialog;
+  drawerToggle: IconButton;
+  settingsToggle: IconButton;
+  legalToggle: IconButton;
+  snackbar: Snackbar;
+  notificationsSwitch: Switch;
 }

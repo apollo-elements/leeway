@@ -5,6 +5,8 @@ subscription MessageSentSubscription {
     user {
       id
       nick
+      isMe
+      status
     }
   }
 }

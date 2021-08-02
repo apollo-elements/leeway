@@ -455,3 +455,7 @@ mwc-button[disabled]:not(:defined) {
 #join-mutation mwc-button {
   grid-column: 2/3;
 }
+
+#settings-dialog mwc-formfield {
+  width: 100%;
+}

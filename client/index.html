@@ -288,7 +288,6 @@
               <script type="application/graphql" src="SendMessage.mutation.graphql"></script>
               <input id="message-input" data-variable="message" aria-label="Message the Channel" placeholder="Message the Channel"/>
               <mwc-button id="message-submit" trigger icon="send">Send</mwc-button>
-              <template><slot></slot></template>
             </apollo-mutation>
           </fieldset>
         </form>
@@ -343,17 +342,12 @@
         </mwc-dialog>
 
         <mwc-dialog id="settings-dialog" heading="Settings">
-          <mwc-formfield label="Allow Notifications"><mwc-switch></mwc-switch></mwc-formfield>
-          <br/>
-          <apollo-mutation id="change-nick-mutation">
-            <script type="application/graphql" src="ChangeNickname.mutation.graphql"></script>
-            <input data-variable="nick" id="nick-change" aria-labelledby="change-nick-button"/>
-            <mwc-button id="change-nick-button" trigger label="Change Nickname"></mwc-button>
-          </apollo-mutation>
-          <apollo-mutation id="part-mutation">
-            <script type="application/graphql" src="Part.mutation.graphql"></script>
-            <mwc-button id="part-button" trigger label="Part"></mwc-button>
-          </apollo-mutation>
+          <mwc-formfield spacebetween label="Allow Notifications"><mwc-switch></mwc-switch></mwc-formfield>
+          <mwc-formfield spacebetween label="Change Nickname">
+            <input variable-for="change-nick-mutation" data-variable="nick" id="nick-change"/>
+          </mwc-formfield>
+          <mwc-button trigger-for="change-nick-mutation" slot="primaryAction" label="Change Nickname"></mwc-button>
+          <mwc-button trigger-for="part-mutation" slot="secondaryAction" label="Part"></mwc-button>
         </mwc-dialog>
 
         <mwc-dialog id="legal-dialog" heading="Legal">
@@ -369,6 +363,13 @@
 
     <service-worker id="service-worker" path="/sw.js" auto-reload></service-worker>
 
+    <apollo-mutation id="change-nick-mutation">
+      <script type="application/graphql" src="ChangeNickname.mutation.graphql"></script>
+    </apollo-mutation>
+
+    <apollo-mutation id="part-mutation">
+      <script type="application/graphql" src="Part.mutation.graphql"></script>
+    </apollo-mutation>
     <script type="module" src="client.js"></script>
   </body>
 </html>

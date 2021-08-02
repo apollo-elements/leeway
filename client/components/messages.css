@@ -50,6 +50,15 @@ input {
   border: none;
   border-bottom: 1px solid currentColor;
   flex: 1 0 auto;
+  font-size: inherit;
+  font-family: inherit;
+  margin-top: -10px;
+  margin-left: -2px;
+  outline: none;
+}
+
+input:not(:focus) {
+  border-bottom-color: grey;
 }
 
 button {
