@@ -10,6 +10,7 @@
   },
   "scripts": {
     "build": "run-s build:*",
+    "build:patch": "patch-package",
     "build:rollup": "rollup -c",
     "postinstall": "patch-package",
     "lint": "run-s lint:*",
