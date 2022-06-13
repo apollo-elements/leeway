@@ -5,7 +5,7 @@ This repo demonstrates how to build an app using Apollo Elements with minimal us
 ## Features
 - Page loads offline via Service Worker
 - <abbr title="server side rendering">SSR</abbr> for initial data payload via Apollo Server
-  - *NO* SSR for components, only for data
+  - Component SSR with [Declarative Shadow DOM](https://web.dev/declarative-shadow-dom/)
 - Code Splitting with Rollup
 - Aggressive minification, including `lit-html` template literals
 - CSS-in-CSS ( e.g. `import shared from '../shared-styles.css';`)
